@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ChineseLearn Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;family=Noto+Sans:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4cdf20",
+                        "on-primary": "#0c1f06",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#152112",
+                        "surface-dark": "#20321b",
+                        "surface-dark-highlight": "#2d4625",
+                        "text-secondary": "#a0c695",
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"],
+                        "body": ["Noto Sans", "sans-serif"],
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem", // 16px
+                        "lg": "1.5rem", // 24px - Adjusted for Bento Grid look
+                        "xl": "2rem", // 32px
+                        "2xl": "3rem", // 48px
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #152112; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d4625; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4cdf20; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-hidden">
+<div class="flex h-screen w-full bg-background-light dark:bg-background-dark">
+<!-- Sidebar -->
+<aside class="hidden lg:flex w-72 flex-col border-r border-[#2d4625] bg-[#152112] p-6 justify-between shrink-0">
+<div class="flex flex-col gap-8">
+<!-- Brand -->
+<div class="flex items-center gap-3 px-2">
+<div class="bg-center bg-no-repeat aspect-square bg-cover rounded-full size-10 shadow-lg shadow-[#4cdf20]/20" data-alt="Abstract green geometric logo" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCpOLXXkva-2LLPoSoJasUeGDtKR5cJ75e03_S1zgTEsRKQiy8XjxOdVb8YOShJXe31Z-I8iZq1SVEeP9sgo_xMlZtMIRPzdTgIIvBDzMsEjnbp2JcM86KUjvVd0J68-9xystXXviAcJi1Axahhppx8phAiAG81bivzpZ42Hq1XJ1OsK6i5WN_3cmvxA8cAI1HP9dtIa5oHAkxLmugT-SIiXRBWVdBn8d1kaff4JYGb0AS3QEcFd-JLrJ4NGEJnEGXSI00zTgnME0f6");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-xl font-bold leading-none tracking-tight">ChineseLearn</h1>
+<p class="text-text-secondary text-xs font-medium">v2.4 Pro</p>
+</div>
+</div>
+<!-- Navigation -->
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-full bg-primary text-on-primary shadow-md shadow-primary/10 transition-transform active:scale-95" href="#">
+<span class="material-symbols-outlined text-[24px]">home</span>
+<p class="text-sm font-bold">Home</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-text-secondary hover:bg-[#2d4625] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">school</span>
+<p class="text-sm font-medium">Learn</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-text-secondary hover:bg-[#2d4625] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">menu_book</span>
+<p class="text-sm font-medium">Vocab</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-text-secondary hover:bg-[#2d4625] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">history_edu</span>
+<p class="text-sm font-medium">Review</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-text-secondary hover:bg-[#2d4625] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">fitness_center</span>
+<p class="text-sm font-medium">Exercises</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-text-secondary hover:bg-[#2d4625] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">insights</span>
+<p class="text-sm font-medium">Progress</p>
+</a>
+</nav>
+</div>
+<!-- Bottom Actions -->
+<div class="flex flex-col gap-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-full text-text-secondary hover:bg-[#2d4625] hover:text-white transition-colors" href="#">
+<span class="material-symbols-outlined text-[24px]">settings</span>
+<p class="text-sm font-medium">Settings</p>
+</a>
+<div class="px-4 py-4 mt-2 rounded-xl bg-[#20321b] border border-[#2d4625]">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-text-secondary uppercase">Daily Goal</span>
+<span class="text-xs font-bold text-white">85%</span>
+</div>
+<div class="h-2 w-full bg-[#152112] rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[85%] rounded-full"></div>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-full overflow-hidden relative">
+<!-- Top Bar -->
+<header class="flex items-center justify-between px-6 py-4 md:px-10 border-b border-[#2d4625] bg-[#152112]/90 backdrop-blur-md sticky top-0 z-20">
+<div class="flex items-center gap-4 lg:hidden">
+<button class="text-white p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-lg font-bold">Dashboard</h2>
+</div>
+<div class="hidden lg:flex flex-1 max-w-md">
+<div class="relative w-full group">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-symbols-outlined text-text-secondary group-focus-within:text-white transition-colors">search</span>
+</div>
+<input autocomplete="off" class="block w-full pl-10 pr-3 py-2.5 border-none rounded-full leading-5 bg-[#20321b] text-white placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm transition-all" placeholder="Search lessons, vocabulary..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4 md:gap-6">
+<div class="hidden md:flex items-center gap-1 bg-[#20321b] px-3 py-1.5 rounded-full border border-[#2d4625]">
+<span class="material-symbols-outlined text-orange-500 text-[20px]">local_fire_department</span>
+<span class="text-sm font-bold text-white">12</span>
+</div>
+<button class="relative p-2 text-text-secondary hover:text-white transition-colors rounded-full hover:bg-[#2d4625]">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1.5 right-2 size-2 bg-red-500 rounded-full border-2 border-[#152112]"></span>
+</button>
+<div class="flex items-center gap-3 pl-2 border-l border-[#2d4625]">
+<div class="text-right hidden md:block">
+<p class="text-sm font-bold text-white leading-tight">Alex T.</p>
+<p class="text-xs text-text-secondary">HSK 3 Student</p>
+</div>
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-10 ring-2 ring-[#2d4625]" data-alt="User profile photo showing a smiling person" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCLnbbOj5fizTPLN4TWD2tgkmh6i2wsLykwJMLRz_ihJ5V-nWr8_2C4eLJvV4IczntVun0DAVQKKMIa_bkWob0QC8_pz3rhWfDajZxaNNZwiqicF21aJF7cny5d6O0cC6-91Za552By1Bt-L2ka1tRt2XLN-21BGLJcVHsXBZNvmcQLopZBDYTIvWjZZHplwWgPN0GNRySL_DY0gNzur73pFqusEUrnxvDjmsHauteBkqQeKHGmn1lNlAgOfBH5JWBy64HnBjC2lmpQ");'></div>
+</div>
+</div>
+</header>
+<!-- Scrollable Content Area -->
+<div class="flex-1 overflow-y-auto p-4 md:p-8 lg:p-10 scroll-smooth">
+<div class="max-w-7xl mx-auto flex flex-col gap-8 pb-10">
+<!-- Welcome Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-2">Welcome back, Alex! 👋</h1>
+<p class="text-text-secondary text-lg">You're on a roll. Let's keep the streak alive.</p>
+</div>
+<button class="bg-[#2d4625] hover:bg-[#36522c] text-white px-5 py-2.5 rounded-full text-sm font-bold flex items-center gap-2 transition-colors">
+<span>View Analytics</span>
+<span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6 auto-rows-min">
+<!-- 1. Resume Watching (Large Hero) -->
+<div class="col-span-1 md:col-span-2 xl:col-span-2 group relative overflow-hidden rounded-lg bg-[#20321b] shadow-lg shadow-black/20 hover:shadow-xl transition-all duration-300 border border-white/5 flex flex-col">
+<div class="absolute inset-0 bg-gradient-to-t from-[#152112] via-transparent to-transparent z-10 opacity-90"></div>
+<!-- Background Image -->
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Video thumbnail showing a busy street in Shanghai at night" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCmGQsAN0EoFfTcJpsX7hJSLrAurM9BYPGfBl0NnW1MLPTExNmcP-kdPlkFkv8ZAKmPyaSdM_35gnDexOobaCQPUSRBhYr_cQPmcXvhA_fYPLP2V_HjrAd-ucuS1l3JjrYIVE0qcCENQaSdFcr2IOywbyEYetJMABJe7vydordRCwDvz-ki2Ajp_gti5BarXwm8cgkI-2Q2U_Mf2XCLgNAZJsw8hpUWIPi0x8BA9Kk9UjXwKFmBiLp_m2oPXoplG9r-MVH2AW3-LoSq");'>
+</div>
+<div class="relative z-20 p-6 flex flex-col justify-end h-full min-h-[320px]">
+<div class="flex items-center gap-3 mb-3">
+<span class="bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">Vlog Series</span>
+<span class="bg-black/40 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">schedule</span> 12:04
+                                    </span>
+</div>
+<h3 class="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">Episode 4: Ordering Food in Shanghai</h3>
+<p class="text-gray-300 text-sm md:text-base mb-6 line-clamp-2 max-w-lg">Learn how to navigate a menu, ask for recommendations, and pay the bill using WeChat Pay in this immersive lesson.</p>
+<div class="flex items-center gap-4 bg-black/20 backdrop-blur-md p-2 rounded-full pr-6 w-fit border border-white/10">
+<button class="bg-primary text-on-primary rounded-full size-10 flex items-center justify-center hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-[24px]">play_arrow</span>
+</button>
+<div class="flex flex-col gap-1 min-w-[140px]">
+<div class="flex justify-between text-xs font-semibold text-white/80">
+<span>Progress</span>
+<span>65%</span>
+</div>
+<div class="h-1.5 bg-white/20 rounded-full w-full overflow-hidden">
+<div class="h-full bg-primary w-[65%] rounded-full shadow-[0_0_10px_rgba(76,223,32,0.5)]"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- 2. SRS Review Today -->
+<div class="col-span-1 md:col-span-1 xl:col-span-1 bg-[#20321b] rounded-lg p-6 flex flex-col justify-between border border-white/5 relative overflow-hidden group">
+<!-- Decor -->
+<div class="absolute -right-4 -top-4 text-[#2d4625] opacity-20 group-hover:opacity-30 transition-opacity transform rotate-12">
+<span class="material-symbols-outlined text-[140px]">style</span>
+</div>
+<div>
+<div class="flex items-center gap-2 mb-4">
+<div class="p-2 bg-orange-500/10 rounded-lg text-orange-400">
+<span class="material-symbols-outlined">history_edu</span>
+</div>
+<span class="text-xs font-bold uppercase tracking-wider text-text-secondary">SRS Review</span>
+</div>
+<h3 class="text-4xl font-extrabold text-white mb-1">24</h3>
+<p class="text-text-secondary font-medium">Words due today</p>
+</div>
+<div class="mt-8">
+<button class="w-full py-3.5 bg-[#2d4625] hover:bg-primary hover:text-on-primary text-white rounded-full font-bold transition-all duration-300 flex items-center justify-center gap-2 group/btn">
+<span>Start Session</span>
+<span class="material-symbols-outlined text-sm group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- 3. New Words (Tall Pillar) -->
+<div class="col-span-1 md:col-span-1 xl:col-span-1 row-span-2 bg-[#20321b] rounded-lg border border-white/5 flex flex-col overflow-hidden">
+<div class="p-6 border-b border-[#2d4625]">
+<div class="flex items-center justify-between mb-1">
+<div class="flex items-center gap-2">
+<div class="p-2 bg-blue-500/10 rounded-lg text-blue-400">
+<span class="material-symbols-outlined">bookmark</span>
+</div>
+<span class="text-xs font-bold uppercase tracking-wider text-text-secondary">New Vocab</span>
+</div>
+<span class="text-xs font-bold text-white bg-[#2d4625] px-2 py-1 rounded-md">+5 this week</span>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-2 space-y-1">
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 hover:bg-[#2d4625] rounded-xl transition-colors cursor-pointer group">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-white group-hover:text-primary transition-colors">你好</span>
+<span class="text-xs text-text-secondary">Nǐ hǎo • Hello</span>
+</div>
+<button class="text-[#2d4625] group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 hover:bg-[#2d4625] rounded-xl transition-colors cursor-pointer group">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-white group-hover:text-primary transition-colors">谢谢</span>
+<span class="text-xs text-text-secondary">Xièxiè • Thanks</span>
+</div>
+<button class="text-[#2d4625] group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 hover:bg-[#2d4625] rounded-xl transition-colors cursor-pointer group">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-white group-hover:text-primary transition-colors">再见</span>
+<span class="text-xs text-text-secondary">Zàijiàn • Goodbye</span>
+</div>
+<button class="text-[#2d4625] group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 hover:bg-[#2d4625] rounded-xl transition-colors cursor-pointer group">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-white group-hover:text-primary transition-colors">猫</span>
+<span class="text-xs text-text-secondary">Māo • Cat</span>
+</div>
+<button class="text-[#2d4625] group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+</div>
+<!-- List Item -->
+<div class="flex items-center justify-between p-3 hover:bg-[#2d4625] rounded-xl transition-colors cursor-pointer group">
+<div class="flex flex-col">
+<span class="text-lg font-bold text-white group-hover:text-primary transition-colors">喜欢</span>
+<span class="text-xs text-text-secondary">Xǐhuān • To like</span>
+</div>
+<button class="text-[#2d4625] group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">volume_up</span>
+</button>
+</div>
+</div>
+<div class="p-4 border-t border-[#2d4625]">
+<button class="w-full text-sm font-bold text-text-secondary hover:text-white text-center">View All Words</button>
+</div>
+</div>
+<!-- 4. Progress Chart -->
+<div class="col-span-1 md:col-span-2 xl:col-span-2 bg-[#20321b] rounded-lg p-6 border border-white/5 flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h3 class="text-lg font-bold text-white">Learning Activity</h3>
+<p class="text-sm text-text-secondary">Last 7 days</p>
+</div>
+<select class="bg-[#152112] text-xs text-white border-none rounded-full px-3 py-1.5 focus:ring-0 cursor-pointer">
+<option>This Week</option>
+<option>This Month</option>
+</select>
+</div>
+<!-- CSS-only Simple Bar Chart Visualization -->
+<div class="flex-1 flex items-end justify-between gap-2 h-32 md:h-40 px-2">
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<div class="absolute bottom-0 w-full bg-primary/30 rounded-t-md h-[40%]"></div>
+</div>
+<span class="text-[10px] uppercase font-bold text-text-secondary">Mon</span>
+</div>
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<div class="absolute bottom-0 w-full bg-primary/50 rounded-t-md h-[65%]"></div>
+</div>
+<span class="text-[10px] uppercase font-bold text-text-secondary">Tue</span>
+</div>
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<div class="absolute bottom-0 w-full bg-primary rounded-t-md h-[85%] shadow-[0_0_15px_rgba(76,223,32,0.3)]"></div>
+</div>
+<span class="text-[10px] uppercase font-bold text-white">Wed</span>
+</div>
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<div class="absolute bottom-0 w-full bg-primary/40 rounded-t-md h-[30%]"></div>
+</div>
+<span class="text-[10px] uppercase font-bold text-text-secondary">Thu</span>
+</div>
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<div class="absolute bottom-0 w-full bg-primary/20 rounded-t-md h-[20%]"></div>
+</div>
+<span class="text-[10px] uppercase font-bold text-text-secondary">Fri</span>
+</div>
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<!-- Empty for future -->
+</div>
+<span class="text-[10px] uppercase font-bold text-text-secondary">Sat</span>
+</div>
+<div class="flex flex-col items-center gap-2 group w-full">
+<div class="w-full bg-[#2d4625] rounded-t-md relative h-32 group-hover:bg-[#36522c] transition-all">
+<!-- Empty for future -->
+</div>
+<span class="text-[10px] uppercase font-bold text-text-secondary">Sun</span>
+</div>
+</div>
+</div>
+<!-- 5. Streak / Daily Goal -->
+<div class="col-span-1 md:col-span-1 xl:col-span-1 bg-[#20321b] rounded-lg p-6 border border-white/5 flex flex-col justify-center items-center relative overflow-hidden">
+<!-- Background decorative gradient -->
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent"></div>
+<div class="relative size-32 mb-4">
+<svg class="size-full -rotate-90" viewbox="0 0 36 36">
+<!-- Background Circle -->
+<path class="text-[#2d4625]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="3"></path>
+<!-- Progress Circle -->
+<path class="text-primary drop-shadow-[0_0_4px_rgba(76,223,32,0.8)]" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="currentColor" stroke-dasharray="85, 100" stroke-linecap="round" stroke-width="3"></path>
+</svg>
+<div class="absolute inset-0 flex flex-col items-center justify-center">
+<span class="text-3xl font-bold text-white">85<span class="text-sm align-top">%</span></span>
+</div>
+</div>
+<div class="text-center relative z-10">
+<h4 class="text-white font-bold text-lg">Daily Goal</h4>
+<p class="text-text-secondary text-sm">35/40 mins completed</p>
+</div>
+</div>
+<!-- 6. Achievements Table -->
+<div class="col-span-1 md:col-span-2 xl:col-span-4 bg-[#20321b] rounded-lg border border-white/5 overflow-hidden">
+<div class="p-6 border-b border-[#2d4625] flex justify-between items-center">
+<h3 class="text-lg font-bold text-white">Recent Achievements</h3>
+<button class="text-primary text-sm font-bold hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-sm text-left">
+<thead class="text-xs text-text-secondary uppercase bg-[#1a2916]">
+<tr>
+<th class="px-6 py-4 font-bold" scope="col">Badge</th>
+<th class="px-6 py-4 font-bold" scope="col">Description</th>
+<th class="px-6 py-4 font-bold" scope="col">Date Earned</th>
+<th class="px-6 py-4 font-bold text-right" scope="col">XP</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#2d4625]">
+<tr class="hover:bg-[#2d4625]/50 transition-colors">
+<td class="px-6 py-4 font-medium text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-yellow-500/20 flex items-center justify-center text-yellow-500">
+<span class="material-symbols-outlined text-[20px]">military_tech</span>
+</div>
+                                                HSK 1 Master
+                                            </td>
+<td class="px-6 py-4 text-gray-300">Completed all HSK 1 vocabulary decks</td>
+<td class="px-6 py-4 text-text-secondary">Today, 10:23 AM</td>
+<td class="px-6 py-4 text-right font-bold text-primary">+500 XP</td>
+</tr>
+<tr class="hover:bg-[#2d4625]/50 transition-colors">
+<td class="px-6 py-4 font-medium text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-orange-500/20 flex items-center justify-center text-orange-500">
+<span class="material-symbols-outlined text-[20px]">local_fire_department</span>
+</div>
+                                                7 Day Streak
+                                            </td>
+<td class="px-6 py-4 text-gray-300">Studied for 7 consecutive days</td>
+<td class="px-6 py-4 text-text-secondary">Yesterday</td>
+<td class="px-6 py-4 text-right font-bold text-primary">+100 XP</td>
+</tr>
+<tr class="hover:bg-[#2d4625]/50 transition-colors">
+<td class="px-6 py-4 font-medium text-white flex items-center gap-3">
+<div class="size-8 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-500">
+<span class="material-symbols-outlined text-[20px]">forum</span>
+</div>
+                                                Conversation Starter
+                                            </td>
+<td class="px-6 py-4 text-gray-300">Finished first Dialogue lesson</td>
+<td class="px-6 py-4 text-text-secondary">Oct 24, 2023</td>
+<td class="px-6 py-4 text-right font-bold text-primary">+250 XP</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div> <!-- End Grid -->
+</div>
+</div>
+</main>
+</div>
+</body></html>

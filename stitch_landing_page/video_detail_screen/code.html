@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Video Detail Screen</title>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#4cdf20",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#152111",
+                        "card-dark": "#20321b",
+                        "card-hover": "#263c20",
+                        "text-muted": "#a0c695"
+                    },
+                    fontFamily: {
+                        "display": ["Manrope", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem", 
+                        "lg": "1.5rem", 
+                        "xl": "2rem", 
+                        "2xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #152111; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2d4625; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4cdf20; 
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white font-display overflow-hidden">
+<div class="flex h-screen w-full">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col w-72 h-full border-r border-[#2d4625]/50 bg-background-dark shrink-0">
+<div class="flex h-full flex-col justify-between p-6">
+<div class="flex flex-col gap-8">
+<!-- User Profile Snippet -->
+<div class="flex gap-4 items-center p-2 rounded-xl hover:bg-[#2d4625]/30 transition-colors cursor-pointer group">
+<div class="bg-center bg-no-repeat bg-cover rounded-full size-12 ring-2 ring-primary/20 group-hover:ring-primary transition-all" data-alt="User profile avatar showing a smiling person" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAmi7hWvsjU_GJZAMIk0tsmyJ2CI5FjUfReh5htx-BDZ5VkqUXE-IGhpbeGYi32sQx2Yzs2HDGtGahNygjd3nrJf4BIoWpngodojrZaHJuvNm9iFbyhrPMyave1zpec7Pe3rGugOPotl5j8VCW3Z7W38AlsaEzV9UQ4rqJmm6qvoyJBKba1c300GvKznBKF8Hu51TTHXO7BMxnun3EayDIfFa-CnmAm7qk0Oj81R1HIJ47w5BwcG9PO_P9YJvYDaP3VRCow1S0yAwDK");'></div>
+<div class="flex flex-col">
+<h1 class="text-white text-base font-bold leading-tight">Learn Chinese</h1>
+<p class="text-text-muted text-xs font-medium tracking-wide">Daily Streak: <span class="text-primary">12 🔥</span></p>
+</div>
+</div>
+<!-- Nav Links -->
+<nav class="flex flex-col gap-2">
+<a class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-[#2d4625] transition-all group" href="#">
+<span class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">home</span>
+<p class="text-text-muted group-hover:text-white text-sm font-semibold transition-colors">Home</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full bg-[#2d4625] shadow-lg shadow-black/20" href="#">
+<span class="material-symbols-outlined fill text-primary">explore</span>
+<p class="text-white text-sm font-bold">Explore</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-[#2d4625] transition-all group" href="#">
+<span class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">local_library</span>
+<p class="text-text-muted group-hover:text-white text-sm font-semibold transition-colors">Library</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-[#2d4625] transition-all group" href="#">
+<span class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">bar_chart</span>
+<p class="text-text-muted group-hover:text-white text-sm font-semibold transition-colors">Progress</p>
+</a>
+<a class="flex items-center gap-4 px-4 py-3 rounded-full hover:bg-[#2d4625] transition-all group" href="#">
+<span class="material-symbols-outlined text-text-muted group-hover:text-white transition-colors">settings</span>
+<p class="text-text-muted group-hover:text-white text-sm font-semibold transition-colors">Settings</p>
+</a>
+</nav>
+</div>
+<!-- Bottom Promo -->
+<div class="bg-gradient-to-br from-[#20321b] to-[#1a2916] p-5 rounded-2xl border border-[#2d4625]">
+<p class="text-white text-sm font-bold mb-2">Pro Plan</p>
+<p class="text-text-muted text-xs mb-4 leading-relaxed">Unlock all HSK 4-6 content and AI pronunciation feedback.</p>
+<button class="w-full py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-lg transition-colors">Upgrade</button>
+</div>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="flex-1 flex flex-col h-full relative overflow-y-auto">
+<!-- TopNavBar -->
+<header class="sticky top-0 z-20 flex items-center justify-between px-8 py-5 bg-background-dark/80 backdrop-blur-md border-b border-[#2d4625]/30">
+<div class="flex items-center gap-6 flex-1">
+<!-- Mobile Menu Button -->
+<button class="md:hidden text-white p-2">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex items-center gap-3 text-white">
+<div class="size-8 rounded-lg bg-[#2d4625] flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]">smart_display</span>
+</div>
+<h2 class="text-white text-lg font-bold tracking-tight hidden sm:block">Detail View</h2>
+</div>
+<!-- Search Bar -->
+<div class="hidden sm:flex max-w-md flex-1 ml-4">
+<div class="flex w-full items-center rounded-full bg-[#20321b] border border-transparent focus-within:border-primary/50 transition-colors h-11 px-4 gap-3">
+<span class="material-symbols-outlined text-text-muted">search</span>
+<input class="w-full bg-transparent border-none text-white placeholder-text-muted focus:ring-0 text-sm font-medium p-0" placeholder="Search videos, vocab, grammar..."/>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="size-10 flex items-center justify-center rounded-full bg-[#20321b] text-text-muted hover:text-white hover:bg-[#2d4625] transition-all relative">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+<span class="absolute top-2.5 right-3 size-2 bg-primary rounded-full border-2 border-[#20321b]"></span>
+</button>
+<button class="size-10 flex items-center justify-center rounded-full bg-[#20321b] text-text-muted hover:text-white hover:bg-[#2d4625] transition-all">
+<span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+</button>
+</div>
+</header>
+<!-- Content Body: Bento Grid -->
+<div class="p-6 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full">
+<!-- Back Button Breadcrumb -->
+<div class="mb-6 flex items-center gap-2 text-text-muted hover:text-primary transition-colors cursor-pointer w-fit">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span class="text-sm font-semibold uppercase tracking-wider">Back to Library</span>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 auto-rows-min">
+<!-- 1. Hero Video Card (Large) -->
+<div class="col-span-1 lg:col-span-8 relative group overflow-hidden rounded-xl bg-card-dark aspect-video lg:aspect-auto lg:min-h-[480px] shadow-2xl shadow-black/50">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Video thumbnail showing a busy modern coffee shop in Beijing with people ordering" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCsQb1gwKdks3MyfFChxlNgmHcfREPC-JPwMfgARhrvEHSaPSlL2NOFtdcvh0mstKQc6cu2_QoOykm1nWyxh4Egl9tvKtuDqv538ptBqWIeW9Yxr9UtUIXWioA44LAww-NbYPUox6K6cul8dFEchQHbKT0u3iX6Oy9rl9ajnUftaNZ7MeXHTv7Tua0L5V9GILUIp6DLeX72W7u7sQLXTCvHoCt6iFGGqqWWU7NskptZM2Bdd-BnO8cvMb6BITMdQFC6NnazXOzrB1v5");'>
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+<!-- Play Overlay -->
+<div class="absolute inset-0 flex items-center justify-center">
+<button class="size-20 rounded-full bg-primary/90 hover:bg-primary text-[#152112] flex items-center justify-center backdrop-blur-sm transition-all hover:scale-110 shadow-[0_0_30px_rgba(76,223,32,0.4)]">
+<span class="material-symbols-outlined fill text-[40px]">play_arrow</span>
+</button>
+</div>
+<!-- Video overlay info -->
+<div class="absolute bottom-0 left-0 w-full p-8 flex justify-between items-end">
+<div class="flex gap-3">
+<div class="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full flex items-center gap-2">
+<span class="size-2 bg-red-500 rounded-full animate-pulse"></span>
+<span class="text-white text-xs font-bold uppercase tracking-wider">HD Video</span>
+</div>
+<div class="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full">
+<span class="text-white text-xs font-bold uppercase tracking-wider">Subtitles: EN, CN</span>
+</div>
+</div>
+<span class="text-white/80 font-mono text-sm bg-black/60 px-2 py-1 rounded">04:32</span>
+</div>
+</div>
+<!-- 2. Info & Action Column -->
+<div class="col-span-1 lg:col-span-4 flex flex-col gap-6">
+<!-- Title Card -->
+<div class="bg-card-dark p-6 rounded-xl border border-[#2d4625]/50 flex flex-col justify-between gap-6 relative overflow-hidden group hover:border-primary/30 transition-colors">
+<div class="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-primary rotate-12">local_cafe</span>
+</div>
+<div>
+<div class="flex gap-2 mb-4">
+<span class="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20">Intermediate</span>
+<span class="px-3 py-1 rounded-full bg-[#2d4625] text-white text-xs font-bold uppercase tracking-wider">HSK 3</span>
+</div>
+<h1 class="text-3xl font-bold text-white leading-tight mb-2">Ordering Coffee in Beijing</h1>
+<p class="text-text-muted text-sm font-medium">Daily Life • Dining • Social</p>
+</div>
+<button class="w-full py-4 bg-primary hover:bg-[#3ec01a] text-[#152112] text-lg font-bold rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(76,223,32,0.2)] hover:shadow-[0_4px_25px_rgba(76,223,32,0.4)] hover:-translate-y-0.5 active:translate-y-0">
+<span>Học video này</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 gap-4 flex-1">
+<!-- Stat 1 -->
+<div class="bg-card-dark p-5 rounded-lg border border-[#2d4625]/50 flex flex-col items-center justify-center gap-2 hover:bg-card-hover transition-colors">
+<span class="material-symbols-outlined text-primary text-3xl">translate</span>
+<div class="text-center">
+<p class="text-2xl font-bold text-white">12</p>
+<p class="text-text-muted text-xs font-semibold uppercase">New Words</p>
+</div>
+</div>
+<!-- Stat 2 -->
+<div class="bg-card-dark p-5 rounded-lg border border-[#2d4625]/50 flex flex-col items-center justify-center gap-2 hover:bg-card-hover transition-colors">
+<span class="material-symbols-outlined text-blue-400 text-3xl">psychology</span>
+<div class="text-center">
+<p class="text-2xl font-bold text-white">85%</p>
+<p class="text-text-muted text-xs font-semibold uppercase">User Rating</p>
+</div>
+</div>
+<!-- Stat 3 -->
+<div class="bg-card-dark p-5 rounded-lg border border-[#2d4625]/50 flex flex-col items-center justify-center gap-2 hover:bg-card-hover transition-colors">
+<span class="material-symbols-outlined text-yellow-400 text-3xl">local_fire_department</span>
+<div class="text-center">
+<p class="text-2xl font-bold text-white">20xp</p>
+<p class="text-text-muted text-xs font-semibold uppercase">Reward</p>
+</div>
+</div>
+<!-- Stat 4 -->
+<div class="bg-card-dark p-5 rounded-lg border border-[#2d4625]/50 flex flex-col items-center justify-center gap-2 hover:bg-card-hover transition-colors">
+<span class="material-symbols-outlined text-purple-400 text-3xl">record_voice_over</span>
+<div class="text-center">
+<p class="text-2xl font-bold text-white">Native</p>
+<p class="text-text-muted text-xs font-semibold uppercase">Accent</p>
+</div>
+</div>
+</div>
+</div>
+<!-- 3. Description Block -->
+<div class="col-span-1 lg:col-span-7 bg-card-dark rounded-xl p-8 border border-[#2d4625]/50">
+<div class="flex items-center gap-3 mb-6">
+<div class="p-2 bg-[#2d4625] rounded-full text-primary">
+<span class="material-symbols-outlined">description</span>
+</div>
+<h3 class="text-xl font-bold text-white">About this lesson</h3>
+</div>
+<div class="prose prose-invert max-w-none">
+<p class="text-gray-300 text-lg leading-relaxed mb-6">
+                                Learn essential phrases for ordering drinks and navigating a café menu in China. This lesson focuses on mastering the neutral tone in common service industry interactions and using polite particles correctly.
+                            </p>
+</div>
+<!-- Key Points List -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+<div class="flex items-start gap-3 p-4 bg-[#1a2916] rounded-lg">
+<span class="material-symbols-outlined text-primary shrink-0 mt-0.5">check_circle</span>
+<div>
+<h4 class="text-white font-bold text-sm">Polite Particles</h4>
+<p class="text-text-muted text-sm mt-1">Using 想要 (xiǎng yào) vs 要 (yào).</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-4 bg-[#1a2916] rounded-lg">
+<span class="material-symbols-outlined text-primary shrink-0 mt-0.5">check_circle</span>
+<div>
+<h4 class="text-white font-bold text-sm">Customizing Orders</h4>
+<p class="text-text-muted text-sm mt-1">Asking for ice, sugar levels, and milk type.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- 4. Vocabulary Cloud -->
+<div class="col-span-1 lg:col-span-5 bg-card-dark rounded-xl p-8 border border-[#2d4625]/50 flex flex-col">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="p-2 bg-[#2d4625] rounded-full text-primary">
+<span class="material-symbols-outlined">school</span>
+</div>
+<h3 class="text-xl font-bold text-white">Key Vocabulary</h3>
+</div>
+<button class="text-primary text-sm font-bold hover:underline">View All</button>
+</div>
+<div class="flex flex-wrap content-start gap-3">
+<!-- Vocab Item -->
+<div class="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-[#2d4625]/50 hover:bg-[#2d4625] border border-transparent hover:border-primary/50 rounded-full transition-all">
+<span class="text-white font-bold">咖啡</span>
+<span class="text-text-muted text-sm font-medium">Kāfēi</span>
+<button class="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-[#2d4625]/50 hover:bg-[#2d4625] border border-transparent hover:border-primary/50 rounded-full transition-all">
+<span class="text-white font-bold">冰美式</span>
+<span class="text-text-muted text-sm font-medium">Bīng měishì</span>
+<button class="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-[#2d4625]/50 hover:bg-[#2d4625] border border-transparent hover:border-primary/50 rounded-full transition-all">
+<span class="text-white font-bold">拿铁</span>
+<span class="text-text-muted text-sm font-medium">Nátiě</span>
+<button class="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-[#2d4625]/50 hover:bg-[#2d4625] border border-transparent hover:border-primary/50 rounded-full transition-all">
+<span class="text-white font-bold">带走</span>
+<span class="text-text-muted text-sm font-medium">Dàizǒu</span>
+<button class="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-[#2d4625]/50 hover:bg-[#2d4625] border border-transparent hover:border-primary/50 rounded-full transition-all">
+<span class="text-white font-bold">扫码</span>
+<span class="text-text-muted text-sm font-medium">Sǎomǎ</span>
+<button class="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+<div class="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-[#2d4625]/50 hover:bg-[#2d4625] border border-transparent hover:border-primary/50 rounded-full transition-all">
+<span class="text-white font-bold">服务员</span>
+<span class="text-text-muted text-sm font-medium">Fúwùyuán</span>
+<button class="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
+<span class="material-symbols-outlined text-[16px]">volume_up</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

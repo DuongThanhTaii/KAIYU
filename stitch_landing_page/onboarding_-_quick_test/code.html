@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Onboarding - Quick Test</title>
+<!-- Google Fonts: Manrope -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+            extend: {
+                colors: {
+                    "primary": "#4cdf20", // Bright Green
+                    "primary-dark": "#3ab515",
+                    "secondary": "#2d4625",
+                    "background-light": "#f6f8f6",
+                    "background-dark": "#152111", // Dark Slate/Green
+                    "card-dark": "#1c2b18",
+                    "surface-dark": "#243620",
+                    "text-subtle": "#a0c695",
+                },
+                fontFamily: {
+                    "display": ["Manrope", "sans-serif"]
+                },
+                borderRadius: {
+                    "DEFAULT": "1rem", 
+                    "lg": "1.5rem", 
+                    "xl": "2rem", 
+                    "2xl": "2.5rem",
+                    "3xl": "3rem",
+                    "full": "9999px"
+                },
+            },
+            },
+        }
+    </script>
+<style>
+        /* Custom tweaks for radio inputs to ensure they are hidden but accessible */
+        .radio-hidden:checked + div {
+            border-color: #4cdf20;
+            background-color: rgba(76, 223, 32, 0.1);
+        }
+        
+        .radio-hidden:checked + div .radio-indicator {
+            background-color: #4cdf20;
+            border-color: #4cdf20;
+        }
+
+        .radio-hidden:focus-visible + div {
+            outline: 2px solid #4cdf20;
+            outline-offset: 2px;
+        }
+        
+        /* Smooth transitions */
+        .transition-all-custom {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 300ms;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-white overflow-x-hidden min-h-screen flex flex-col selection:bg-primary selection:text-background-dark">
+<!-- Navbar -->
+<header class="w-full border-b border-[#2d4625] px-6 py-4 lg:px-12 bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+<div class="max-w-7xl mx-auto flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 flex items-center justify-center text-primary rounded-lg bg-[#2d4625]/50">
+<span class="material-symbols-outlined" style="font-size: 24px;">school</span>
+</div>
+<h1 class="text-xl font-bold tracking-tight text-white">KAIYU</h1>
+</div>
+<div class="flex gap-3">
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-[#2d4625] hover:bg-[#3a5a30] transition-colors text-white">
+<span class="material-symbols-outlined" style="font-size: 20px;">settings</span>
+</button>
+<button class="flex items-center justify-center w-10 h-10 rounded-full bg-[#2d4625] hover:bg-[#3a5a30] transition-colors text-white">
+<span class="material-symbols-outlined" style="font-size: 20px;">person</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center justify-center p-4 sm:p-6 lg:p-12 relative">
+<!-- Decorative background blurs -->
+<div class="absolute top-20 left-10 w-64 h-64 bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
+<div class="absolute bottom-20 right-10 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="w-full max-w-5xl flex flex-col gap-6 z-10">
+<!-- Header & Progress Section -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4 px-2">
+<div class="flex flex-col gap-1">
+<span class="text-primary font-bold tracking-wider text-sm uppercase">Quick Level Check</span>
+<h2 class="text-3xl md:text-4xl font-bold text-white">Question 1 <span class="text-text-subtle text-2xl font-normal">/ 5</span></h2>
+</div>
+<div class="w-full md:w-64 flex flex-col gap-2">
+<div class="flex justify-between text-xs font-medium text-text-subtle">
+<span>Beginner</span>
+<span>Intermediate</span>
+</div>
+<div class="h-3 w-full bg-[#2d4625] rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[20%] transition-all-custom"></div>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:min-h-[500px]">
+<!-- Col 1: The Visual/Question Card (Takes 5 cols) -->
+<div class="lg:col-span-5 flex flex-col">
+<div class="relative flex-grow flex flex-col items-center justify-center bg-card-dark rounded-3xl p-8 border border-[#2d4625] shadow-2xl overflow-hidden group">
+<!-- Background Image for context -->
+<div class="absolute inset-0 opacity-20 bg-cover bg-center mix-blend-overlay" data-alt="Abstract minimal nature pattern dark green" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDnpNRpfbCe98kGV6y-nGpFVydddz5u51YMIVkAdnEsOizsPwSQbeV5s8aB2dwGPt4KJKYGRvBDw1SNA3Pm7MRNxSgo7LysCL_xbUnhgE7mf6JYvnTAkEHWPKJNOsBtomlypP8GSEIQfHmph1f0L7zZJJSttRR_kBtXqBAYJkLjjv9djQZbvV1G2GRDa1EDCGvTCARNtAZcVcSKXeRufmez8lPXQdpxeybvqjW-e3CBk91uu_WknGwxYiu4IJfKRxDYe3iOTcKLRn98');">
+</div>
+<!-- Card Content -->
+<div class="relative z-10 flex flex-col items-center gap-6 text-center">
+<div class="flex flex-col items-center">
+<h3 class="text-[8rem] leading-none font-bold text-white drop-shadow-lg mb-2">你好</h3>
+<p class="text-2xl text-primary font-medium tracking-widest">nǐ hǎo</p>
+</div>
+<button class="flex items-center gap-2 px-6 py-3 rounded-full bg-[#2d4625]/80 hover:bg-primary hover:text-background-dark text-white border border-primary/30 hover:border-primary transition-all-custom group/audio">
+<span class="material-symbols-outlined group-hover/audio:animate-pulse">volume_up</span>
+<span class="text-sm font-bold">Listen</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Col 2: The Interaction Area (Takes 7 cols) -->
+<div class="lg:col-span-7 flex flex-col gap-6">
+<!-- Question Prompt Card -->
+<div class="bg-surface-dark rounded-2xl p-6 border border-[#2d4625]">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center flex-shrink-0 mt-1">
+<span class="material-symbols-outlined">help</span>
+</div>
+<div>
+<h4 class="text-xl font-bold text-white mb-1">Select the correct meaning</h4>
+<p class="text-text-subtle text-base">Choose the English translation that best matches the character displayed.</p>
+</div>
+</div>
+</div>
+<!-- Answer Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-grow">
+<!-- Option 1 -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only radio-hidden" name="quiz-answer" type="radio"/>
+<div class="h-full flex flex-col justify-center p-6 rounded-2xl bg-[#20321b] border-2 border-transparent hover:border-[#406336] transition-all-custom">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-text-subtle uppercase tracking-wider group-hover:text-primary transition-colors">Option A</span>
+<div class="radio-indicator w-5 h-5 rounded-full border-2 border-[#406336] group-hover:border-primary"></div>
+</div>
+<span class="text-xl font-bold text-white group-hover:text-primary transition-colors">Hello</span>
+</div>
+</label>
+<!-- Option 2 -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only radio-hidden" name="quiz-answer" type="radio"/>
+<div class="h-full flex flex-col justify-center p-6 rounded-2xl bg-[#20321b] border-2 border-transparent hover:border-[#406336] transition-all-custom">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-text-subtle uppercase tracking-wider group-hover:text-primary transition-colors">Option B</span>
+<div class="radio-indicator w-5 h-5 rounded-full border-2 border-[#406336] group-hover:border-primary"></div>
+</div>
+<span class="text-xl font-bold text-white group-hover:text-primary transition-colors">Goodbye</span>
+</div>
+</label>
+<!-- Option 3 -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only radio-hidden" name="quiz-answer" type="radio"/>
+<div class="h-full flex flex-col justify-center p-6 rounded-2xl bg-[#20321b] border-2 border-transparent hover:border-[#406336] transition-all-custom">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-text-subtle uppercase tracking-wider group-hover:text-primary transition-colors">Option C</span>
+<div class="radio-indicator w-5 h-5 rounded-full border-2 border-[#406336] group-hover:border-primary"></div>
+</div>
+<span class="text-xl font-bold text-white group-hover:text-primary transition-colors">Thank you</span>
+</div>
+</label>
+<!-- Option 4 -->
+<label class="cursor-pointer group relative">
+<input class="peer sr-only radio-hidden" name="quiz-answer" type="radio"/>
+<div class="h-full flex flex-col justify-center p-6 rounded-2xl bg-[#20321b] border-2 border-transparent hover:border-[#406336] transition-all-custom">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-text-subtle uppercase tracking-wider group-hover:text-primary transition-colors">Option D</span>
+<div class="radio-indicator w-5 h-5 rounded-full border-2 border-[#406336] group-hover:border-primary"></div>
+</div>
+<span class="text-xl font-bold text-white group-hover:text-primary transition-colors">Sorry</span>
+</div>
+</label>
+</div>
+<!-- Actions -->
+<div class="flex justify-end pt-2">
+<button class="w-full sm:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-background-dark font-bold text-lg py-4 px-10 rounded-full transition-all-custom shadow-[0_0_20px_rgba(76,223,32,0.3)] hover:shadow-[0_0_30px_rgba(76,223,32,0.5)] active:scale-95">
+<span>Next Question</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Footer Hints -->
+<div class="flex items-center justify-center gap-6 text-sm text-text-subtle/60 mt-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base">timer</span>
+<span>Est. time: 2 mins</span>
+</div>
+<div class="w-1 h-1 rounded-full bg-text-subtle/40"></div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-base">verified</span>
+<span>Accuracy matters</span>
+</div>
+</div>
+</div>
+</main>
+</body></html>
