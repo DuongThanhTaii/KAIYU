@@ -1,0 +1,286 @@
+'use client';
+
+import { useEffect, useRef, useCallback, forwardRef, useImperativeHandle, useState } from 'react';
+
+// YouTube Player type definitions
+interface YTPlayer {
+    destroy: () => void;
+    getCurrentTime: () => number;
+    seekTo: (seconds: number, allowSeekAhead: boolean) => void;
+    playVideo: () => void;
+    pauseVideo: () => void;
+    getPlayerState: () => number;
+    setPlaybackRate: (rate: number) => void;
+    getPlaybackRate: () => number;
+}
+
+interface YTPlayerConstructor {
+    new(
+        element: HTMLDivElement | string,
+        options: {
+            videoId: string;
+            width?: string | number;
+            height?: string | number;
+            playerVars?: Record<string, number | string>;
+            events?: {
+                onReady?: () => void;
+                onStateChange?: (event: { data: number }) => void;
+                onError?: (event: { data: number }) => void;
+            };
+        }
+    ): YTPlayer;
+}
+
+interface YTNamespace {
+    Player: YTPlayerConstructor;
+    PlayerState: {
+        PLAYING: number;
+        PAUSED: number;
+        ENDED: number;
+        BUFFERING: number;
+    };
+}
+
+// Extend Window interface for YouTube IFrame API
+declare global {
+    interface Window {
+        YT?: YTNamespace;
+        onYouTubeIframeAPIReady?: () => void;
+    }
+}
+
+export interface YouTubePlayerHandle {
+    seekTo: (seconds: number) => void;
+    setPlaybackRate: (rate: number) => void;
+    getPlaybackRate: () => number;
+    play: () => void;
+    pause: () => void;
+    isPlaying: () => boolean;
+}
+
+interface YouTubePlayerProps {
+    videoId: string;
+    onTimeUpdate?: (time: number) => void;
+    onReady?: () => void;
+    onPlay?: () => void;
+    onPause?: () => void;
+    className?: string;
+}
+
+// Generate unique ID for each player instance
+let playerIdCounter = 0;
+
+const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
+    videoId,
+    onTimeUpdate,
+    onReady,
+    onPlay,
+    onPause,
+    className = '',
+}, ref) => {
+    const [playerId] = useState(() => `youtube-player-${++playerIdCounter}`);
+    const [isAPIReady, setIsAPIReady] = useState(false);
+    const playerRef = useRef<YTPlayer | null>(null);
+    const intervalRef = useRef<NodeJS.Timeout | null>(null);
+    const onTimeUpdateRef = useRef(onTimeUpdate);
+    const onReadyRef = useRef(onReady);
+    const onPlayRef = useRef(onPlay);
+    const onPauseRef = useRef(onPause);
+
+    // Update refs when callbacks change
+    useEffect(() => {
+        onTimeUpdateRef.current = onTimeUpdate;
+        onReadyRef.current = onReady;
+        onPlayRef.current = onPlay;
+        onPauseRef.current = onPause;
+    }, [onTimeUpdate, onReady, onPlay, onPause]);
+
+    // Expose seekTo and playback rate methods to parent
+    useImperativeHandle(ref, () => ({
+        seekTo: (seconds: number) => {
+            if (playerRef.current && typeof playerRef.current.seekTo === 'function') {
+                playerRef.current.seekTo(seconds, true);
+            }
+        },
+        setPlaybackRate: (rate: number) => {
+            if (playerRef.current && typeof playerRef.current.setPlaybackRate === 'function') {
+                playerRef.current.setPlaybackRate(rate);
+            }
+        },
+        getPlaybackRate: () => {
+            if (playerRef.current && typeof playerRef.current.getPlaybackRate === 'function') {
+                return playerRef.current.getPlaybackRate();
+            }
+            return 1;
+        },
+        play: () => {
+            if (playerRef.current && typeof playerRef.current.playVideo === 'function') {
+                playerRef.current.playVideo();
+            }
+        },
+        pause: () => {
+            if (playerRef.current && typeof playerRef.current.pauseVideo === 'function') {
+                playerRef.current.pauseVideo();
+            }
+        },
+        isPlaying: () => {
+            if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
+                return playerRef.current.getPlayerState() === 1; // YT.PlayerState.PLAYING
+            }
+            return false;
+        },
+    }), []);
+
+    // Load YouTube IFrame API script
+    const loadYouTubeAPI = useCallback(() => {
+        return new Promise<void>((resolve) => {
+            if (window.YT && window.YT.Player) {
+                resolve();
+                return;
+            }
+
+            const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
+            if (existingScript) {
+                // Script exists but API not ready yet, wait for it
+                const checkReady = setInterval(() => {
+                    if (window.YT && window.YT.Player) {
+                        clearInterval(checkReady);
+                        resolve();
+                    }
+                }, 100);
+                return;
+            }
+
+            // Create script element
+            const tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+            // Wait for API to be ready
+            window.onYouTubeIframeAPIReady = () => {
+                resolve();
+            };
+        });
+    }, []);
+
+    // Load API on mount
+    useEffect(() => {
+        loadYouTubeAPI().then(() => {
+            setIsAPIReady(true);
+        });
+    }, [loadYouTubeAPI]);
+
+    // Initialize player when API is ready
+    useEffect(() => {
+        if (!isAPIReady || !window.YT || !videoId) return;
+
+        const playerElement = document.getElementById(playerId);
+        if (!playerElement) return;
+
+        // Destroy existing player
+        if (playerRef.current) {
+            try {
+                playerRef.current.destroy();
+            } catch (e) {
+                console.error('Error destroying player:', e);
+            }
+            playerRef.current = null;
+        }
+
+        // Clear existing interval
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+
+        // Create new player
+        try {
+            playerRef.current = new window.YT.Player(playerId, {
+                videoId: videoId,
+                width: '100%',
+                height: '100%',
+                playerVars: {
+                    autoplay: 0,
+                    modestbranding: 1,
+                    rel: 0,
+                    enablejsapi: 1,
+                    origin: window.location.origin,
+                },
+                events: {
+                    onReady: () => {
+                        if (onReadyRef.current) onReadyRef.current();
+
+                        // Start time tracking interval
+                        intervalRef.current = setInterval(() => {
+                            if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                                try {
+                                    const time = playerRef.current.getCurrentTime();
+                                    if (onTimeUpdateRef.current) {
+                                        onTimeUpdateRef.current(time);
+                                    }
+                                } catch (e) {
+                                    // Player might not be ready
+                                }
+                            }
+                        }, 100);
+                    },
+                    onStateChange: (event: { data: number }) => {
+                        // When video is playing, ensure interval is running
+                        if (window.YT && event.data === window.YT.PlayerState.PLAYING) {
+                            if (onPlayRef.current) onPlayRef.current();
+                            if (!intervalRef.current) {
+                                intervalRef.current = setInterval(() => {
+                                    if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+                                        try {
+                                            const time = playerRef.current.getCurrentTime();
+                                            if (onTimeUpdateRef.current) {
+                                                onTimeUpdateRef.current(time);
+                                            }
+                                        } catch (e) {
+                                            // Player might not be ready
+                                        }
+                                    }
+                                }, 100);
+                            }
+                        }
+                        // When video is paused or ended
+                        if (window.YT && (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED)) {
+                            if (onPauseRef.current) onPauseRef.current();
+                        }
+                    },
+                    onError: (event: { data: number }) => {
+                        console.error('YouTube player error:', event.data);
+                    },
+                },
+            });
+        } catch (e) {
+            console.error('Error creating YouTube player:', e);
+        }
+
+        return () => {
+            if (intervalRef.current) {
+                clearInterval(intervalRef.current);
+                intervalRef.current = null;
+            }
+            if (playerRef.current) {
+                try {
+                    playerRef.current.destroy();
+                } catch (e) {
+                    // Ignore cleanup errors
+                }
+                playerRef.current = null;
+            }
+        };
+    }, [isAPIReady, videoId, playerId]);
+
+    return (
+        <div className={`w-full h-full ${className}`}>
+            <div id={playerId} className="w-full h-full" />
+        </div>
+    );
+});
+
+YouTubePlayer.displayName = 'YouTubePlayer';
+
+export default YouTubePlayer;

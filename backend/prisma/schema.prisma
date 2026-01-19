@@ -1,0 +1,537 @@
+generator client {
+  provider   = "prisma-client-js"
+  engineType = "binary"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String              @id @default(uuid()) @db.Uuid
+  email              String              @unique @db.VarChar(255)
+  passwordHash       String              @map("password_hash") @db.VarChar(255)
+  name               String              @db.VarChar(255)
+  avatarUrl          String?             @map("avatar_url") @db.VarChar(500)
+  hskLevel           Int                 @default(1) @map("hsk_level")
+  streak             Int                 @default(0)
+  xp                 Int                 @default(0)
+  totalStudyMinutes  Int                 @default(0) @map("total_study_minutes")
+  lastActiveDate     DateTime?           @map("last_active_date") @db.Date
+  dailyGoalMinutes   Int                 @default(30) @map("daily_goal_minutes")
+  isPremium          Boolean             @default(false) @map("is_premium")
+  role               String              @default("user") @db.VarChar(50)
+  createdAt          DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  authProvider       String              @default("local") @map("auth_provider") @db.VarChar(50)
+  googleId           String?             @unique @map("google_id") @db.VarChar(255)
+  achievementsEarned   AchievementEarned[]
+  aiChatHistory        AiChatHistory[]
+  aiRecommendations    AiRecommendation[]
+  flashcardReviews     FlashcardReview[]
+  learningGoals        LearningGoal[]
+  userVocabulary       UserVocabulary[]
+  videoProgress        VideoProgress[]
+  vocabularyFolders    VocabularyFolder[]
+  videoNotes           VideoNote[]
+  savedVideos          SavedVideo[]
+  videoViews           VideoView[]
+  sceneHistory         UserSceneHistory[]
+  createdScenes        GeneratedScene[]   @relation("CreatedScenes")
+  // Email notification relations
+  emailSettings        UserEmailSettings?
+  emailLogs            EmailLog[]
+
+  @@map("users")
+}
+
+model Video {
+  id                String            @id @default(uuid()) @db.Uuid
+  title             String            @db.VarChar(500)
+  description       String?
+  videoUrl          String            @map("video_url") @db.VarChar(1000)
+  thumbnailUrl      String?           @map("thumbnail_url") @db.VarChar(1000)
+  durationSeconds   Int               @default(0) @map("duration_seconds")
+  hskLevel          Int               @default(1) @map("hsk_level")
+  category          String?           @db.VarChar(100)
+  accent            String?           @db.VarChar(100)
+  subtitleLanguages String[]          @default([]) @map("subtitle_languages")
+  viewCount         Int               @default(0) @map("view_count")
+  vocabCount        Int               @default(0) @map("vocab_count")
+  xpReward          Int               @default(0) @map("xp_reward")
+  isPublished       Boolean           @default(false) @map("is_published")
+  createdAt         DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  subtitles         Subtitle[]
+  userVocabulary    UserVocabulary[]
+  videoProgress     VideoProgress[]
+  videoVocabulary   VideoVocabulary[]
+  quiz              VideoQuiz?
+  videoNotes        VideoNote[]
+  savedBy           SavedVideo[]
+  videoViews        VideoView[]
+
+  @@map("videos")
+}
+
+model VideoView {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  videoId   String   @map("video_id") @db.Uuid
+  viewedAt  DateTime @default(now()) @map("viewed_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([userId, videoId, viewedAt])
+  @@map("video_views")
+}
+
+model SavedVideo {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  videoId   String   @map("video_id") @db.Uuid
+  savedAt   DateTime @default(now()) @map("saved_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video     Video    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, videoId])
+  @@map("saved_videos")
+}
+
+model VideoQuiz {
+  id          String         @id @default(uuid()) @db.Uuid
+  videoId     String         @unique @map("video_id") @db.Uuid
+  title       String         @db.VarChar(500)
+  description String?
+  isPublished Boolean        @default(false) @map("is_published")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime       @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  video       Video          @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  questions   QuizQuestion[]
+
+  @@map("video_quizzes")
+}
+
+model QuizQuestion {
+  id            String    @id @default(uuid()) @db.Uuid
+  quizId        String    @map("quiz_id") @db.Uuid
+  sentenceHanzi String    @map("sentence_hanzi")
+  blankWord     String    @map("blank_word") @db.VarChar(50)
+  blankPosition Int       @map("blank_position")
+  options       String[]
+  meaningVi     String?   @map("meaning_vi")
+  sequenceOrder Int       @map("sequence_order")
+  subtitleId    String?   @map("subtitle_id") @db.Uuid
+  quiz          VideoQuiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("quiz_questions")
+}
+
+
+model Vocabulary {
+  id                   String                @id @default(uuid()) @db.Uuid
+  hanzi                String                @unique @db.VarChar(50)
+  pinyin               String                @db.VarChar(100)
+  meaningEn            String                @map("meaning_en") @db.VarChar(500)
+  meaningVi            String?               @map("meaning_vi") @db.VarChar(500)
+  partOfSpeech         String?               @map("part_of_speech") @db.VarChar(50)
+  hskLevel             Int                   @default(1) @map("hsk_level")
+  tags                 String[]              @default([])
+  audioUrl             String?               @map("audio_url") @db.VarChar(1000)
+  examples             Json?                 @default("[]")
+  createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  flashcardReviews     FlashcardReview[]
+  subtitleTokens       SubtitleToken[]
+  userVocabulary       UserVocabulary[]
+  videoVocabulary      VideoVocabulary[]
+  vocabularyEmbeddings VocabularyEmbedding[]
+
+  @@map("vocabulary")
+}
+
+model Subtitle {
+  id                 String              @id @default(uuid()) @db.Uuid
+  videoId            String              @map("video_id") @db.Uuid
+  startTime          Decimal             @map("start_time") @db.Decimal(10, 3)
+  endTime            Decimal             @map("end_time") @db.Decimal(10, 3)
+  hanzi              String
+  pinyin             String
+  meaningEn          String?             @map("meaning_en")
+  meaningVi          String?             @map("meaning_vi")
+  sequenceOrder      Int                 @map("sequence_order")
+  subtitleEmbeddings SubtitleEmbedding[]
+  tokens             SubtitleToken[]
+  video              Video               @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("subtitles")
+}
+
+model SubtitleToken {
+  id           String      @id @default(uuid()) @db.Uuid
+  subtitleId   String      @map("subtitle_id") @db.Uuid
+  vocabularyId String?     @map("vocabulary_id") @db.Uuid
+  position     Int
+  hanzi        String      @db.VarChar(50)
+  pinyin       String      @db.VarChar(100)
+  meaning      String?     @db.VarChar(500)
+  hskLevel     Int?        @map("hsk_level")
+  partOfSpeech String?     @map("part_of_speech") @db.VarChar(50)
+  subtitle     Subtitle    @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
+  vocabulary   Vocabulary? @relation(fields: [vocabularyId], references: [id])
+
+  @@map("subtitle_tokens")
+}
+
+model UserVocabulary {
+  id                 String            @id @default(uuid()) @db.Uuid
+  userId             String            @map("user_id") @db.Uuid
+  vocabularyId       String            @map("vocabulary_id") @db.Uuid
+  sourceVideoId      String?           @map("source_video_id") @db.Uuid
+  folderId           String?           @map("folder_id") @db.Uuid
+  proficiency        String            @default("new") @db.VarChar(50)
+  proficiencyPercent Int               @default(0) @map("proficiency_percent")
+  savedAt            DateTime          @default(now()) @map("saved_at") @db.Timestamptz(6)
+  lastReviewedAt     DateTime?         @map("last_reviewed_at") @db.Timestamptz(6)
+  
+  // Context from video - Phase 1 SRS Enhancement
+  sourceTimestamp    Decimal?          @map("source_timestamp") @db.Decimal(10, 3)
+  sourceSentence     String?           @map("source_sentence")
+  sourcePinyin       String?           @map("source_pinyin")
+  
+  // Rich media context - Phase 5 Cloudinary
+  sourceImageUrl     String?           @map("source_image_url") @db.VarChar(500)
+  sourceAudioUrl     String?           @map("source_audio_url") @db.VarChar(500)
+  
+  sourceVideo        Video?            @relation(fields: [sourceVideoId], references: [id])
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary         Vocabulary        @relation(fields: [vocabularyId], references: [id])
+  folder             VocabularyFolder? @relation(fields: [folderId], references: [id])
+
+  @@unique([userId, vocabularyId])
+  @@map("user_vocabulary")
+}
+
+model VocabularyFolder {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  name        String           @db.VarChar(100)
+  color       String?          @db.VarChar(20)
+  icon        String?          @db.VarChar(50)
+  isDefault   Boolean          @default(false) @map("is_default")
+  createdAt   DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary  UserVocabulary[]
+
+  @@unique([userId, name])
+  @@map("vocabulary_folders")
+}
+
+model FlashcardReview {
+  id           String     @id @default(uuid()) @db.Uuid
+  userId       String     @map("user_id") @db.Uuid
+  vocabularyId String     @map("vocabulary_id") @db.Uuid
+  nextReviewAt DateTime   @default(now()) @map("next_review_at") @db.Timestamptz(6)
+  intervalDays Int        @default(0) @map("interval_days")
+  easeFactor   Decimal    @default(2.50) @map("ease_factor") @db.Decimal(3, 2)
+  reviewCount  Int        @default(0) @map("review_count")
+  status       String     @default("new") @db.VarChar(50)
+  lastReviewAt DateTime?  @map("last_review_at") @db.Timestamptz(6)
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabulary   Vocabulary @relation(fields: [vocabularyId], references: [id])
+
+  @@unique([userId, vocabularyId])
+  @@map("flashcard_reviews")
+}
+
+model VideoProgress {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  videoId             String   @map("video_id") @db.Uuid
+  progressPercent     Int      @default(0) @map("progress_percent")
+  lastPositionSeconds Decimal  @default(0) @map("last_position_seconds") @db.Decimal(10, 3)
+  lastWatchedAt       DateTime @default(now()) @map("last_watched_at") @db.Timestamptz(6)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video               Video    @relation(fields: [videoId], references: [id])
+
+  @@unique([userId, videoId])
+  @@map("video_progress")
+}
+
+model VideoVocabulary {
+  id           String     @id @default(uuid()) @db.Uuid
+  videoId      String     @map("video_id") @db.Uuid
+  vocabularyId String     @map("vocabulary_id") @db.Uuid
+  video        Video      @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  vocabulary   Vocabulary @relation(fields: [vocabularyId], references: [id])
+
+  @@unique([videoId, vocabularyId])
+  @@map("video_vocabulary")
+}
+
+model Achievement {
+  id          String              @id @default(uuid()) @db.Uuid
+  code        String              @unique @db.VarChar(100)
+  title       String              @db.VarChar(255)
+  description String?
+  icon        String?             @db.VarChar(100)
+  iconColor   String?             @map("icon_color") @db.VarChar(50)
+  xpReward    Int                 @default(0) @map("xp_reward")
+  earnedBy    AchievementEarned[]
+
+  @@map("achievements")
+}
+
+model AchievementEarned {
+  id            String      @id @default(uuid()) @db.Uuid
+  userId        String      @map("user_id") @db.Uuid
+  achievementId String      @map("achievement_id") @db.Uuid
+  earnedAt      DateTime    @default(now()) @map("earned_at") @db.Timestamptz(6)
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
+  @@map("achievements_earned")
+}
+
+model LearningGoal {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  goalType  String   @map("goal_type") @db.VarChar(100)
+  goalValue String?  @map("goal_value") @db.VarChar(255)
+  setAt     DateTime @default(now()) @map("set_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("learning_goals")
+}
+
+model VocabularyEmbedding {
+  id           String     @id @default(uuid()) @db.Uuid
+  vocabularyId String     @map("vocabulary_id") @db.Uuid
+  modelName    String     @default("text-embedding-3-small") @map("model_name") @db.VarChar(100)
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+  vocabulary   Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  @@unique([vocabularyId, modelName])
+  @@map("vocabulary_embeddings")
+}
+
+model SubtitleEmbedding {
+  id         String   @id @default(uuid()) @db.Uuid
+  subtitleId String   @map("subtitle_id") @db.Uuid
+  modelName  String   @default("text-embedding-3-small") @map("model_name") @db.VarChar(100)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  subtitle   Subtitle @relation(fields: [subtitleId], references: [id], onDelete: Cascade)
+
+  @@unique([subtitleId, modelName])
+  @@map("subtitle_embeddings")
+}
+
+model AiChatHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  role      String   @db.VarChar(50)
+  content   String
+  metadata  Json?    @default("{}")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_chat_history")
+}
+
+model AiRecommendation {
+  id                 String   @id @default(uuid()) @db.Uuid
+  userId             String   @map("user_id") @db.Uuid
+  recommendationType String   @map("recommendation_type") @db.VarChar(100)
+  content            Json
+  score              Decimal? @db.Decimal(5, 4)
+  isDismissed        Boolean  @default(false) @map("is_dismissed")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ai_recommendations")
+}
+
+model VideoNote {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  videoId      String   @map("video_id") @db.Uuid
+  timestampSec Decimal  @map("timestamp_sec") @db.Decimal(10, 3)
+  content      String
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@map("video_notes")
+}
+
+// ============================================
+// AI SCENE GENERATOR MODELS
+// ============================================
+
+model SceneTemplate {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @db.VarChar(100)
+  nameVi         String   @map("name_vi") @db.VarChar(100)
+  description    String?  @db.VarChar(500)
+  category       String   @db.VarChar(50) // daily_life, travel, business, etc.
+  hskLevel       Int      @default(2) @map("hsk_level")
+  imageUrl       String?  @map("image_url") @db.VarChar(500)
+  dialogFlow     Json     @map("dialog_flow") // Branching dialog structure
+  vocabSlots     String[] @map("vocab_slots") // Vocab categories to inject: ["drink", "food", "price"]
+  difficulty     String   @default("easy") @db.VarChar(20) // easy, medium, hard
+  isActive       Boolean  @default(true) @map("is_active")
+  usageCount     Int      @default(0) @map("usage_count")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  generatedScenes GeneratedScene[]
+  userHistory     UserSceneHistory[]
+  analytics       SceneAnalytics[]
+
+  @@map("scene_templates")
+}
+
+model GeneratedScene {
+  id            String    @id @default(uuid()) @db.Uuid
+  templateId    String?   @map("template_id") @db.Uuid
+  creatorId     String?   @map("creator_id") @db.Uuid
+  vocabHash     String    @map("vocab_hash") @db.VarChar(64) // Hash of vocab for caching
+  title         String?   @db.VarChar(200) // User-friendly title for shared scenes
+  dialogFlow    Json      @map("dialog_flow")
+  injectedVocab Json?     @map("injected_vocab") // The vocab that was used
+  isAIGenerated Boolean   @default(false) @map("is_ai_generated")
+  isPublic      Boolean   @default(false) @map("is_public") // Scene sharing
+  likesCount    Int       @default(0) @map("likes_count")
+  usageCount    Int       @default(0) @map("usage_count")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  expiresAt     DateTime? @map("expires_at") @db.Timestamptz(6)
+
+  template    SceneTemplate?     @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  creator     User?              @relation("CreatedScenes", fields: [creatorId], references: [id], onDelete: SetNull)
+  userHistory UserSceneHistory[]
+  analytics   SceneAnalytics[]
+
+  @@index([vocabHash])
+  @@index([isPublic, usageCount])
+  @@map("generated_scenes")
+}
+
+model UserSceneHistory {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  templateId  String?  @map("template_id") @db.Uuid
+  sceneId     String?  @map("scene_id") @db.Uuid
+  score       Int?     // 0-100
+  choicesMade Json?    @map("choices_made") // Record of user's choices
+  vocabUsed   String[] @map("vocab_used") // Vocab successfully used
+  completedAt DateTime @default(now()) @map("completed_at") @db.Timestamptz(6)
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template SceneTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  scene    GeneratedScene? @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+
+  @@map("user_scene_history")
+}
+
+// Analytics for tracking popular scenes and vocab combinations
+model SceneAnalytics {
+  id           String   @id @default(uuid()) @db.Uuid
+  sceneId      String?  @map("scene_id") @db.Uuid
+  templateId   String?  @map("template_id") @db.Uuid
+  scenarioType String   @map("scenario_type") @db.VarChar(50)
+  vocabUsed    String[] @map("vocab_used")
+  playCount    Int      @default(1) @map("play_count")
+  avgScore     Float    @default(0) @map("avg_score")
+  totalScore   Int      @default(0) @map("total_score")
+  lastPlayedAt DateTime @default(now()) @map("last_played_at") @db.Timestamptz(6)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  scene    GeneratedScene? @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+  template SceneTemplate?  @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@unique([sceneId])
+  @@index([scenarioType, playCount])
+  @@map("scene_analytics")
+}
+
+// ============================================
+// EMAIL NOTIFICATION MODELS
+// ============================================
+
+model EmailTemplate {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique @db.VarChar(100) // streak_reminder, vocab_due, weekly_report
+  name            String   @db.VarChar(255)
+  nameVi          String   @map("name_vi") @db.VarChar(255)
+  subject         String   @db.VarChar(500)
+  htmlBody        String   @map("html_body")
+  textBody        String?  @map("text_body")
+  variables       String[] @default([]) // ["userName", "streakDays", "dueCount"]
+  category        String   @default("reminder") @db.VarChar(50) // reminder, report, engagement
+  isActive        Boolean  @default(true) @map("is_active")
+  
+  // Trigger configuration
+  triggerType     String   @default("inactive_days") @map("trigger_type") @db.VarChar(50) // inactive_days, daily, weekly, manual
+  triggerDays     Int      @default(3) @map("trigger_days") // Days of inactivity to trigger
+  triggerHour     Int      @default(18) @map("trigger_hour") // Hour to send (0-23)
+  triggerDayOfWeek Int?    @map("trigger_day_of_week") // 0=Sunday, 1=Monday... (for weekly)
+  
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  emailLogs       EmailLog[]
+
+  @@map("email_templates")
+}
+
+model EmailLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  templateId   String   @map("template_id") @db.Uuid
+  toEmail      String   @map("to_email") @db.VarChar(255)
+  subject      String   @db.VarChar(500)
+  status       String   @default("pending") @db.VarChar(50) // pending, sent, failed, opened, clicked
+  sentAt       DateTime? @map("sent_at") @db.Timestamptz(6)
+  openedAt     DateTime? @map("opened_at") @db.Timestamptz(6)
+  clickedAt    DateTime? @map("clicked_at") @db.Timestamptz(6)
+  errorMessage String?  @map("error_message")
+  metadata     Json?    @default("{}")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template     EmailTemplate @relation(fields: [templateId], references: [id])
+
+  @@index([userId, createdAt])
+  @@index([status])
+  @@map("email_logs")
+}
+
+model UserEmailSettings {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @unique @map("user_id") @db.Uuid
+  enableReminders     Boolean  @default(true) @map("enable_reminders")
+  enableWeeklyReport  Boolean  @default(true) @map("enable_weekly_report")
+  enableEngagement    Boolean  @default(true) @map("enable_engagement")
+  reminderHour        Int      @default(20) @map("reminder_hour") // 24h format, default 8PM
+  timezone            String   @default("Asia/Ho_Chi_Minh") @db.VarChar(50)
+  lastReminderSent    DateTime? @map("last_reminder_sent") @db.Timestamptz(6)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_email_settings")
+}
+
+// ============================================
+// SITE SETTINGS MODEL
+// ============================================
+
+model SiteSettings {
+  key       String   @id @db.VarChar(100)
+  value     String
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  @@map("site_settings")
+}

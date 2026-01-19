@@ -1,0 +1,424 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import DashboardLayout from '@/components/layout/DashboardLayout';
+import Card from '@/components/common/Card';
+import Icon from '@/components/common/Icon';
+import Badge from '@/components/common/Badge';
+import Button from '@/components/common/Button';
+import { videoApi, type Video, type Category } from '@/services/videoApi';
+import { progressApi, type VideoProgress } from '@/services/progressApi';
+
+export default function VideoLibraryPage() {
+    const [videos, setVideos] = useState<Video[]>([]);
+    const [categories, setCategories] = useState<Category[]>([]);
+    const [continueWatching, setContinueWatching] = useState<VideoProgress | null>(null);
+    const [savedVideoIds, setSavedVideoIds] = useState<Set<string>>(new Set());
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [activeHskFilter, setActiveHskFilter] = useState<number | null>(null);
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const hskLevels = [1, 2, 3, 4, 5, 6];
+
+    // Fetch videos
+    const fetchVideos = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+        try {
+            const response = await videoApi.getAll({
+                page: currentPage,
+                limit: 12,
+                hskLevel: activeHskFilter || undefined,
+                category: activeCategory || undefined,
+                search: searchQuery || undefined,
+            });
+            setVideos(response.data);
+            setTotalPages(response.meta.totalPages);
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load videos';
+            setError(errorMessage);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage, activeHskFilter, activeCategory, searchQuery]);
+
+    // Fetch categories
+    const fetchCategories = useCallback(async () => {
+        try {
+            const cats = await videoApi.getCategories();
+            setCategories(cats);
+        } catch (err) {
+            console.error('Failed to fetch categories:', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchVideos();
+    }, [fetchVideos]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
+
+    // Fetch continue watching
+    useEffect(() => {
+        const fetchContinueWatching = async () => {
+            const progress = await progressApi.getContinueWatching();
+            setContinueWatching(progress);
+        };
+        fetchContinueWatching();
+    }, []);
+
+    // Fetch saved video ids
+    useEffect(() => {
+        const fetchSavedIds = async () => {
+            const ids = await videoApi.getSavedVideoIds();
+            setSavedVideoIds(new Set(ids));
+        };
+        fetchSavedIds();
+    }, []);
+
+    // Handle save/unsave video
+    const handleToggleSave = async (e: React.MouseEvent, videoId: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const isSaved = savedVideoIds.has(videoId);
+        try {
+            const newSavedState = await videoApi.toggleSaveVideo(videoId, isSaved);
+            setSavedVideoIds(prev => {
+                const newSet = new Set(prev);
+                if (newSavedState) {
+                    newSet.add(videoId);
+                } else {
+                    newSet.delete(videoId);
+                }
+                return newSet;
+            });
+        } catch (err) {
+            console.error('Failed to toggle save:', err);
+        }
+    };
+
+    // Handle search with debounce
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setCurrentPage(1);
+            fetchVideos();
+        }, 300);
+        return () => clearTimeout(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchQuery]);
+
+    // Helper to get thumbnail
+    const getThumbnail = (video: Video): string => {
+        if (video.thumbnailUrl) return video.thumbnailUrl;
+        if (videoApi.isYouTubeUrl(video.videoUrl)) {
+            return videoApi.getYouTubeThumbnail(video.videoUrl) || '/placeholder-video.jpg';
+        }
+        return '/placeholder-video.jpg';
+    };
+
+    // Get HSK badge color class
+    const getHskBadgeColor = (level: number): string => {
+        const colors: Record<number, string> = {
+            1: 'bg-blue-600',
+            2: 'bg-emerald-600',
+            3: 'bg-amber-600',
+            4: 'bg-orange-600',
+            5: 'bg-purple-600',
+            6: 'bg-red-600',
+        };
+        return colors[level] || 'bg-gray-600';
+    };
+
+    // Reset all filters
+    const resetFilters = () => {
+        setActiveHskFilter(null);
+        setActiveCategory(null);
+        setSearchQuery('');
+        setCurrentPage(1);
+    };
+
+    return (
+        <DashboardLayout>
+            <div className="flex flex-col gap-8 pb-10">
+                {/* Hero Section: Continue Watching */}
+                {continueWatching && (
+                    <Link href={`/learn/${continueWatching.videoId}`}>
+                        <div className="relative w-full h-[280px] md:h-[320px] rounded-2xl overflow-hidden group cursor-pointer">
+                            {/* Background Image */}
+                            <div
+                                className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
+                                style={{ backgroundImage: `url(${continueWatching.video.thumbnailUrl || '/placeholder-video.jpg'})` }}
+                            />
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/40 to-transparent" />
+
+                            {/* Content */}
+                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div className="flex flex-col gap-3 max-w-2xl">
+                                    <div className="flex items-center gap-3">
+                                        <span className="px-3 py-1 bg-primary/90 backdrop-blur-sm text-on-primary text-xs font-extrabold uppercase tracking-wide rounded-full">
+                                            Tiếp tục học
+                                        </span>
+                                        <span className="text-text-secondary text-sm font-medium flex items-center gap-1">
+                                            <Icon name="schedule" size="sm" />
+                                            {progressApi.formatRemainingTime(continueWatching)}
+                                        </span>
+                                    </div>
+                                    <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                                        {continueWatching.video.title}
+                                    </h1>
+                                    <p className="text-gray-300 text-sm md:text-base">
+                                        HSK {continueWatching.video.hskLevel} • {continueWatching.video.category || 'Video'}
+                                    </p>
+                                    {/* Progress Bar */}
+                                    <div className="w-full max-w-md h-1.5 bg-white/20 rounded-full mt-2 overflow-hidden">
+                                        <div
+                                            className="h-full bg-primary rounded-full transition-all"
+                                            style={{ width: `${continueWatching.progressPercent}%` }}
+                                        />
+                                    </div>
+                                    <span className="text-text-secondary text-xs">
+                                        {Math.round(continueWatching.progressPercent)}% hoàn thành
+                                    </span>
+                                </div>
+                                {/* Play Button */}
+                                <div className="size-14 md:size-16 rounded-full bg-primary text-on-primary flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_20px_rgba(76,223,32,0.4)]">
+                                    <Icon name="play_arrow" size="lg" filled className="ml-1" />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                )}
+
+                {/* Filters Section */}
+                <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xl font-bold text-white">Duyệt thư viện</h3>
+                        <button
+                            onClick={resetFilters}
+                            className="text-sm text-text-secondary hover:text-primary transition-colors font-medium"
+                        >
+                            Đặt lại bộ lọc
+                        </button>
+                    </div>
+
+                    {/* HSK Level Chips */}
+                    <div className="flex flex-wrap gap-2 md:gap-3">
+                        <button
+                            onClick={() => setActiveHskFilter(null)}
+                            className={`h-9 px-4 rounded-full text-sm font-bold transition-all ${!activeHskFilter
+                                ? 'bg-primary text-on-primary border border-primary'
+                                : 'bg-surface-dark hover:bg-surface-highlight text-white border border-transparent'
+                                }`}
+                        >
+                            Tất cả
+                        </button>
+                        {hskLevels.map((level) => (
+                            <button
+                                key={level}
+                                onClick={() => setActiveHskFilter(activeHskFilter === level ? null : level)}
+                                className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${activeHskFilter === level
+                                    ? 'bg-primary text-on-primary border border-primary'
+                                    : 'bg-surface-dark hover:bg-surface-highlight text-white border border-transparent'
+                                    }`}
+                            >
+                                HSK {level}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Category & Filter Pills */}
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {/* Search Input */}
+                        <div className="relative shrink-0">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Icon name="search" size="sm" className="text-text-secondary" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Tìm video..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-9 pl-9 pr-4 rounded-full bg-surface-dark border border-border-color text-white text-sm placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 w-48"
+                            />
+                        </div>
+
+                        <div className="w-px h-8 bg-border-color shrink-0 self-center" />
+
+                        {/* Category Pills */}
+                        {categories.map((cat) => (
+                            <button
+                                key={cat.category}
+                                onClick={() => setActiveCategory(activeCategory === cat.category ? null : cat.category)}
+                                className={`flex items-center gap-2 h-9 px-4 rounded-full shrink-0 transition-colors ${activeCategory === cat.category
+                                    ? 'bg-primary text-on-primary'
+                                    : 'border border-border-color hover:border-text-secondary text-white'
+                                    }`}
+                            >
+                                <span className="text-sm">{cat.category}</span>
+                                <span className="text-xs opacity-70">({cat.count})</span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Error Message */}
+                {error && (
+                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+                        <p className="text-red-400">{error}</p>
+                        <button onClick={fetchVideos} className="mt-2 text-sm text-primary hover:underline">
+                            Thử lại
+                        </button>
+                    </div>
+                )}
+
+                {/* Loading */}
+                {isLoading && (
+                    <div className="flex justify-center py-12">
+                        <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    </div>
+                )}
+
+                {/* Empty State */}
+                {!isLoading && videos.length === 0 && (
+                    <div className="text-center py-16">
+                        <Icon name="video_library" size="xl" className="text-text-secondary mb-4" />
+                        <h3 className="text-xl font-bold text-white mb-2">Không tìm thấy video</h3>
+                        <p className="text-text-secondary mb-6">Thử điều chỉnh bộ lọc để tìm nội dung khác.</p>
+                        <Button variant="secondary" onClick={resetFilters}>
+                            Xóa bộ lọc
+                        </Button>
+                    </div>
+                )}
+
+                {/* Bento Grid */}
+                {!isLoading && videos.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
+                        {videos.map((video, index) => (
+                            <Link
+                                key={video.id}
+                                href={`/detail/${video.id}`}
+                                className={index === 0 ? 'sm:col-span-2' : ''}
+                            >
+                                <Card
+                                    variant="default"
+                                    padding="none"
+                                    className={`overflow-hidden group h-full flex flex-col hover:shadow-lg hover:shadow-black/20 transition-all ${index === 0 ? 'min-h-[280px]' : ''
+                                        }`}
+                                >
+                                    {/* Thumbnail */}
+                                    <div className={`relative overflow-hidden ${index === 0 ? 'aspect-[2/1]' : 'aspect-video'}`}>
+                                        <div
+                                            className="absolute inset-0 bg-cover bg-center group-hover:scale-105 transition-transform duration-500"
+                                            style={{ backgroundImage: `url(${getThumbnail(video)})` }}
+                                        />
+                                        {/* Hover overlay */}
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                            <Icon
+                                                name="play_circle"
+                                                size="xl"
+                                                className="text-white opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100 transition-all drop-shadow-lg text-5xl"
+                                            />
+                                        </div>
+
+                                        {/* Duration Badge */}
+                                        <span className="absolute bottom-2 right-2 px-1.5 py-0.5 bg-black/70 rounded text-[10px] font-bold text-white">
+                                            {videoApi.formatDuration(video.durationSeconds)}
+                                        </span>
+
+                                        {/* HSK Badge */}
+                                        <span className={`absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-bold text-white shadow-sm ${getHskBadgeColor(video.hskLevel)}`}>
+                                            HSK {video.hskLevel}
+                                        </span>
+
+                                        {/* Featured Badge for first item */}
+                                        {index === 0 && (
+                                            <span className="absolute top-2 right-2 px-2.5 py-1 bg-white/10 backdrop-blur-md border border-white/10 rounded-lg text-white text-xs font-bold uppercase">
+                                                Nổi bật
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Content */}
+                                    <div className="p-4 flex flex-col flex-1 justify-between">
+                                        <div>
+                                            <h4 className="text-white font-bold text-lg leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                                                {video.title}
+                                            </h4>
+                                            <p className="text-text-secondary text-xs">
+                                                {video.category} • {video.hskLevel <= 2 ? 'Sơ cấp' : video.hskLevel <= 4 ? 'Trung cấp' : 'Cao cấp'}
+                                            </p>
+                                        </div>
+
+                                        {/* Footer */}
+                                        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+                                            <div className="flex items-center gap-1">
+                                                <Icon name="visibility" size="sm" className="text-text-secondary" />
+                                                <span className="text-text-secondary text-xs">
+                                                    {video.viewCount >= 1000
+                                                        ? `${(video.viewCount / 1000).toFixed(1)}k`
+                                                        : video.viewCount} views
+                                                </span>
+                                            </div>
+                                            <button
+                                                className={`transition-colors ${savedVideoIds.has(video.id) ? 'text-primary' : 'text-white hover:text-primary'}`}
+                                                onClick={(e) => handleToggleSave(e, video.id)}
+                                            >
+                                                <Icon name={savedVideoIds.has(video.id) ? 'bookmark' : 'bookmark_add'} size="md" filled={savedVideoIds.has(video.id)} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </Card>
+                            </Link>
+                        ))}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {!isLoading && totalPages > 1 && (
+                    <div className="flex justify-center py-4">
+                        <nav className="flex items-center gap-2">
+                            <button
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1}
+                                className="p-2 rounded-full text-text-secondary hover:text-white hover:bg-surface-highlight disabled:opacity-50"
+                            >
+                                <Icon name="chevron_left" size="md" />
+                            </button>
+
+                            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => i + 1).map(page => (
+                                <button
+                                    key={page}
+                                    onClick={() => setCurrentPage(page)}
+                                    className={`size-9 rounded-full font-medium text-sm transition-colors ${currentPage === page
+                                        ? 'bg-primary text-on-primary font-bold'
+                                        : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                        }`}
+                                >
+                                    {page}
+                                </button>
+                            ))}
+
+                            {totalPages > 5 && <span className="text-text-secondary text-sm">...</span>}
+
+                            <button
+                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                disabled={currentPage === totalPages}
+                                className="p-2 rounded-full text-text-secondary hover:text-white hover:bg-surface-highlight disabled:opacity-50"
+                            >
+                                <Icon name="chevron_right" size="md" />
+                            </button>
+                        </nav>
+                    </div>
+                )}
+            </div>
+        </DashboardLayout>
+    );
+}

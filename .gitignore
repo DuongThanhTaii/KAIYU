@@ -1,0 +1,34 @@
+# Root gitignore - applies to all subfolders
+
+# Dependencies
+node_modules/
+
+# Environment files
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Frontend legacy (không cần push)
+frontend/
+
+# Gemini artifacts
+.gemini/

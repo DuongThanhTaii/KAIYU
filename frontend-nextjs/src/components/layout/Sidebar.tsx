@@ -1,0 +1,247 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import Icon from '../common/Icon';
+import { useAuth } from '../../contexts/AuthContext';
+import { progressApi } from '../../services/progressApi';
+
+interface NavItem {
+    label: string;
+    path: string;
+    icon: string;
+}
+
+const navItems: NavItem[] = [
+    { label: 'Trang chủ', path: '/dashboard', icon: 'home' },
+    { label: 'Học video', path: '/learn', icon: 'school' },
+    { label: 'Từ vựng', path: '/vocab', icon: 'menu_book' },
+    { label: 'Ôn tập', path: '/review', icon: 'history_edu' },
+    { label: 'Tình huống', path: '/scenes', icon: 'theater_comedy' },
+    { label: 'Thành tựu', path: '/achievements', icon: 'emoji_events' },
+    { label: 'Tiến độ', path: '/profile', icon: 'insights' },
+];
+
+interface SidebarProps {
+    isCollapsed: boolean;
+    setIsCollapsed: (collapsed: boolean) => void;
+    isMobileOpen: boolean;
+    setIsMobileOpen: (open: boolean) => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({
+    isCollapsed,
+    setIsCollapsed,
+    isMobileOpen,
+    setIsMobileOpen
+}) => {
+    const pathname = usePathname();
+    const { user } = useAuth();
+    const [dailyProgress, setDailyProgress] = useState<number>(0);
+    const [minutesStudied, setMinutesStudied] = useState<number>(0);
+
+    const isActive = (path: string) => pathname === path;
+
+    // Fetch daily progress
+    const fetchDailyProgress = useCallback(async () => {
+        try {
+            const daily = await progressApi.getDailyProgress();
+            const dailyGoal = user?.dailyGoalMinutes || 30;
+            const minutes = daily.watchTimeMinutes || 0;
+            const percent = Math.min(100, Math.round((minutes / dailyGoal) * 100));
+            setMinutesStudied(minutes);
+            setDailyProgress(percent);
+        } catch (err) {
+            console.error('Failed to fetch daily progress:', err);
+        }
+    }, [user?.dailyGoalMinutes]);
+
+    useEffect(() => {
+        fetchDailyProgress();
+    }, [fetchDailyProgress]);
+
+    // Close mobile menu on route change
+    useEffect(() => {
+        setIsMobileOpen(false);
+    }, [pathname, setIsMobileOpen]);
+
+    return (
+        <>
+            {/* Desktop Sidebar */}
+            <aside
+                className={`hidden lg:flex flex-col border-r border-border-color bg-background-dark p-4 justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-72'}`}
+            >
+                <div className="flex flex-col gap-8">
+                    {/* Header: Hamburger + Brand */}
+                    <div className="flex items-center gap-2 px-1">
+                        {/* Menu Toggle */}
+                        <button
+                            onClick={() => setIsCollapsed(!isCollapsed)}
+                            className="p-2 rounded-lg hover:bg-surface-highlight transition-colors shrink-0 inline-flex items-center justify-center cursor-pointer"
+                            title={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
+                        >
+                            <Icon name="menu" size="md" className="text-text-secondary hover:text-white" />
+                        </button>
+
+                        {/* Brand - Hide when collapsed */}
+                        {!isCollapsed && (
+                            <div className="flex items-center gap-3">
+                                <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
+                                <div className="flex flex-col">
+                                    <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
+                                    <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Navigation */}
+                    <nav className="flex flex-col gap-2">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.path}
+                                href={item.path}
+                                className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''} ${isActive(item.path)
+                                    ? 'bg-primary text-on-primary shadow-md shadow-primary/10'
+                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                    }`}
+                                title={isCollapsed ? item.label : undefined}
+                            >
+                                <Icon name={item.icon} filled={isActive(item.path)} />
+                                {!isCollapsed && (
+                                    <p className={`text-sm ${isActive(item.path) ? 'font-bold' : 'font-medium'}`}>
+                                        {item.label}
+                                    </p>
+                                )}
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="flex flex-col gap-2">
+                    <Link
+                        href="/settings"
+                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''}`}
+                        title={isCollapsed ? "Cài đặt" : undefined}
+                    >
+                        <Icon name="settings" />
+                        {!isCollapsed && <p className="text-sm font-medium">Cài đặt</p>}
+                    </Link>
+
+                    {/* Daily Goal Progress - Show different versions */}
+                    {!isCollapsed ? (
+                        <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-xs font-bold text-text-secondary uppercase">Mục tiêu hôm nay</span>
+                                <span className="text-xs font-bold text-white">{dailyProgress}%</span>
+                            </div>
+                            <div className="h-2 w-full bg-background-dark rounded-full overflow-hidden">
+                                <div
+                                    className="h-full bg-primary rounded-full transition-all duration-500"
+                                    style={{ width: `${dailyProgress}%` }}
+                                ></div>
+                            </div>
+                            <div className="mt-2 text-xs text-text-secondary text-center">
+                                {minutesStudied}/{user?.dailyGoalMinutes || 30} phút
+                            </div>
+                        </div>
+                    ) : (
+                        // Collapsed: Mini circular progress
+                        <div className="flex justify-center mt-2">
+                            <div className="relative w-12 h-12" title={`Mục tiêu: ${dailyProgress}%`}>
+                                <svg className="w-12 h-12 transform -rotate-90">
+                                    <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3" className="text-surface-dark" />
+                                    <circle cx="24" cy="24" r="20" fill="none" stroke="#20A7DF" strokeWidth="3" strokeLinecap="round"
+                                        strokeDasharray={`${dailyProgress * 1.26} 126`} />
+                                </svg>
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                                    {dailyProgress}%
+                                </span>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </aside>
+
+            {/* Mobile/Tablet Overlay - Always rendered, animated with opacity */}
+            <div
+                className={`lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 ease-in-out ${isMobileOpen
+                    ? 'opacity-100 pointer-events-auto'
+                    : 'opacity-0 pointer-events-none'
+                    }`}
+                onClick={() => setIsMobileOpen(false)}
+            />
+
+            {/* Mobile/Tablet Sidebar */}
+            <aside
+                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-50 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+            >
+                <div className="flex flex-col gap-8">
+                    {/* Header */}
+                    <div className="flex items-center gap-2 px-1">
+                        <button
+                            onClick={() => setIsMobileOpen(false)}
+                            className="p-2 rounded-lg hover:bg-surface-highlight transition-colors inline-flex items-center justify-center cursor-pointer"
+                        >
+                            <Icon name="close" size="md" className="text-text-secondary" />
+                        </button>
+                        <div className="flex items-center gap-3">
+                            <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
+                            <div className="flex flex-col">
+                                <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
+                                <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Navigation */}
+                    <nav className="flex flex-col gap-2">
+                        {navItems.map((item) => (
+                            <Link
+                                key={item.path}
+                                href={item.path}
+                                className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all ${isActive(item.path)
+                                    ? 'bg-primary text-on-primary shadow-md shadow-primary/10'
+                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                    }`}
+                            >
+                                <Icon name={item.icon} filled={isActive(item.path)} />
+                                <p className={`text-sm ${isActive(item.path) ? 'font-bold' : 'font-medium'}`}>
+                                    {item.label}
+                                </p>
+                            </Link>
+                        ))}
+                    </nav>
+                </div>
+
+                {/* Bottom */}
+                <div className="flex flex-col gap-2">
+                    <Link
+                        href="/settings"
+                        className="flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-white transition-colors"
+                    >
+                        <Icon name="settings" />
+                        <p className="text-sm font-medium">Cài đặt</p>
+                    </Link>
+                    <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-bold text-text-secondary uppercase">Mục tiêu hôm nay</span>
+                            <span className="text-xs font-bold text-white">{dailyProgress}%</span>
+                        </div>
+                        <div className="h-2 w-full bg-background-dark rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${dailyProgress}%` }}></div>
+                        </div>
+                        <div className="mt-2 text-xs text-text-secondary text-center">
+                            {minutesStudied}/{user?.dailyGoalMinutes || 30} phút
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </>
+    );
+};
+
+export default Sidebar;

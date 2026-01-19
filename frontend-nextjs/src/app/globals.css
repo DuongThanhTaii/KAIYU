@@ -1,0 +1,340 @@
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@import "tailwindcss";
+
+/* Tailwind v4 Theme Configuration */
+@theme {
+  /* Colors */
+  --color-primary: #20A7DF;
+  --color-primary-hover: #1a8fc2;
+  --color-on-primary: #061117;
+  --color-background-dark: #0F1724;
+  --color-background-light: #f6f8fa;
+  --color-surface-dark: #162030;
+  --color-surface-highlight: #1e3045;
+  --color-border-color: #1e3045;
+  --color-text-secondary: #95b5c6;
+
+  /* Fonts */
+  --font-family-display: 'Manrope', sans-serif;
+  --font-family-body: 'Noto Sans', sans-serif;
+  --font-family-chinese: 'Noto Sans SC', sans-serif;
+
+  /* Border Radius */
+  --radius-lg: 1.5rem;
+  --radius-xl: 2rem;
+  --radius-2xl: 2.5rem;
+}
+
+/* Base styles */
+html {
+  font-family: var(--font-family-display);
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-background-dark);
+  color: white;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0F1724;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e3045;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #20A7DF;
+}
+
+::selection {
+  background: #20A7DF;
+  color: #0F1724;
+}
+
+/* Component classes */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 150ms;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.btn-secondary {
+  background-color: var(--color-surface-highlight);
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  transition: all 150ms;
+  border: 1px solid var(--color-border-color);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-surface-dark);
+}
+
+.card {
+  background-color: var(--color-surface-dark);
+  border-radius: 0.75rem;
+  border: 1px solid var(--color-border-color);
+  padding: 1.5rem;
+}
+
+.glass-panel {
+  background-color: rgba(30, 46, 25, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Material Symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.material-symbols-outlined.fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Size utility for icon containers */
+.size-8 {
+  width: 2rem;
+  height: 2rem;
+}
+
+.size-10 {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+.size-12 {
+  width: 3rem;
+  height: 3rem;
+}
+
+.size-14 {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.size-16 {
+  width: 4rem;
+  height: 4rem;
+}
+
+.size-20 {
+  width: 5rem;
+  height: 5rem;
+}
+
+/* Flip Card Animation */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* ===== PREMIUM FLASHCARD STYLES ===== */
+
+/* Glassmorphism Card */
+.flashcard-glass {
+  background: linear-gradient(135deg, rgba(22, 32, 48, 0.9) 0%, rgba(15, 23, 36, 0.95) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Animated Gradient Border */
+.flashcard-border-glow {
+  position: relative;
+}
+
+.flashcard-border-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 1rem;
+  padding: 2px;
+  background: linear-gradient(135deg,
+      #20A7DF 0%,
+      #4cd320 25%,
+      #20A7DF 50%,
+      #4cd320 75%,
+      #20A7DF 100%);
+  background-size: 300% 300%;
+  animation: gradient-rotate 4s ease infinite;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.flashcard-border-glow:hover::before {
+  opacity: 1;
+}
+
+@keyframes gradient-rotate {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* Text Glow Effect */
+.text-glow {
+  text-shadow:
+    0 0 20px rgba(32, 167, 223, 0.4),
+    0 0 40px rgba(32, 167, 223, 0.2),
+    0 0 60px rgba(32, 167, 223, 0.1);
+}
+
+/* Card Hover Lift Effect */
+.card-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow:
+    0 20px 40px -12px rgba(0, 0, 0, 0.4),
+    0 0 30px -5px rgba(32, 167, 223, 0.15);
+}
+
+/* Pulse Animation for Hints */
+@keyframes pulse-glow {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.02);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Level Badge */
+.level-badge {
+  background: linear-gradient(135deg, rgba(32, 167, 223, 0.15) 0%, rgba(76, 211, 32, 0.1) 100%);
+  border: 1px solid rgba(32, 167, 223, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+/* Streak Badge */
+.streak-badge {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.2) 0%, rgba(234, 88, 12, 0.1) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+/* Custom Checkbox - matches theme color */
+input[type="checkbox"].checkbox-theme {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--color-primary);
+  border-radius: 0.25rem;
+  background-color: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.15s ease;
+}
+
+input[type="checkbox"].checkbox-theme:checked {
+  background-color: var(--color-primary);
+}
+
+input[type="checkbox"].checkbox-theme:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid var(--color-on-primary);
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+input[type="checkbox"].checkbox-theme:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(32, 167, 223, 0.15);
+}
+
+/* Slide Drawer Animation */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.25s ease-out;
+}
