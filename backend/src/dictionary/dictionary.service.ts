@@ -52,8 +52,10 @@ export class DictionaryService {
      */
     private async loadDictionary(): Promise<void> {
         try {
-            // Dynamic import to handle ESM module
-            const cccedict = await import('cc-cedict');
+            // Use Function constructor to create a true ESM import
+            // This bypasses TypeScript's CommonJS transpilation of dynamic imports
+            const importModule = new Function('specifier', 'return import(specifier)');
+            const cccedict = await importModule('cc-cedict');
             this.dictionary = cccedict.default || cccedict;
             this.isLoaded = true;
             console.log('CC-CEDICT dictionary loaded successfully');
