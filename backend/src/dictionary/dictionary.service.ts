@@ -42,16 +42,23 @@ export interface LookupResult {
 export class DictionaryService {
     private dictionary: any = null;
     private isLoaded = false;
+    private isLoading = false;
 
     constructor() {
-        this.loadDictionary();
+        // Lazy loading - don't load dictionary at startup to save memory
+        // Dictionary will be loaded on first API call
+        console.log('DictionaryService initialized (lazy loading mode)');
     }
 
     /**
-     * Load CC-CEDICT dictionary data
+     * Load CC-CEDICT dictionary data (lazy loading)
      */
     private async loadDictionary(): Promise<void> {
+        if (this.isLoaded || this.isLoading) return;
+
+        this.isLoading = true;
         try {
+            console.log('Loading CC-CEDICT dictionary...');
             // Use Function constructor to create a true ESM import
             // This bypasses TypeScript's CommonJS transpilation of dynamic imports
             const importModule = new Function('specifier', 'return import(specifier)');
@@ -62,8 +69,11 @@ export class DictionaryService {
         } catch (error) {
             console.error('Failed to load CC-CEDICT dictionary:', error);
             this.isLoaded = false;
+        } finally {
+            this.isLoading = false;
         }
     }
+
 
     /**
      * Convert pinyin with tone numbers to pinyin with tone marks
