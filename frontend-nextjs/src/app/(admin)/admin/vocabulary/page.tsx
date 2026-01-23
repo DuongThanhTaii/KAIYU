@@ -42,6 +42,8 @@ export default function AdminVocabularyPage() {
     const [importData, setImportData] = useState<ImportVocabularyItem[]>([]);
     const [importError, setImportError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: number } | null>(null);
+    const [duplicateConfirm, setDuplicateConfirm] = useState<{ message: string; vocab: Vocabulary } | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -264,9 +266,22 @@ export default function AdminVocabularyPage() {
             setShowModal(false);
             resetForm();
             fetchVocabulary(pagination.page);
-        } catch (err) {
+        } catch (err: any) {
             console.error('Failed to save vocabulary:', err);
-            setError('Không thể lưu từ vựng');
+            const errorMessage = err?.message || 'Không thể lưu từ vựng';
+
+            // Check if it's a duplicate error (409 Conflict)
+            if (errorMessage.includes('đã tồn tại')) {
+                // Find the existing vocabulary to offer edit option
+                const existingVocab = vocabulary.find(v => v.hanzi === formData.hanzi);
+                if (existingVocab) {
+                    // Show Modal to switch to edit mode
+                    setDuplicateConfirm({ message: errorMessage, vocab: existingVocab });
+                    return;
+                }
+            }
+
+            setError(errorMessage);
         } finally {
             setIsSaving(false);
         }
@@ -389,11 +404,11 @@ export default function AdminVocabularyPage() {
             setImportData([]);
             fetchVocabulary(1);
 
-            // Show success message
-            alert(`Import thành công: ${result.created} từ mới, ${result.skipped} bỏ qua, ${result.errors} lỗi`);
-        } catch (err) {
+            // Show result in modal
+            setImportResult(result);
+        } catch (err: any) {
             console.error('Failed to import vocabulary:', err);
-            setImportError('Import thất bại. Vui lòng thử lại.');
+            setImportError(err?.message || 'Import thất bại. Vui lòng thử lại.');
         } finally {
             setIsSaving(false);
         }
@@ -1324,6 +1339,156 @@ export default function AdminVocabularyPage() {
                         </div>
                     )}
                 </div>
+            </Modal>
+
+            {/* Import Result Modal */}
+            <Modal
+                isOpen={!!importResult}
+                onClose={() => setImportResult(null)}
+                title="Kết quả Import"
+                size="sm"
+                footer={
+                    <button
+                        onClick={() => setImportResult(null)}
+                        className="px-6 py-2 bg-gradient-to-r from-primary to-cyan-500 text-white font-bold rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                        Đóng
+                    </button>
+                }
+            >
+                {importResult && (
+                    <div className="space-y-4">
+                        {/* Success icon */}
+                        <div className="flex justify-center">
+                            <div className="size-16 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <Icon name="check_circle" className="text-4xl text-green-400" />
+                            </div>
+                        </div>
+
+                        <h3 className="text-center text-lg font-bold text-white">
+                            Import hoàn tất!
+                        </h3>
+
+                        {/* Stats */}
+                        <div className="space-y-3">
+                            {/* Created */}
+                            <div className="flex items-center gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-xl">
+                                <div className="size-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                    <Icon name="add_circle" className="text-green-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm text-text-secondary">Từ mới thêm thành công</p>
+                                    <p className="text-xl font-bold text-green-400">{importResult.created}</p>
+                                </div>
+                            </div>
+
+                            {/* Skipped */}
+                            {importResult.skipped > 0 && (
+                                <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                    <div className="size-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                        <Icon name="skip_next" className="text-amber-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-text-secondary">Bỏ qua (đã tồn tại)</p>
+                                        <p className="text-xl font-bold text-amber-400">{importResult.skipped}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Errors */}
+                            {importResult.errors > 0 && (
+                                <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                    <div className="size-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                        <Icon name="error" className="text-red-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-text-secondary">Lỗi (thiếu thông tin)</p>
+                                        <p className="text-xl font-bold text-red-400">{importResult.errors}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Tip */}
+                        {importResult.created === 0 && importResult.skipped > 0 && (
+                            <div className="p-3 bg-primary/10 border border-primary/20 rounded-xl">
+                                <p className="text-sm text-primary flex items-center gap-2">
+                                    <Icon name="lightbulb" size="sm" />
+                                    Tất cả từ đều đã tồn tại. Không có từ mới được thêm.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </Modal>
+
+            {/* Duplicate Confirmation Modal */}
+            <Modal
+                isOpen={!!duplicateConfirm}
+                onClose={() => setDuplicateConfirm(null)}
+                title="Từ vựng đã tồn tại"
+                size="sm"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setDuplicateConfirm(null)}
+                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            onClick={() => {
+                                if (duplicateConfirm) {
+                                    handleOpenEdit(duplicateConfirm.vocab);
+                                    setDuplicateConfirm(null);
+                                }
+                            }}
+                            className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:opacity-90 transition-opacity"
+                        >
+                            Sửa từ này
+                        </button>
+                    </>
+                }
+            >
+                {duplicateConfirm && (
+                    <div className="space-y-4">
+                        {/* Warning icon */}
+                        <div className="flex justify-center">
+                            <div className="size-16 rounded-full bg-amber-500/20 flex items-center justify-center">
+                                <Icon name="warning" className="text-4xl text-amber-400" />
+                            </div>
+                        </div>
+
+                        {/* Message */}
+                        <div className="text-center space-y-2">
+                            <p className="text-white">
+                                Từ vựng <span className="text-2xl font-bold text-amber-400 font-chinese">{duplicateConfirm.vocab.hanzi}</span> đã tồn tại trong hệ thống.
+                            </p>
+                            <p className="text-sm text-text-secondary">
+                                Bạn có muốn chuyển sang chế độ <strong className="text-amber-400">Sửa</strong> để cập nhật từ này không?
+                            </p>
+                        </div>
+
+                        {/* Existing word info */}
+                        <div className="p-4 bg-surface-highlight rounded-xl">
+                            <p className="text-xs text-text-secondary uppercase tracking-wider mb-2">Thông tin hiện có</p>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                                <div>
+                                    <span className="text-text-secondary">Pinyin: </span>
+                                    <span className="text-primary">{duplicateConfirm.vocab.pinyin}</span>
+                                </div>
+                                <div>
+                                    <span className="text-text-secondary">HSK: </span>
+                                    <span className="text-white">{duplicateConfirm.vocab.hskLevel}</span>
+                                </div>
+                                <div className="col-span-2">
+                                    <span className="text-text-secondary">Nghĩa: </span>
+                                    <span className="text-white">{duplicateConfirm.vocab.meaningVi}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </Modal>
         </AdminLayout>
     );

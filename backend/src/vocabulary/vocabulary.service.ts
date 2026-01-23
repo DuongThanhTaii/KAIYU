@@ -136,7 +136,7 @@ export class VocabularyService {
         });
 
         if (existing) {
-            throw new ConflictException('Vocabulary with this hanzi already exists');
+            throw new ConflictException(`Từ vựng "${data.hanzi}" đã tồn tại trong hệ thống. Vui lòng sử dụng chức năng Sửa để cập nhật.`);
         }
 
         // If meanings array is provided, generate primary meaningVi from first entry
@@ -234,8 +234,8 @@ export class VocabularyService {
                 if (!item.hanzi || !item.pinyin || !item.meaningVi) {
                     result.errors++;
                     result.errorDetails?.push({
-                        hanzi: item.hanzi || '(empty)',
-                        error: 'Missing required fields (hanzi, pinyin, meaningVi)',
+                        hanzi: item.hanzi || '(trống)',
+                        error: 'Thiếu thông tin bắt buộc (hanzi, pinyin, meaningVi)',
                     });
                     continue;
                 }
