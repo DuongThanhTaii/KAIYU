@@ -40,23 +40,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - uses theme colors */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0F1724;
+  background: var(--color-background-dark);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1e3045;
+  background: var(--color-surface-highlight);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #20A7DF;
+  background: var(--color-primary);
 }
 
 ::selection {

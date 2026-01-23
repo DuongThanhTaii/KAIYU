@@ -238,7 +238,7 @@ export default function AdminUsersPage() {
                     e.stopPropagation();
                     setShowUserDetail(user);
                 }}
-                className="p-1.5 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-blue-500/20 text-blue-400 transition-colors inline-flex items-center justify-center cursor-pointer"
                 title="Xem chi tiết"
             >
                 <Icon name="visibility" className="text-lg" />
@@ -249,7 +249,7 @@ export default function AdminUsersPage() {
                     setNewRole(user.role);
                     setShowRoleModal(user);
                 }}
-                className="p-1.5 rounded-lg hover:bg-amber-500/20 text-amber-400 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-amber-500/20 text-amber-400 transition-colors inline-flex items-center justify-center cursor-pointer"
                 title="Thay đổi role"
             >
                 <Icon name="admin_panel_settings" className="text-lg" />
@@ -259,7 +259,7 @@ export default function AdminUsersPage() {
                     e.stopPropagation();
                     setShowDeleteConfirm(user);
                 }}
-                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors"
+                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors inline-flex items-center justify-center cursor-pointer"
                 title="Xóa user"
             >
                 <Icon name="delete" className="text-lg" />

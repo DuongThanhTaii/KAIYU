@@ -545,24 +545,104 @@ export default function AdminVocabularyPage() {
             ),
         },
         {
-            key: 'meaning',
-            header: 'Nghĩa',
+            key: 'radical',
+            header: 'Bộ thủ',
+            width: '80px',
             render: (vocab: Vocabulary) => (
-                <span className="text-white">{vocab.meaningVi || vocab.meaningEn}</span>
+                <div className="text-center">
+                    {vocab.radical ? (
+                        <div className="flex flex-col items-center gap-0.5">
+                            <span className="text-lg font-chinese text-amber-400">{vocab.radical}</span>
+                            {vocab.strokeCount && (
+                                <span className="text-[10px] text-text-secondary">{vocab.strokeCount} nét</span>
+                            )}
+                        </div>
+                    ) : (
+                        <span className="text-text-secondary">-</span>
+                    )}
+                </div>
             ),
         },
         {
-            key: 'partOfSpeech',
-            header: 'Loại từ',
-            width: '80px',
+            key: 'meaning',
+            header: 'Nghĩa',
             render: (vocab: Vocabulary) => (
-                <span className="text-xs text-text-secondary">{vocab.partOfSpeech || '-'}</span>
+                <div className="flex flex-col gap-1">
+                    <span className="text-white">{vocab.meaningVi || vocab.meaningEn}</span>
+                    {vocab.partOfSpeech && (
+                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full w-fit">{vocab.partOfSpeech}</span>
+                    )}
+                </div>
+            ),
+        },
+        {
+            key: 'examples',
+            header: 'Ví dụ',
+            width: '200px',
+            render: (vocab: Vocabulary) => {
+                const examples = vocab.examples as Array<{ chinese?: string; pinyin?: string; vietnamese?: string }> | null;
+                if (!examples || examples.length === 0) return <span className="text-text-secondary text-sm">-</span>;
+                const first = examples[0];
+                return (
+                    <div className="text-sm">
+                        <p className="text-white font-chinese">{first.chinese}</p>
+                        <p className="text-primary/70 text-xs">{first.pinyin}</p>
+                        <p className="text-text-secondary text-xs">{first.vietnamese}</p>
+                        {examples.length > 1 && (
+                            <span className="text-xs text-amber-500">+{examples.length - 1} khác</span>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'relatedWords',
+            header: 'Từ liên quan',
+            width: '150px',
+            render: (vocab: Vocabulary) => {
+                const synonyms = vocab.synonyms as Array<{ hanzi?: string; meaning?: string }> | null;
+                const antonyms = vocab.antonyms as Array<{ hanzi?: string; meaning?: string }> | null;
+                const hasSynonyms = synonyms && synonyms.length > 0;
+                const hasAntonyms = antonyms && antonyms.length > 0;
+
+                if (!hasSynonyms && !hasAntonyms) return <span className="text-text-secondary text-sm">-</span>;
+
+                return (
+                    <div className="text-xs space-y-1">
+                        {hasSynonyms && (
+                            <div className="flex items-center gap-1">
+                                <span className="text-green-400">≈</span>
+                                <span className="text-green-300 font-chinese">{synonyms.slice(0, 2).map(s => s.hanzi).join(', ')}</span>
+                            </div>
+                        )}
+                        {hasAntonyms && (
+                            <div className="flex items-center gap-1">
+                                <span className="text-red-400">↔</span>
+                                <span className="text-red-300 font-chinese">{antonyms.slice(0, 2).map(a => a.hanzi).join(', ')}</span>
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+        },
+        {
+            key: 'mnemonic',
+            header: 'Gợi ý nhớ',
+            width: '180px',
+            render: (vocab: Vocabulary) => (
+                vocab.mnemonic ? (
+                    <p className="text-xs text-amber-300/80 line-clamp-2" title={vocab.mnemonic}>
+                        💡 {vocab.mnemonic}
+                    </p>
+                ) : (
+                    <span className="text-text-secondary text-sm">-</span>
+                )
             ),
         },
         {
             key: 'hskLevel',
             header: 'HSK',
-            width: '80px',
+            width: '70px',
             render: (vocab: Vocabulary) => (
                 <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${vocab.hskLevel <= 2 ? 'bg-green-500/20 text-green-400' :
                     vocab.hskLevel <= 4 ? 'bg-yellow-500/20 text-yellow-400' :
@@ -745,7 +825,7 @@ export default function AdminVocabularyPage() {
                     </>
                 }
             >
-                <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2" style={{ scrollbarWidth: 'thin' }}>
+                <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
                     {/* Section 1: Basic Info */}
                     <div className="bg-surface-highlight/30 rounded-xl p-4 space-y-4">
                         <h4 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">

@@ -63,7 +63,7 @@ const Modal: React.FC<ModalProps> = ({
                     <h2 className="text-lg font-bold text-white">{title}</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-white"
+                        className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-white inline-flex items-center justify-center cursor-pointer"
                     >
                         <Icon name="close" className="text-xl" />
                     </button>

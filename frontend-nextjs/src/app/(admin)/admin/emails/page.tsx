@@ -254,7 +254,7 @@ export default function AdminEmailsPage() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                         <div className="bg-surface-dark rounded-xl border border-border-color p-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg">
+                                <div className="p-2 bg-primary/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="send" className="text-primary" />
                                 </div>
                                 <div>
@@ -265,7 +265,7 @@ export default function AdminEmailsPage() {
                         </div>
                         <div className="bg-surface-dark rounded-xl border border-border-color p-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-500/10 rounded-lg">
+                                <div className="p-2 bg-green-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="visibility" className="text-green-400" />
                                 </div>
                                 <div>
@@ -276,7 +276,7 @@ export default function AdminEmailsPage() {
                         </div>
                         <div className="bg-surface-dark rounded-xl border border-border-color p-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-amber-500/10 rounded-lg">
+                                <div className="p-2 bg-amber-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="touch_app" className="text-amber-400" />
                                 </div>
                                 <div>
@@ -287,7 +287,7 @@ export default function AdminEmailsPage() {
                         </div>
                         <div className="bg-surface-dark rounded-xl border border-border-color p-4">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-red-500/10 rounded-lg">
+                                <div className="p-2 bg-red-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="error" className="text-red-400" />
                                 </div>
                                 <div>
