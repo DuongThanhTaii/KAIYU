@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -121,7 +121,9 @@ export class UserVocabularyService {
     }
 
     /**
-     * Save a word from dictionary lookup (creates vocabulary if needed)
+     * Save a word from dictionary lookup
+     * IMPORTANT: Only allows saving words that exist in system vocabulary (Admin-managed)
+     * Users cannot create new vocabulary entries
      */
     async saveWord(userId: string, data: {
         hanzi: string;
@@ -129,29 +131,24 @@ export class UserVocabularyService {
         meaningVi?: string;
         sourceVideoId?: string;
         folderId?: string;
-        // New context fields for SRS enhancement
+        // Context fields for SRS enhancement
         sourceTimestamp?: number;
         sourceSentence?: string;
         sourcePinyin?: string;
-        // Media URLs from Cloudinary (Phase 5)
+        // Media URLs from Cloudinary
         sourceImageUrl?: string;
         sourceAudioUrl?: string;
     }) {
-        // Find or create vocabulary
-        let vocab = await this.prisma.vocabulary.findUnique({
+        // Find vocabulary in system library (Admin-managed)
+        const vocab = await this.prisma.vocabulary.findUnique({
             where: { hanzi: data.hanzi },
         });
 
+        // BLOCK: Users cannot save words that don't exist in system
         if (!vocab) {
-            vocab = await this.prisma.vocabulary.create({
-                data: {
-                    hanzi: data.hanzi,
-                    pinyin: data.pinyin || '',
-                    meaningEn: data.meaningVi || '', // Use meaningVi for meaningEn for now
-                    meaningVi: data.meaningVi,
-                    hskLevel: 1,
-                },
-            });
+            throw new BadRequestException(
+                'Từ này chưa có trong thư viện hệ thống. Chỉ Admin mới có thể thêm từ mới.'
+            );
         }
 
         // Check if already saved

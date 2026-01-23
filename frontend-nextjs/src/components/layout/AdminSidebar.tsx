@@ -145,7 +145,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
             {/* Mobile/Tablet Sidebar */}
             <aside
-                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-50 transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-30 transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <div className="flex flex-col gap-8">

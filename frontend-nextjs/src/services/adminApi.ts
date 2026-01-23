@@ -89,14 +89,48 @@ export interface Vocabulary {
     id: string;
     hanzi: string;
     pinyin: string;
-    meaningEn: string;
-    meaningVi?: string;
+    meaningVi: string;
+    meaningEn?: string;
+    radical?: string;
+    radicalMeaning?: string;
+    strokeCount?: number;
     partOfSpeech?: string;
     hskLevel: number;
     tags: string[];
     audioUrl?: string;
-    examples?: any[];
+    examples?: { chinese: string; pinyin?: string; vietnamese: string }[];
+    synonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    antonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    mnemonic?: string;
     createdAt: string;
+    updatedAt?: string;
+}
+
+// Import vocabulary item (flat format for XLSX)
+export interface ImportVocabularyItem {
+    hanzi: string;
+    pinyin: string;
+    meaningVi: string;
+    meaningEn?: string;
+    radical?: string;
+    radicalMeaning?: string;
+    strokeCount?: number;
+    partOfSpeech?: string;
+    hskLevel: number;
+    tags?: string[];
+    example1_cn?: string;
+    example1_py?: string;
+    example1_vi?: string;
+    example2_cn?: string;
+    example2_py?: string;
+    example2_vi?: string;
+    synonym1?: string;
+    synonym1_py?: string;
+    synonym1_vi?: string;
+    antonym1?: string;
+    antonym1_py?: string;
+    antonym1_vi?: string;
+    mnemonic?: string;
 }
 
 export interface AdminUser {
@@ -235,13 +269,14 @@ export const deleteVocabulary = (id: string): Promise<{ message: string }> => {
 };
 
 export const importVocabulary = (
-    vocabulary: Partial<Vocabulary>[]
-): Promise<{ created: number; skipped: number; errors: number }> => {
-    return apiRequest<{ created: number; skipped: number; errors: number }>('/admin/vocabulary/import', {
+    items: ImportVocabularyItem[]
+): Promise<{ created: number; skipped: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }> => {
+    return apiRequest<{ created: number; skipped: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }>('/vocabulary/import', {
         method: 'POST',
-        body: JSON.stringify({ vocabulary }),
+        body: JSON.stringify(items),
     });
 };
+
 
 // ============ User Management ============
 export const getAllUsers = (

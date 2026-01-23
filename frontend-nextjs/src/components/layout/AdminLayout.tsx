@@ -276,8 +276,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                     </div>
                 </header>
 
-                {/* Content - Lower z-index */}
-                <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth relative z-0">
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 scroll-smooth">
                     <div className="max-w-7xl mx-auto">
                         {children}
                     </div>

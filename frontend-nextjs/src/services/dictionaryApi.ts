@@ -1,34 +1,59 @@
 import api from './api';
 
 export interface DictionaryEntry {
+    id?: string;
     pinyin: string;
     pinyinDisplay: string;
-    definitions: string[];
+    definitions?: string[];
     definitionsVi?: string[];
-    meaningEn: string;
-    meaningVi?: string;
+    meaningEn?: string;
+    meaningVi: string;
     partOfSpeech?: string;
+    radical?: string;
+    radicalMeaning?: string;
+    strokeCount?: number;
+    hskLevel?: number;
+    examples?: { chinese: string; pinyin?: string; vietnamese: string }[];
+    synonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    antonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    mnemonic?: string;
+    found: boolean;
+    // Centralized system flags
+    source: 'db' | 'ai';
+    isSystemWord: boolean;
 }
 
 export interface LookupResult {
     hanzi: string;
     pinyin: string;
     pinyinDisplay: string;
-    definitions: string[];
+    definitions?: string[];
     definitionsVi?: string[];
-    meaningEn: string;
-    meaningVi?: string;
+    meaningEn?: string;
+    meaningVi: string;
     partOfSpeech?: string;
-    examples?: string[];
+    radical?: string;
+    radicalMeaning?: string;
+    strokeCount?: number;
+    hskLevel?: number;
+    examples?: { chinese: string; pinyin?: string; vietnamese: string }[];
+    synonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    antonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    mnemonic?: string;
     traditional?: string;
     simplified?: string;
     found: boolean;
+    // Centralized system flags
+    source: 'db' | 'ai';
+    isSystemWord: boolean;
     // All entries with different pronunciations
     allEntries?: DictionaryEntry[];
 }
 
 export interface DictionaryStatus {
     loaded: boolean;
+    totalWords?: number;
+    aiCacheSize?: number;
 }
 
 export interface ExampleSentence {

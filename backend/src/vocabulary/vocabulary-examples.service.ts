@@ -104,7 +104,8 @@ export class VocabularyExamplesService {
         }
 
         // 3. Generate with AI
-        const examples = await this.generateExamples(vocab.hanzi, vocab.pinyin, vocab.meaningVi || vocab.meaningEn);
+        const meaning = vocab.meaningVi || vocab.meaningEn || '';
+        const examples = await this.generateExamples(vocab.hanzi, vocab.pinyin, meaning);
 
         // 4. Save to DB for future
         if (examples.length > 0) {

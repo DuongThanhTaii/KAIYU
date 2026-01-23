@@ -347,6 +347,16 @@ export function WordPopover({
                     <>
                         {/* Header - Large Character Display */}
                         <div className="p-5 border-b border-border-color bg-surface-highlight/20">
+                            {/* AI Warning Banner */}
+                            {lookupResult.source === 'ai' && !lookupResult.isSystemWord && (
+                                <div className="mb-3 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center gap-2">
+                                    <Icon name="smart_toy" className="text-amber-400" size="sm" />
+                                    <span className="text-amber-300 text-xs font-medium">
+                                        Từ ngoài thư viện (AI dịch) - Không thể lưu
+                                    </span>
+                                </div>
+                            )}
+
                             <div className="flex items-start justify-between">
                                 <div className="flex items-center gap-4">
                                     {/* Large Hanzi */}
@@ -360,12 +370,19 @@ export function WordPopover({
 
                                         {/* Badges */}
                                         <div className="flex items-center gap-2">
-                                            <span className={`px-2 py-0.5 ${HSK_COLORS[hskLevel] || 'bg-gray-500'} text-white text-xs font-bold rounded`}>
-                                                HSK {hskLevel}
-                                            </span>
+                                            {lookupResult.isSystemWord && lookupResult.hskLevel && (
+                                                <span className={`px-2 py-0.5 ${HSK_COLORS[lookupResult.hskLevel] || 'bg-gray-500'} text-white text-xs font-bold rounded`}>
+                                                    HSK {lookupResult.hskLevel}
+                                                </span>
+                                            )}
                                             {lookupResult.partOfSpeech && (
                                                 <span className="px-2 py-0.5 bg-surface-highlight text-text-secondary text-xs rounded">
                                                     {lookupResult.partOfSpeech}
+                                                </span>
+                                            )}
+                                            {lookupResult.source === 'ai' && (
+                                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded flex items-center gap-1">
+                                                    <Icon name="auto_awesome" size="sm" /> AI
                                                 </span>
                                             )}
                                         </div>
@@ -379,21 +396,24 @@ export function WordPopover({
                                         size="sm"
                                         className="p-2 hover:bg-surface-highlight text-text-secondary hover:text-primary rounded-full transition-colors"
                                     />
-                                    <button
-                                        onClick={handleSave}
-                                        disabled={isSaving || saveSuccess}
-                                        className={`inline-flex items-center justify-center p-2 rounded-full transition-all ${saveSuccess
-                                            ? 'bg-emerald-500 text-white'
-                                            : 'hover:bg-surface-highlight text-text-secondary hover:text-primary'
-                                            }`}
-                                        title="Lưu từ"
-                                    >
-                                        {isSaving ? (
-                                            <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                        ) : (
-                                            <Icon name={saveSuccess ? "check" : "bookmark_add"} size="sm" />
-                                        )}
-                                    </button>
+                                    {/* Save button - ONLY show if isSystemWord */}
+                                    {lookupResult.isSystemWord && (
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={isSaving || saveSuccess}
+                                            className={`inline-flex items-center justify-center p-2 rounded-full transition-all ${saveSuccess
+                                                ? 'bg-emerald-500 text-white'
+                                                : 'hover:bg-surface-highlight text-text-secondary hover:text-primary'
+                                                }`}
+                                            title="Lưu từ"
+                                        >
+                                            {isSaving ? (
+                                                <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                            ) : (
+                                                <Icon name={saveSuccess ? "check" : "bookmark_add"} size="sm" />
+                                            )}
+                                        </button>
+                                    )}
                                     {/* Close button */}
                                     <button
                                         onClick={onClose}
@@ -475,7 +495,7 @@ export function WordPopover({
                                                         </div>
                                                         {/* Definitions */}
                                                         <div className="px-4 py-3 space-y-2">
-                                                            {(entry.definitionsVi?.length ? entry.definitionsVi : entry.definitions)
+                                                            {(entry.definitionsVi?.length ? entry.definitionsVi : entry.definitions || [])
                                                                 .slice(0, 4)
                                                                 .map((def, i) => (
                                                                     <div key={i} className="flex items-start gap-2">
@@ -777,37 +797,44 @@ export function WordPopover({
                                         </div>
                                     )}
 
-                                    {/* Save Button */}
-                                    <button
-                                        onClick={handleSave}
-                                        disabled={isSaving || saveSuccess}
-                                        className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${saveSuccess
-                                            ? 'bg-emerald-500 text-white'
-                                            : 'bg-primary text-black hover:bg-primary-hover'
-                                            }`}
-                                    >
-                                        {isSaving ? (
-                                            <div className="size-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                                        ) : saveSuccess ? (
-                                            <div className="flex flex-col items-center gap-0.5">
-                                                <div className="flex items-center gap-2">
-                                                    <Icon name="check_circle" size="sm" />
-                                                    Đã lưu!
+                                    {/* Save Button - Only for system words */}
+                                    {lookupResult?.isSystemWord ? (
+                                        <button
+                                            onClick={handleSave}
+                                            disabled={isSaving || saveSuccess}
+                                            className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${saveSuccess
+                                                ? 'bg-emerald-500 text-white'
+                                                : 'bg-primary text-black hover:bg-primary-hover'
+                                                }`}
+                                        >
+                                            {isSaving ? (
+                                                <div className="size-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                                            ) : saveSuccess ? (
+                                                <div className="flex flex-col items-center gap-0.5">
+                                                    <div className="flex items-center gap-2">
+                                                        <Icon name="check_circle" size="sm" />
+                                                        Đã lưu!
+                                                    </div>
+                                                    {savedInFolder && (
+                                                        <span className="text-xs opacity-80 flex items-center gap-1">
+                                                            <Icon name="folder" size="sm" />
+                                                            {savedInFolder}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {savedInFolder && (
-                                                    <span className="text-xs opacity-80 flex items-center gap-1">
-                                                        <Icon name="folder" size="sm" />
-                                                        {savedInFolder}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <Icon name="add" size="sm" />
-                                                Lưu flashcard (+10 XP)
-                                            </>
-                                        )}
-                                    </button>
+                                            ) : (
+                                                <>
+                                                    <Icon name="add" size="sm" />
+                                                    Lưu flashcard (+10 XP)
+                                                </>
+                                            )}
+                                        </button>
+                                    ) : (
+                                        <div className="w-full py-3 rounded-xl bg-surface-highlight/50 text-text-secondary text-sm text-center flex items-center justify-center gap-2">
+                                            <Icon name="info" size="sm" />
+                                            Từ này chưa có trong thư viện hệ thống
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

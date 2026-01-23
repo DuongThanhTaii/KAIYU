@@ -131,14 +131,34 @@ model Vocabulary {
   id                   String                @id @default(uuid()) @db.Uuid
   hanzi                String                @unique @db.VarChar(50)
   pinyin               String                @db.VarChar(100)
-  meaningEn            String                @map("meaning_en") @db.VarChar(500)
-  meaningVi            String?               @map("meaning_vi") @db.VarChar(500)
-  partOfSpeech         String?               @map("part_of_speech") @db.VarChar(50)
+  meaningVi            String                @map("meaning_vi") @db.VarChar(500)
+  meaningEn            String?               @map("meaning_en") @db.VarChar(500)
+  
+  // Extended fields for custom dictionary
+  radical              String?               @db.VarChar(10)
+  radicalMeaning       String?               @map("radical_meaning") @db.VarChar(100)
+  strokeCount          Int?                  @map("stroke_count")
+  
+  partOfSpeech         String?               @map("part_of_speech") @db.VarChar(100)
   hskLevel             Int                   @default(1) @map("hsk_level")
   tags                 String[]              @default([])
   audioUrl             String?               @map("audio_url") @db.VarChar(1000)
+  
+  // JSON fields for examples and related words
   examples             Json?                 @default("[]")
+  synonyms             Json?                 @default("[]")
+  antonyms             Json?                 @default("[]")
+  
+  // Mnemonic for learning
+  mnemonic             String?
+  
+  // Multi-meaning support: Array of { partOfSpeech, pinyin, meanings[] }
+  // Format: [{ "partOfSpeech": "adj", "pinyin": "hǎo", "meanings": ["tốt", "đẹp"] }]
+  meanings             Json?                 @default("[]")
+  
   createdAt            DateTime              @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime              @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
   flashcardReviews     FlashcardReview[]
   subtitleTokens       SubtitleToken[]
   userVocabulary       UserVocabulary[]
@@ -147,6 +167,7 @@ model Vocabulary {
 
   @@map("vocabulary")
 }
+
 
 model Subtitle {
   id                 String              @id @default(uuid()) @db.Uuid

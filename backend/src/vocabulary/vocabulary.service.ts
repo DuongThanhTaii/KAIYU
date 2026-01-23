@@ -1,5 +1,13 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+    CreateVocabularyDto,
+    UpdateVocabularyDto,
+    ImportVocabularyItemDto,
+    ImportResultDto,
+    ExampleSentenceDto,
+    RelatedWordDto,
+} from './dto';
 
 @Injectable()
 export class VocabularyService {
@@ -22,15 +30,15 @@ export class VocabularyService {
         }
 
         if (partOfSpeech) {
-            where.partOfSpeech = partOfSpeech;
+            where.partOfSpeech = { contains: partOfSpeech, mode: 'insensitive' };
         }
 
         if (search) {
             where.OR = [
                 { hanzi: { contains: search } },
                 { pinyin: { contains: search, mode: 'insensitive' } },
-                { meaningEn: { contains: search, mode: 'insensitive' } },
                 { meaningVi: { contains: search, mode: 'insensitive' } },
+                { meaningEn: { contains: search, mode: 'insensitive' } },
             ];
         }
 
@@ -39,7 +47,7 @@ export class VocabularyService {
                 where,
                 skip,
                 take: limit,
-                orderBy: { hskLevel: 'asc' },
+                orderBy: [{ hskLevel: 'asc' }, { hanzi: 'asc' }],
             }),
             this.prisma.vocabulary.count({ where }),
         ]);
@@ -79,18 +87,50 @@ export class VocabularyService {
         return vocab;
     }
 
+    /**
+     * Smart lookup - find by exact match, or break down into characters
+     */
+    async smartLookup(input: string): Promise<any[]> {
+        // Level 1: Exact match
+        const exact = await this.prisma.vocabulary.findUnique({
+            where: { hanzi: input },
+        });
+        if (exact) return [exact];
+
+        // Level 2: Contains match (for compound words)
+        const contains = await this.prisma.vocabulary.findMany({
+            where: { hanzi: { contains: input } },
+            take: 5,
+        });
+        if (contains.length > 0) return contains;
+
+        // Level 3: Character-by-character breakdown
+        if (input.length >= 2) {
+            const chars = input.split('');
+            const results = await Promise.all(
+                chars.map(char =>
+                    this.prisma.vocabulary.findUnique({ where: { hanzi: char } })
+                )
+            );
+            const validResults = results.filter(Boolean);
+            if (validResults.length > 0) return validResults;
+        }
+
+        // Level 4: Pinyin/meaning search
+        const fuzzy = await this.prisma.vocabulary.findMany({
+            where: {
+                OR: [
+                    { pinyin: { contains: input, mode: 'insensitive' } },
+                    { meaningVi: { contains: input, mode: 'insensitive' } },
+                ],
+            },
+            take: 10,
+        });
+        return fuzzy;
+    }
+
     // Admin methods
-    async create(data: {
-        hanzi: string;
-        pinyin: string;
-        meaningEn: string;
-        meaningVi?: string;
-        partOfSpeech?: string;
-        hskLevel: number;
-        tags?: string[];
-        audioUrl?: string;
-        examples?: any;
-    }) {
+    async create(data: CreateVocabularyDto) {
         const existing = await this.prisma.vocabulary.findUnique({
             where: { hanzi: data.hanzi },
         });
@@ -99,41 +139,69 @@ export class VocabularyService {
             throw new ConflictException('Vocabulary with this hanzi already exists');
         }
 
+        // If meanings array is provided, generate primary meaningVi from first entry
+        let primaryMeaningVi = data.meaningVi;
+        let primaryPartOfSpeech = data.partOfSpeech;
+        if (data.meanings && data.meanings.length > 0) {
+            const firstMeaning = data.meanings[0];
+            primaryPartOfSpeech = data.meanings.map(m => m.partOfSpeech).join(', ');
+            // Combine all meanings for quick display
+            primaryMeaningVi = data.meanings
+                .flatMap(m => m.meanings)
+                .join('; ');
+        }
+
         return this.prisma.vocabulary.create({
             data: {
                 hanzi: data.hanzi,
                 pinyin: data.pinyin,
+                meaningVi: primaryMeaningVi,
                 meaningEn: data.meaningEn,
-                meaningVi: data.meaningVi,
-                partOfSpeech: data.partOfSpeech,
+                radical: data.radical,
+                radicalMeaning: data.radicalMeaning,
+                strokeCount: data.strokeCount,
+                partOfSpeech: primaryPartOfSpeech,
                 hskLevel: data.hskLevel,
                 tags: data.tags || [],
                 audioUrl: data.audioUrl,
                 examples: data.examples || [],
-            },
+                synonyms: data.synonyms || [],
+                antonyms: data.antonyms || [],
+                mnemonic: data.mnemonic,
+                meanings: data.meanings || [],
+            } as any,
         });
     }
 
-    async update(id: string, data: Partial<{
-        hanzi: string;
-        pinyin: string;
-        meaningEn: string;
-        meaningVi: string;
-        partOfSpeech: string;
-        hskLevel: number;
-        tags: string[];
-        audioUrl: string;
-        examples: any;
-    }>) {
+    async update(id: string, data: UpdateVocabularyDto) {
         const vocab = await this.prisma.vocabulary.findUnique({ where: { id } });
 
         if (!vocab) {
             throw new NotFoundException('Vocabulary not found');
         }
 
+        // Build update data, only include defined fields
+        const updateData: any = {};
+        if (data.hanzi !== undefined) updateData.hanzi = data.hanzi;
+        if (data.pinyin !== undefined) updateData.pinyin = data.pinyin;
+        if (data.meaningVi !== undefined) updateData.meaningVi = data.meaningVi;
+        if (data.meaningEn !== undefined) updateData.meaningEn = data.meaningEn;
+        if (data.radical !== undefined) updateData.radical = data.radical;
+        if (data.radicalMeaning !== undefined) updateData.radicalMeaning = data.radicalMeaning;
+        if (data.strokeCount !== undefined) updateData.strokeCount = data.strokeCount;
+        if (data.partOfSpeech !== undefined) updateData.partOfSpeech = data.partOfSpeech;
+        if (data.hskLevel !== undefined) updateData.hskLevel = data.hskLevel;
+        if (data.tags !== undefined) updateData.tags = data.tags;
+        if (data.audioUrl !== undefined) updateData.audioUrl = data.audioUrl;
+        if (data.examples !== undefined) updateData.examples = data.examples;
+        if (data.synonyms !== undefined) updateData.synonyms = data.synonyms;
+        if (data.antonyms !== undefined) updateData.antonyms = data.antonyms;
+        if (data.mnemonic !== undefined) updateData.mnemonic = data.mnemonic;
+        if (data.meanings !== undefined) updateData.meanings = data.meanings;
+
         return this.prisma.vocabulary.update({
             where: { id },
-            data,
+            data: updateData,
         });
     }
 
@@ -149,6 +217,130 @@ export class VocabularyService {
         return { message: 'Vocabulary deleted successfully' };
     }
 
+    /**
+     * Import vocabulary from XLSX/CSV data
+     */
+    async importVocabulary(items: ImportVocabularyItemDto[]): Promise<ImportResultDto> {
+        const result: ImportResultDto = {
+            created: 0,
+            skipped: 0,
+            errors: 0,
+            errorDetails: [],
+        };
+
+        for (const item of items) {
+            try {
+                // Validate required fields
+                if (!item.hanzi || !item.pinyin || !item.meaningVi) {
+                    result.errors++;
+                    result.errorDetails?.push({
+                        hanzi: item.hanzi || '(empty)',
+                        error: 'Missing required fields (hanzi, pinyin, meaningVi)',
+                    });
+                    continue;
+                }
+
+                // Check for existing
+                const existing = await this.prisma.vocabulary.findUnique({
+                    where: { hanzi: item.hanzi },
+                });
+
+                if (existing) {
+                    result.skipped++;
+                    continue;
+                }
+
+                // Parse examples from flattened format
+                const examples: ExampleSentenceDto[] = [];
+                if (item.example1_cn && item.example1_vi) {
+                    examples.push({
+                        chinese: item.example1_cn,
+                        pinyin: item.example1_py,
+                        vietnamese: item.example1_vi,
+                    });
+                }
+                if (item.example2_cn && item.example2_vi) {
+                    examples.push({
+                        chinese: item.example2_cn,
+                        pinyin: item.example2_py,
+                        vietnamese: item.example2_vi,
+                    });
+                }
+                if (item.example3_cn && item.example3_vi) {
+                    examples.push({
+                        chinese: item.example3_cn,
+                        pinyin: item.example3_py,
+                        vietnamese: item.example3_vi,
+                    });
+                }
+
+                // Parse synonyms from flattened format
+                const synonyms: RelatedWordDto[] = [];
+                if (item.synonym1) {
+                    synonyms.push({
+                        hanzi: item.synonym1,
+                        pinyin: item.synonym1_py || '',
+                        meaningVi: item.synonym1_vi || '',
+                    });
+                }
+                if (item.synonym2) {
+                    synonyms.push({
+                        hanzi: item.synonym2,
+                        pinyin: item.synonym2_py || '',
+                        meaningVi: item.synonym2_vi || '',
+                    });
+                }
+
+                // Parse antonyms from flattened format
+                const antonyms: RelatedWordDto[] = [];
+                if (item.antonym1) {
+                    antonyms.push({
+                        hanzi: item.antonym1,
+                        pinyin: item.antonym1_py || '',
+                        meaningVi: item.antonym1_vi || '',
+                    });
+                }
+                if (item.antonym2) {
+                    antonyms.push({
+                        hanzi: item.antonym2,
+                        pinyin: item.antonym2_py || '',
+                        meaningVi: item.antonym2_vi || '',
+                    });
+                }
+
+                // Create vocabulary
+                await this.prisma.vocabulary.create({
+                    data: {
+                        hanzi: item.hanzi,
+                        pinyin: item.pinyin,
+                        meaningVi: item.meaningVi,
+                        meaningEn: item.meaningEn,
+                        radical: item.radical,
+                        radicalMeaning: item.radicalMeaning,
+                        strokeCount: item.strokeCount,
+                        partOfSpeech: item.partOfSpeech,
+                        hskLevel: item.hskLevel || 1,
+                        tags: item.tags || [],
+                        examples: examples.length > 0 ? examples : [],
+                        synonyms: synonyms.length > 0 ? synonyms : [],
+                        antonyms: antonyms.length > 0 ? antonyms : [],
+                        mnemonic: item.mnemonic,
+                    } as any,
+                });
+
+                result.created++;
+            } catch (error) {
+                result.errors++;
+                result.errorDetails?.push({
+                    hanzi: item.hanzi || '(unknown)',
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                });
+            }
+        }
+
+        return result;
+    }
+
     async getHskLevelStats() {
         const result = await this.prisma.vocabulary.groupBy({
             by: ['hskLevel'],
@@ -159,5 +351,30 @@ export class VocabularyService {
             hskLevel: r.hskLevel,
             count: r._count.id,
         }));
+    }
+
+    /**
+     * Get total vocabulary count
+     */
+    async getTotalCount(): Promise<number> {
+        return this.prisma.vocabulary.count();
+    }
+
+    /**
+     * Search vocabulary by multiple criteria
+     */
+    async search(query: string, limit = 20) {
+        return this.prisma.vocabulary.findMany({
+            where: {
+                OR: [
+                    { hanzi: { contains: query } },
+                    { pinyin: { contains: query, mode: 'insensitive' } },
+                    { meaningVi: { contains: query, mode: 'insensitive' } },
+                    { meaningEn: { contains: query, mode: 'insensitive' } },
+                ],
+            },
+            take: limit,
+            orderBy: [{ hskLevel: 'asc' }, { hanzi: 'asc' }],
+        });
     }
 }

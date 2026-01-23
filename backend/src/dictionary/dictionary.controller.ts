@@ -1,20 +1,18 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { DictionaryService } from './dictionary.service';
+import { CustomDictionaryService } from './custom-dictionary.service';
 import { WordEnrichmentService } from './word-enrichment.service';
-import { VocabularyExamplesService } from '../vocabulary/vocabulary-examples.service';
 
 @ApiTags('dictionary')
 @Controller('dictionary')
 export class DictionaryController {
     constructor(
-        private readonly dictionaryService: DictionaryService,
+        private readonly dictionaryService: CustomDictionaryService,
         private readonly enrichmentService: WordEnrichmentService,
-        private readonly examplesService: VocabularyExamplesService,
     ) { }
 
     @Get('lookup/:hanzi')
-    @ApiOperation({ summary: 'Lookup a Chinese word in dictionary' })
+    @ApiOperation({ summary: 'Lookup a Chinese word in dictionary (uses local vocabulary database)' })
     @ApiQuery({ name: 'context', required: false, description: 'Pinyin from video context to prioritize matching entries' })
     @ApiResponse({ status: 200, description: 'Dictionary entry for the word' })
     async lookup(
@@ -25,7 +23,7 @@ export class DictionaryController {
     }
 
     @Get('enrich/:hanzi')
-    @ApiOperation({ summary: 'Get enriched data for a Chinese word (stroke, mnemonic, related words)' })
+    @ApiOperation({ summary: 'Get enriched data for a Chinese word (stroke data from HanziWriter, local data for synonyms/antonyms)' })
     @ApiResponse({ status: 200, description: 'Enriched word data including stroke animation, mnemonics, and related words' })
     @ApiQuery({ name: 'pinyin', required: false, description: 'Pinyin of the word for better context' })
     @ApiQuery({ name: 'meaning', required: false, description: 'Meaning of the word for better context' })
@@ -34,7 +32,7 @@ export class DictionaryController {
         @Query('pinyin') pinyin?: string,
         @Query('meaning') meaning?: string,
     ) {
-        // If pinyin/meaning not provided, look them up first
+        // If pinyin/meaning not provided, look them up first from local DB
         let p = pinyin;
         let m = meaning;
 
@@ -46,12 +44,33 @@ export class DictionaryController {
             }
         }
 
-        return this.enrichmentService.getEnrichedData(hanzi, p, m);
+        // Get local enriched data (synonyms, antonyms, mnemonic)
+        const localData = await this.dictionaryService.getEnrichedData(hanzi);
+
+        // Get stroke data from external service (HanziWriter CDN)
+        const strokeData = await this.enrichmentService.getEnrichedData(hanzi, p, m);
+
+        // Merge local data with stroke data
+        return {
+            hanzi,
+            strokeData: strokeData.strokeData,
+            decomposition: strokeData.decomposition,
+            mnemonic: localData.mnemonic ? { visualStory: localData.mnemonic } : strokeData.mnemonic,
+            relatedWords: {
+                synonyms: localData.synonyms || [],
+                antonyms: localData.antonyms || [],
+                collocations: strokeData.relatedWords?.collocations || [],
+            },
+            hskLevel: localData.hskLevel,
+            radical: localData.radical,
+            radicalMeaning: localData.radicalMeaning,
+            strokeCount: localData.strokeCount,
+        };
     }
 
     @Get('search')
-    @ApiOperation({ summary: 'Search words by pinyin or Chinese' })
-    @ApiQuery({ name: 'q', required: true, description: 'Search query (pinyin or Chinese)' })
+    @ApiOperation({ summary: 'Search words by pinyin, Chinese, or Vietnamese meaning' })
+    @ApiQuery({ name: 'q', required: true, description: 'Search query' })
     @ApiQuery({ name: 'limit', required: false, description: 'Max results (default 20)' })
     @ApiResponse({ status: 200, description: 'List of matching dictionary entries' })
     async search(
@@ -66,31 +85,21 @@ export class DictionaryController {
     @ApiOperation({ summary: 'Get example sentences for a Chinese word' })
     @ApiResponse({ status: 200, description: 'List of example sentences with translations' })
     async getExamples(@Param('hanzi') hanzi: string) {
-        // First lookup to get context (pinyin/meaning)
-        const lookup = await this.dictionaryService.lookup(hanzi);
+        // Get examples from local database
+        const examples = await this.dictionaryService.getExamples(hanzi);
 
-        // Use AI service to get/generate examples
-        const examples = await this.examplesService.getExamplesByHanzi(
-            hanzi,
-            lookup.found ? lookup.pinyin : undefined,
-            lookup.found ? (lookup.meaningVi || lookup.meaningEn) : undefined
-        );
-
-        // Map to format expected by dictionaryApi
+        // Map to format expected by frontend
         return examples.map(ex => ({
-            chinese: ex.hanzi,
+            chinese: ex.chinese,
             pinyin: ex.pinyin,
-            translation: ex.meaningVi
+            translation: ex.vietnamese
         }));
     }
 
     @Get('status')
-    @ApiOperation({ summary: 'Check if dictionary is loaded' })
+    @ApiOperation({ summary: 'Check dictionary status' })
     @ApiResponse({ status: 200, description: 'Dictionary status' })
-    getStatus() {
-        return {
-            loaded: this.dictionaryService.isDictionaryLoaded(),
-        };
+    async getStatus() {
+        return this.dictionaryService.getStatus();
     }
 }
-

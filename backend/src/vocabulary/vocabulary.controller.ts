@@ -1,7 +1,32 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import {
+    Controller,
+    Get,
+    Post,
+    Put,
+    Delete,
+    Param,
+    Query,
+    Body,
+    UseGuards,
+} from '@nestjs/common';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiQuery,
+    ApiBody,
+    ApiBearerAuth,
+} from '@nestjs/swagger';
 import { VocabularyService } from './vocabulary.service';
 import { VocabularyExamplesService } from './vocabulary-examples.service';
+import {
+    CreateVocabularyDto,
+    UpdateVocabularyDto,
+    ImportVocabularyItemDto,
+    ImportResultDto,
+} from './dto';
+import { JwtAuthGuard, RolesGuard, Roles } from '../auth';
+
 
 @ApiTags('vocabulary')
 @Controller('vocabulary')
@@ -42,6 +67,33 @@ export class VocabularyController {
         return this.vocabularyService.getHskLevelStats();
     }
 
+    @Get('search')
+    @ApiOperation({ summary: 'Search vocabulary by query' })
+    @ApiQuery({ name: 'q', required: true, type: String })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiResponse({ status: 200, description: 'Search results' })
+    async search(
+        @Query('q') q: string,
+        @Query('limit') limit?: number,
+    ) {
+        return this.vocabularyService.search(q, limit ? Number(limit) : 20);
+    }
+
+    @Get('lookup/:input')
+    @ApiOperation({ summary: 'Smart lookup - find by hanzi, breakdown characters, or fuzzy search' })
+    @ApiResponse({ status: 200, description: 'Lookup results' })
+    async smartLookup(@Param('input') input: string) {
+        return this.vocabularyService.smartLookup(input);
+    }
+
+    @Get('count')
+    @ApiOperation({ summary: 'Get total vocabulary count' })
+    @ApiResponse({ status: 200, description: 'Total count' })
+    async getTotalCount() {
+        const count = await this.vocabularyService.getTotalCount();
+        return { count };
+    }
+
     @Get(':id')
     @ApiOperation({ summary: 'Get vocabulary by ID' })
     @ApiResponse({ status: 200, description: 'Vocabulary details' })
@@ -64,5 +116,78 @@ export class VocabularyController {
     async findByHanzi(@Param('hanzi') hanzi: string) {
         return this.vocabularyService.findByHanzi(hanzi);
     }
-}
 
+    // ============================================
+    // ADMIN ENDPOINTS (Protected)
+    // ============================================
+
+    @Post()
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Create new vocabulary' })
+    @ApiBody({ type: CreateVocabularyDto })
+    @ApiResponse({ status: 201, description: 'Vocabulary created' })
+    @ApiResponse({ status: 409, description: 'Vocabulary with this hanzi already exists' })
+    async create(@Body() data: CreateVocabularyDto) {
+        return this.vocabularyService.create(data);
+    }
+
+    @Put(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Update vocabulary' })
+    @ApiBody({ type: UpdateVocabularyDto })
+    @ApiResponse({ status: 200, description: 'Vocabulary updated' })
+    @ApiResponse({ status: 404, description: 'Vocabulary not found' })
+    async update(@Param('id') id: string, @Body() data: UpdateVocabularyDto) {
+        return this.vocabularyService.update(id, data);
+    }
+
+    @Delete(':id')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Delete vocabulary' })
+    @ApiResponse({ status: 200, description: 'Vocabulary deleted' })
+    @ApiResponse({ status: 404, description: 'Vocabulary not found' })
+    async remove(@Param('id') id: string) {
+        return this.vocabularyService.remove(id);
+    }
+
+    @Post('import')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Import vocabulary from XLSX/CSV data' })
+    @ApiBody({
+        description: 'Array of vocabulary items to import',
+        schema: {
+            type: 'array',
+            items: {
+                type: 'object',
+                required: ['hanzi', 'pinyin', 'meaningVi', 'hskLevel'],
+                properties: {
+                    hanzi: { type: 'string', example: '好' },
+                    pinyin: { type: 'string', example: 'hǎo' },
+                    meaningVi: { type: 'string', example: 'tốt, thích' },
+                    meaningEn: { type: 'string', example: 'good, to like' },
+                    partOfSpeech: { type: 'string', example: 'adj,verb' },
+                    hskLevel: { type: 'number', example: 1 },
+                    radical: { type: 'string', example: '女' },
+                    strokeCount: { type: 'number', example: 6 },
+                    example1_cn: { type: 'string', example: '你好' },
+                    example1_py: { type: 'string', example: 'nǐ hǎo' },
+                    example1_vi: { type: 'string', example: 'Xin chào' },
+                    synonym1: { type: 'string', example: '棒' },
+                    antonym1: { type: 'string', example: '坏' },
+                },
+            },
+        },
+    })
+    @ApiResponse({ status: 201, description: 'Import result', type: ImportResultDto })
+    async importVocabulary(@Body() items: ImportVocabularyItemDto[]) {
+        return this.vocabularyService.importVocabulary(items);
+    }
+}
