@@ -483,7 +483,7 @@ export default function AdminUsersPage() {
                         {newRole === 'admin' && (
                             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                                 <p className="text-sm text-amber-400">
-                                    ⚠️ Admin có toàn quyền truy cập và quản lý hệ thống
+                                    Admin có toàn quyền truy cập và quản lý hệ thống
                                 </p>
                             </div>
                         )}
@@ -523,7 +523,7 @@ export default function AdminUsersPage() {
                         </p>
                         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                             <p className="text-sm text-red-400">
-                                ⚠️ Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan (flashcards, tiến độ học, từ vựng đã lưu) sẽ bị xóa.
+                                Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan (flashcards, tiến độ học, từ vựng đã lưu) sẽ bị xóa.
                             </p>
                         </div>
                     </div>

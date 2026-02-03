@@ -14,6 +14,7 @@ import {
     updateVocabulary,
     deleteVocabulary,
     importVocabulary,
+    bulkUpdateVocabulary,
     type Vocabulary,
     type ImportVocabularyItem
 } from '@/services/adminApi';
@@ -38,11 +39,14 @@ export default function AdminVocabularyPage() {
     const [editingVocab, setEditingVocab] = useState<Vocabulary | null>(null);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
     const [showImportModal, setShowImportModal] = useState(false);
+    const [showUpdateModal, setShowUpdateModal] = useState(false);
     const [importMode, setImportMode] = useState<'json' | 'csv' | 'xlsx'>('xlsx');
     const [importData, setImportData] = useState<ImportVocabularyItem[]>([]);
+    const [updateData, setUpdateData] = useState<ImportVocabularyItem[]>([]);
     const [importError, setImportError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: number } | null>(null);
+    const [updateResult, setUpdateResult] = useState<{ updated: number; skipped: number; errors: number } | null>(null);
     const [duplicateConfirm, setDuplicateConfirm] = useState<{ message: string; vocab: Vocabulary } | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -414,6 +418,69 @@ export default function AdminVocabularyPage() {
         }
     };
 
+    // Update file handler (similar to import but for updating)
+    const handleUpdateFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const data = new Uint8Array(event.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                // Map to ImportVocabularyItem format
+                const items: ImportVocabularyItem[] = jsonData.map(row => ({
+                    hanzi: row.hanzi || row['汉字'] || '',
+                    pinyin: row.pinyin || row['拼音'] || '',
+                    meaningVi: row.meaningVi || row.meaning_vi || row['nghĩa'] || row['vietnamese'] || '',
+                    meaningEn: row.meaningEn || row.meaning_en || row['english'],
+                    radical: row.radical || row['bộ thủ'],
+                    radicalMeaning: row.radicalMeaning || row.radical_meaning,
+                    strokeCount: parseInt(row.strokeCount || row.stroke_count) || undefined,
+                    partOfSpeech: row.partOfSpeech || row.part_of_speech || row.pos || row['loại từ'],
+                    hskLevel: parseInt(row.hskLevel || row.hsk_level || row.hsk) || 1,
+                    example1_cn: row.example1_cn || row['ví dụ 1'],
+                    example1_py: row.example1_py,
+                    example1_vi: row.example1_vi,
+                    synonym1: row.synonym1 || row['đồng nghĩa'],
+                    antonym1: row.antonym1 || row['trái nghĩa'],
+                    mnemonic: row.mnemonic || row['gợi ý nhớ'],
+                }));
+
+                setUpdateData(items.filter(i => i.hanzi)); // Only need hanzi for update
+                setImportError(null);
+            } catch (err) {
+                console.error('XLSX parse error:', err);
+                setImportError('Không thể đọc file XLSX. Vui lòng kiểm tra định dạng.');
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleUpdateConfirm = async () => {
+        setIsSaving(true);
+        setError(null);
+        try {
+            const result = await bulkUpdateVocabulary(updateData);
+
+            setShowUpdateModal(false);
+            setUpdateData([]);
+            fetchVocabulary(pagination.page);
+
+            // Show result
+            setUpdateResult(result);
+        } catch (err: any) {
+            console.error('Failed to update vocabulary:', err);
+            setImportError(err?.message || 'Cập nhật thất bại. Vui lòng thử lại.');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     // Export handlers
     const handleExportCSV = () => {
         const headers = 'hanzi,pinyin,meaningEn,meaningVi,partOfSpeech,hskLevel';
@@ -729,6 +796,14 @@ export default function AdminVocabularyPage() {
                     >
                         <Icon name="upload" />
                         Import
+                    </button>
+                    <button
+                        onClick={() => setShowUpdateModal(true)}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-400 transition-colors disabled:opacity-50"
+                    >
+                        <Icon name="sync" />
+                        Cập nhật
                     </button>
                     <button
                         onClick={handleOpenCreate}
@@ -1288,7 +1363,7 @@ export default function AdminVocabularyPage() {
                         </div>
                         <pre className="text-xs text-text-secondary bg-background-dark p-3 rounded overflow-x-auto whitespace-pre-wrap">
                             {importMode === 'xlsx'
-                                ? 'Cột bắt buộc: hanzi, pinyin, meaningVi, hskLevel\nCột tùy chọn: radical, radicalMeaning, strokeCount, partOfSpeech, tags, mnemonic\n           example1_cn, example1_py, example1_vi, example2_cn...\n           synonym1, synonym2, antonym1, antonym2\n\n💡 Nhấn "Tải file mẫu" để xem cấu trúc đầy đủ với dữ liệu ví dụ'
+                                ? 'Cột bắt buộc: hanzi, pinyin, meaningVi, hskLevel\nCột tùy chọn: radical, radicalMeaning, strokeCount, partOfSpeech, tags, mnemonic\n           example1_cn, example1_py, example1_vi, example2_cn...\n           synonym1, synonym2, antonym1, antonym2\n\nNhấn "Tải file mẫu" để xem cấu trúc đầy đủ với dữ liệu ví dụ'
                                 : importMode === 'csv'
                                     ? 'hanzi,pinyin,meaningVi,hskLevel,partOfSpeech\n好,hǎo,tốt thích,1,adj'
                                     : '[{\n  "hanzi": "好",\n  "pinyin": "hǎo",\n  "meaningVi": "tốt, thích",\n  "hskLevel": 1\n}]'
@@ -1487,6 +1562,202 @@ export default function AdminVocabularyPage() {
                                 </div>
                             </div>
                         </div>
+                    </div>
+                )}
+            </Modal>
+
+            {/* Bulk Update Modal */}
+            <Modal
+                isOpen={showUpdateModal}
+                onClose={() => {
+                    setShowUpdateModal(false);
+                    setUpdateData([]);
+                    setImportError(null);
+                }}
+                title="Cập nhật Từ vựng hàng loạt"
+                size="lg"
+                footer={
+                    <>
+                        <button
+                            onClick={() => {
+                                setShowUpdateModal(false);
+                                setUpdateData([]);
+                                setImportError(null);
+                            }}
+                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            onClick={handleUpdateConfirm}
+                            disabled={updateData.length === 0 || isSaving}
+                            className="px-6 py-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                        >
+                            {isSaving ? 'Đang cập nhật...' : `Cập nhật ${updateData.length} từ`}
+                        </button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    {/* Info Banner */}
+                    <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                        <div className="flex items-start gap-3">
+                            <Icon name="info" className="text-purple-400 mt-0.5" />
+                            <div className="text-sm">
+                                <p className="text-purple-300 font-medium mb-1">Hướng dẫn Cập nhật:</p>
+                                <ul className="text-text-secondary space-y-1 list-disc list-inside">
+                                    <li>Upload file XLSX chứa các từ cần <strong className="text-purple-400">cập nhật</strong></li>
+                                    <li>Chỉ những từ <strong className="text-purple-400">đã tồn tại</strong> sẽ được cập nhật</li>
+                                    <li>Từ không có trong cơ sở dữ liệu sẽ bị bỏ qua</li>
+                                    <li>Cột <code className="text-purple-400">hanzi</code> là key để tìm từ cần update</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* File Upload */}
+                    <div
+                        className="border-2 border-dashed border-purple-500/30 rounded-xl p-8 text-center hover:border-purple-500/50 transition-colors cursor-pointer"
+                        onClick={() => document.getElementById('updateFileInput')?.click()}
+                    >
+                        <input
+                            id="updateFileInput"
+                            type="file"
+                            accept=".xlsx"
+                            className="hidden"
+                            onChange={handleUpdateFileUpload}
+                        />
+                        <Icon name="sync" className="text-4xl text-purple-400 mb-3" />
+                        <p className="text-sm text-text-secondary mb-2">
+                            Kéo thả file Excel (.xlsx) vào đây hoặc
+                        </p>
+                        <button className="px-4 py-2 bg-purple-500 text-white text-sm font-bold rounded-lg">
+                            Chọn File
+                        </button>
+                    </div>
+
+                    {/* Error */}
+                    {importError && (
+                        <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                            <p className="text-sm text-red-400">{importError}</p>
+                        </div>
+                    )}
+
+                    {/* Preview */}
+                    {updateData.length > 0 && (
+                        <div>
+                            <p className="text-sm font-medium text-white mb-2">
+                                Xem trước ({updateData.length} từ sẽ được cập nhật):
+                            </p>
+                            <div className="max-h-48 overflow-y-auto border border-border-color rounded-lg">
+                                <table className="w-full text-sm">
+                                    <thead className="bg-background-dark sticky top-0">
+                                        <tr>
+                                            <th className="px-3 py-2 text-left text-text-secondary">Hanzi</th>
+                                            <th className="px-3 py-2 text-left text-text-secondary">Pinyin</th>
+                                            <th className="px-3 py-2 text-left text-text-secondary">Nghĩa</th>
+                                            <th className="px-3 py-2 text-left text-text-secondary">HSK</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border-color">
+                                        {updateData.slice(0, 10).map((item, index) => (
+                                            <tr key={index}>
+                                                <td className="px-3 py-2 text-white font-chinese">{item.hanzi}</td>
+                                                <td className="px-3 py-2 text-primary">{item.pinyin}</td>
+                                                <td className="px-3 py-2 text-text-secondary">{item.meaningVi}</td>
+                                                <td className="px-3 py-2 text-white">{item.hskLevel}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {updateData.length > 10 && (
+                                <p className="text-xs text-text-secondary mt-1">
+                                    ...và {updateData.length - 10} từ khác
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </Modal>
+
+            {/* Update Result Modal */}
+            <Modal
+                isOpen={!!updateResult}
+                onClose={() => setUpdateResult(null)}
+                title="Kết quả Cập nhật"
+                size="sm"
+                footer={
+                    <button
+                        onClick={() => setUpdateResult(null)}
+                        className="px-6 py-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white font-bold rounded-lg hover:opacity-90 transition-opacity"
+                    >
+                        Đóng
+                    </button>
+                }
+            >
+                {updateResult && (
+                    <div className="space-y-4">
+                        {/* Success icon */}
+                        <div className="flex justify-center">
+                            <div className="size-16 rounded-full bg-purple-500/20 flex items-center justify-center">
+                                <Icon name="sync" className="text-4xl text-purple-400" />
+                            </div>
+                        </div>
+
+                        <h3 className="text-center text-lg font-bold text-white">
+                            Cập nhật hoàn tất!
+                        </h3>
+
+                        {/* Stats */}
+                        <div className="space-y-3">
+                            {/* Updated */}
+                            <div className="flex items-center gap-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                                <div className="size-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                                    <Icon name="edit" className="text-purple-400" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm text-text-secondary">Từ đã cập nhật</p>
+                                    <p className="text-xl font-bold text-purple-400">{updateResult.updated}</p>
+                                </div>
+                            </div>
+
+                            {/* Skipped */}
+                            {updateResult.skipped > 0 && (
+                                <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                    <div className="size-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                        <Icon name="skip_next" className="text-amber-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-text-secondary">Bỏ qua (chưa tồn tại)</p>
+                                        <p className="text-xl font-bold text-amber-400">{updateResult.skipped}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Errors */}
+                            {updateResult.errors > 0 && (
+                                <div className="flex items-center gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl">
+                                    <div className="size-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                        <Icon name="error" className="text-red-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-text-secondary">Lỗi</p>
+                                        <p className="text-xl font-bold text-red-400">{updateResult.errors}</p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Tip */}
+                        {updateResult.updated === 0 && updateResult.skipped > 0 && (
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                <p className="text-sm text-amber-400 flex items-center gap-2">
+                                    <Icon name="lightbulb" size="sm" />
+                                    Không có từ nào được cập nhật vì tất cả từ trong file chưa tồn tại trong database.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
             </Modal>

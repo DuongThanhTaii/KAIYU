@@ -1,4 +1,7 @@
-import React, { useEffect, useRef } from 'react';
+'use client';
+
+import React, { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from '../common';
 
 interface ModalProps {
@@ -19,6 +22,13 @@ const Modal: React.FC<ModalProps> = ({
     footer,
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
+    const [mounted, setMounted] = useState(false);
+
+    // Ensure we're on client-side before using createPortal
+    useEffect(() => {
+        setMounted(true);
+        return () => setMounted(false);
+    }, []);
 
     useEffect(() => {
         const handleEscape = (e: KeyboardEvent) => {
@@ -36,7 +46,7 @@ const Modal: React.FC<ModalProps> = ({
         };
     }, [isOpen, onClose]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !mounted) return null;
 
     const sizeClasses = {
         sm: 'max-w-md',
@@ -45,8 +55,8 @@ const Modal: React.FC<ModalProps> = ({
         xl: 'max-w-4xl',
     };
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    const modalContent = (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -83,6 +93,10 @@ const Modal: React.FC<ModalProps> = ({
             </div>
         </div>
     );
+
+    // Use Portal to render modal directly to document.body
+    // This ensures modal appears above all elements including sidebar
+    return createPortal(modalContent, document.body);
 };
 
 export default Modal;

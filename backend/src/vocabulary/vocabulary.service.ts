@@ -377,4 +377,129 @@ export class VocabularyService {
             orderBy: [{ hskLevel: 'asc' }, { hanzi: 'asc' }],
         });
     }
+
+    /**
+     * Bulk update vocabulary from XLSX/CSV data
+     * Only updates existing vocabulary, skips new ones
+     */
+    async bulkUpdateVocabulary(items: ImportVocabularyItemDto[]): Promise<{
+        updated: number;
+        skipped: number;
+        errors: number;
+        errorDetails?: { hanzi: string; error: string }[];
+    }> {
+        const result = {
+            updated: 0,
+            skipped: 0,
+            errors: 0,
+            errorDetails: [] as { hanzi: string; error: string }[],
+        };
+
+        for (const item of items) {
+            try {
+                // Validate required field
+                if (!item.hanzi) {
+                    result.errors++;
+                    result.errorDetails.push({
+                        hanzi: '(trống)',
+                        error: 'Thiếu hanzi',
+                    });
+                    continue;
+                }
+
+                // Check if vocabulary exists
+                const existing = await this.prisma.vocabulary.findUnique({
+                    where: { hanzi: item.hanzi },
+                });
+
+                if (!existing) {
+                    // Skip if not exists
+                    result.skipped++;
+                    continue;
+                }
+
+                // Parse examples from flattened format
+                const examples: ExampleSentenceDto[] = [];
+                if (item.example1_cn && item.example1_vi) {
+                    examples.push({
+                        chinese: item.example1_cn,
+                        pinyin: item.example1_py,
+                        vietnamese: item.example1_vi,
+                    });
+                }
+                if (item.example2_cn && item.example2_vi) {
+                    examples.push({
+                        chinese: item.example2_cn,
+                        pinyin: item.example2_py,
+                        vietnamese: item.example2_vi,
+                    });
+                }
+
+                // Parse synonyms
+                const synonyms: RelatedWordDto[] = [];
+                if (item.synonym1) {
+                    synonyms.push({
+                        hanzi: item.synonym1,
+                        pinyin: item.synonym1_py || '',
+                        meaningVi: item.synonym1_vi || '',
+                    });
+                }
+                if (item.synonym2) {
+                    synonyms.push({
+                        hanzi: item.synonym2,
+                        pinyin: item.synonym2_py || '',
+                        meaningVi: item.synonym2_vi || '',
+                    });
+                }
+
+                // Parse antonyms
+                const antonyms: RelatedWordDto[] = [];
+                if (item.antonym1) {
+                    antonyms.push({
+                        hanzi: item.antonym1,
+                        pinyin: item.antonym1_py || '',
+                        meaningVi: item.antonym1_vi || '',
+                    });
+                }
+                if (item.antonym2) {
+                    antonyms.push({
+                        hanzi: item.antonym2,
+                        pinyin: item.antonym2_py || '',
+                        meaningVi: item.antonym2_vi || '',
+                    });
+                }
+
+                // Build update data - only include non-empty fields
+                const updateData: any = {};
+                if (item.pinyin) updateData.pinyin = item.pinyin;
+                if (item.meaningVi) updateData.meaningVi = item.meaningVi;
+                if (item.meaningEn) updateData.meaningEn = item.meaningEn;
+                if (item.radical) updateData.radical = item.radical;
+                if (item.radicalMeaning) updateData.radicalMeaning = item.radicalMeaning;
+                if (item.strokeCount) updateData.strokeCount = item.strokeCount;
+                if (item.partOfSpeech) updateData.partOfSpeech = item.partOfSpeech;
+                if (item.hskLevel) updateData.hskLevel = item.hskLevel;
+                if (item.mnemonic) updateData.mnemonic = item.mnemonic;
+                if (examples.length > 0) updateData.examples = examples;
+                if (synonyms.length > 0) updateData.synonyms = synonyms;
+                if (antonyms.length > 0) updateData.antonyms = antonyms;
+
+                // Update vocabulary
+                await this.prisma.vocabulary.update({
+                    where: { hanzi: item.hanzi },
+                    data: updateData,
+                });
+
+                result.updated++;
+            } catch (error) {
+                result.errors++;
+                result.errorDetails.push({
+                    hanzi: item.hanzi || '(unknown)',
+                    error: error instanceof Error ? error.message : 'Unknown error',
+                });
+            }
+        }
+
+        return result;
+    }
 }

@@ -190,4 +190,46 @@ export class VocabularyController {
     async importVocabulary(@Body() items: ImportVocabularyItemDto[]) {
         return this.vocabularyService.importVocabulary(items);
     }
+
+    @Post('bulk-update')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Bulk update existing vocabulary from XLSX/CSV data' })
+    @ApiBody({
+        description: 'Array of vocabulary items to update (only existing items will be updated)',
+        schema: {
+            type: 'array',
+            items: {
+                type: 'object',
+                required: ['hanzi'],
+                properties: {
+                    hanzi: { type: 'string', example: '好', description: 'Required - used to find existing vocabulary' },
+                    pinyin: { type: 'string', example: 'hǎo' },
+                    meaningVi: { type: 'string', example: 'tốt, thích' },
+                    meaningEn: { type: 'string', example: 'good, to like' },
+                    partOfSpeech: { type: 'string', example: 'adj,verb' },
+                    hskLevel: { type: 'number', example: 1 },
+                    radical: { type: 'string', example: '女' },
+                    strokeCount: { type: 'number', example: 6 },
+                    mnemonic: { type: 'string', example: 'Gợi ý nhớ' },
+                },
+            },
+        },
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Bulk update result',
+        schema: {
+            type: 'object',
+            properties: {
+                updated: { type: 'number', description: 'Number of updated items' },
+                skipped: { type: 'number', description: 'Number of skipped items (not found)' },
+                errors: { type: 'number', description: 'Number of errors' },
+            },
+        },
+    })
+    async bulkUpdateVocabulary(@Body() items: ImportVocabularyItemDto[]) {
+        return this.vocabularyService.bulkUpdateVocabulary(items);
+    }
 }

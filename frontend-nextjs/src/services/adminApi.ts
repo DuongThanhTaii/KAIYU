@@ -277,6 +277,15 @@ export const importVocabulary = (
     });
 };
 
+export const bulkUpdateVocabulary = (
+    items: ImportVocabularyItem[]
+): Promise<{ updated: number; skipped: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }> => {
+    return apiRequest<{ updated: number; skipped: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }>('/vocabulary/bulk-update', {
+        method: 'POST',
+        body: JSON.stringify(items),
+    });
+};
+
 
 // ============ User Management ============
 export const getAllUsers = (
