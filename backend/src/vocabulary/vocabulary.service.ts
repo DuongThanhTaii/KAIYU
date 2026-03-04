@@ -505,9 +505,25 @@ export class VocabularyService {
 
     /**
      * Delete all vocabulary (for re-import)
+     * Cascades: deletes related UserVocabulary, VideoVocabulary, VocabularyEmbedding, FlashcardReview records
+     * Sets SubtitleToken.vocabularyId to null
      */
     async deleteAll(): Promise<number> {
-        const { count } = await this.prisma.vocabulary.deleteMany({});
-        return count;
+        return this.prisma.$transaction(async (tx) => {
+            // Delete related records first (foreign key constraints)
+            await tx.flashcardReview.deleteMany({});
+            await tx.userVocabulary.deleteMany({});
+            await tx.videoVocabulary.deleteMany({});
+            await tx.vocabularyEmbedding.deleteMany({});
+            // SubtitleToken has optional vocabularyId, just null it
+            await tx.subtitleToken.updateMany({
+                where: { vocabularyId: { not: null } },
+                data: { vocabularyId: null },
+            });
+
+            // Now delete all vocabulary
+            const { count } = await tx.vocabulary.deleteMany({});
+            return count;
+        });
     }
 }
