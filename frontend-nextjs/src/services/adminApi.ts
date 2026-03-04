@@ -286,6 +286,9 @@ export const bulkUpdateVocabulary = (
     });
 };
 
+export const getVocabularyStats = (): Promise<{ hskLevel: number; count: number }[]> => {
+    return apiRequest<{ hskLevel: number; count: number }[]>('/vocabulary/stats');
+};
 
 // ============ User Management ============
 export const getAllUsers = (

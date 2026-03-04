@@ -15,6 +15,7 @@ import {
     deleteVocabulary,
     importVocabulary,
     bulkUpdateVocabulary,
+    getVocabularyStats,
     type Vocabulary,
     type ImportVocabularyItem
 } from '@/services/adminApi';
@@ -48,6 +49,8 @@ export default function AdminVocabularyPage() {
     const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: number } | null>(null);
     const [updateResult, setUpdateResult] = useState<{ updated: number; skipped: number; errors: number } | null>(null);
     const [duplicateConfirm, setDuplicateConfirm] = useState<{ message: string; vocab: Vocabulary } | null>(null);
+    const [hskStats, setHskStats] = useState<Record<number, number>>({});
+    const [importProgress, setImportProgress] = useState<{ active: boolean; message: string }>({ active: false, message: '' });
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -122,11 +125,24 @@ export default function AdminVocabularyPage() {
         }
     }, [filterHsk]);
 
+    // Fetch HSK stats from database
+    const fetchStats = useCallback(async () => {
+        try {
+            const stats = await getVocabularyStats();
+            const statsMap: Record<number, number> = {};
+            stats.forEach(s => { statsMap[s.hskLevel] = s.count; });
+            setHskStats(statsMap);
+        } catch (err) {
+            console.error('Failed to fetch stats:', err);
+        }
+    }, []);
+
     useEffect(() => {
         if (isAuthenticated && user?.role === 'admin') {
             fetchVocabulary();
+            fetchStats();
         }
-    }, [fetchVocabulary, isAuthenticated, user]);
+    }, [fetchVocabulary, fetchStats, isAuthenticated, user]);
 
     const resetForm = () => {
         setFormData({
@@ -440,18 +456,22 @@ export default function AdminVocabularyPage() {
     const handleImportConfirm = async () => {
         setIsSaving(true);
         setError(null);
+        setImportProgress({ active: true, message: `Đang import ${importData.length} từ vựng...` });
         try {
             const result = await importVocabulary(importData);
 
             setShowImportModal(false);
             setImportData([]);
+            setImportProgress({ active: false, message: '' });
             fetchVocabulary(1);
+            fetchStats();
 
             // Show result in modal
             setImportResult(result);
         } catch (err: any) {
             console.error('Failed to import vocabulary:', err);
             setImportError(err?.message || 'Import thất bại. Vui lòng thử lại.');
+            setImportProgress({ active: false, message: '' });
         } finally {
             setIsSaving(false);
         }
@@ -500,18 +520,22 @@ export default function AdminVocabularyPage() {
     const handleUpdateConfirm = async () => {
         setIsSaving(true);
         setError(null);
+        setImportProgress({ active: true, message: `Đang cập nhật ${updateData.length} từ vựng...` });
         try {
             const result = await bulkUpdateVocabulary(updateData);
 
             setShowUpdateModal(false);
             setUpdateData([]);
+            setImportProgress({ active: false, message: '' });
             fetchVocabulary(pagination.page);
+            fetchStats();
 
             // Show result
             setUpdateResult(result);
         } catch (err: any) {
             console.error('Failed to update vocabulary:', err);
             setImportError(err?.message || 'Cập nhật thất bại. Vui lòng thử lại.');
+            setImportProgress({ active: false, message: '' });
         } finally {
             setIsSaving(false);
         }
@@ -640,40 +664,28 @@ export default function AdminVocabularyPage() {
             ),
         },
         {
-            key: 'radical',
-            header: 'Bộ thủ',
-            width: '80px',
+            key: 'partOfSpeech',
+            header: 'Từ loại',
+            width: '100px',
             render: (vocab: Vocabulary) => (
-                <div className="text-center">
-                    {vocab.radical ? (
-                        <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-lg font-chinese text-amber-400">{vocab.radical}</span>
-                            {vocab.strokeCount && (
-                                <span className="text-[10px] text-text-secondary">{vocab.strokeCount} nét</span>
-                            )}
-                        </div>
-                    ) : (
-                        <span className="text-text-secondary">-</span>
-                    )}
-                </div>
+                vocab.partOfSpeech ? (
+                    <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">{vocab.partOfSpeech}</span>
+                ) : (
+                    <span className="text-text-secondary">-</span>
+                )
             ),
         },
         {
             key: 'meaning',
             header: 'Nghĩa',
             render: (vocab: Vocabulary) => (
-                <div className="flex flex-col gap-1">
-                    <span className="text-white">{vocab.meaningVi || vocab.meaningEn}</span>
-                    {vocab.partOfSpeech && (
-                        <span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded-full w-fit">{vocab.partOfSpeech}</span>
-                    )}
-                </div>
+                <span className="text-white text-sm">{vocab.meaningVi || vocab.meaningEn || '-'}</span>
             ),
         },
         {
             key: 'examples',
             header: 'Ví dụ',
-            width: '200px',
+            width: '250px',
             render: (vocab: Vocabulary) => {
                 const examples = vocab.examples as Array<{ chinese?: string; pinyin?: string; vietnamese?: string }> | null;
                 if (!examples || examples.length === 0) return <span className="text-text-secondary text-sm">-</span>;
@@ -683,17 +695,14 @@ export default function AdminVocabularyPage() {
                         <p className="text-white font-chinese">{first.chinese}</p>
                         <p className="text-primary/70 text-xs">{first.pinyin}</p>
                         <p className="text-text-secondary text-xs">{first.vietnamese}</p>
-                        {examples.length > 1 && (
-                            <span className="text-xs text-amber-500">+{examples.length - 1} khác</span>
-                        )}
                     </div>
                 );
             },
         },
         {
             key: 'relatedWords',
-            header: 'Từ liên quan',
-            width: '150px',
+            header: 'Cận nghĩa / Trái nghĩa',
+            width: '180px',
             render: (vocab: Vocabulary) => {
                 const synonyms = vocab.synonyms as Array<{ hanzi?: string; meaning?: string }> | null;
                 const antonyms = vocab.antonyms as Array<{ hanzi?: string; meaning?: string }> | null;
@@ -707,13 +716,13 @@ export default function AdminVocabularyPage() {
                         {hasSynonyms && (
                             <div className="flex items-center gap-1">
                                 <span className="text-green-400">≈</span>
-                                <span className="text-green-300 font-chinese">{synonyms.slice(0, 2).map(s => s.hanzi).join(', ')}</span>
+                                <span className="text-green-300 font-chinese">{synonyms.slice(0, 3).map(s => s.hanzi).join(', ')}</span>
                             </div>
                         )}
                         {hasAntonyms && (
                             <div className="flex items-center gap-1">
                                 <span className="text-red-400">↔</span>
-                                <span className="text-red-300 font-chinese">{antonyms.slice(0, 2).map(a => a.hanzi).join(', ')}</span>
+                                <span className="text-red-300 font-chinese">{antonyms.slice(0, 3).map(a => a.hanzi).join(', ')}</span>
                             </div>
                         )}
                     </div>
@@ -721,29 +730,16 @@ export default function AdminVocabularyPage() {
             },
         },
         {
-            key: 'mnemonic',
-            header: 'Gợi ý nhớ',
-            width: '180px',
-            render: (vocab: Vocabulary) => (
-                vocab.mnemonic ? (
-                    <p className="text-xs text-amber-300/80 line-clamp-2" title={vocab.mnemonic}>
-                        💡 {vocab.mnemonic}
-                    </p>
-                ) : (
-                    <span className="text-text-secondary text-sm">-</span>
-                )
-            ),
-        },
-        {
             key: 'hskLevel',
             header: 'HSK',
-            width: '70px',
+            width: '75px',
             render: (vocab: Vocabulary) => (
                 <span className={`px-2 py-1 text-xs font-bold rounded-full whitespace-nowrap ${vocab.hskLevel <= 2 ? 'bg-green-500/20 text-green-400' :
                     vocab.hskLevel <= 4 ? 'bg-yellow-500/20 text-yellow-400' :
-                        'bg-red-500/20 text-red-400'
+                        vocab.hskLevel <= 6 ? 'bg-red-500/20 text-red-400' :
+                            'bg-purple-500/20 text-purple-400'
                     }`}>
-                    HSK {vocab.hskLevel}
+                    {vocab.hskLevel === 0 ? 'N/A' : vocab.hskLevel === 7 ? 'Ngoài' : `HSK ${vocab.hskLevel}`}
                 </span>
             ),
         },
@@ -842,21 +838,35 @@ export default function AdminVocabularyPage() {
                 </div>
             )}
 
+            {/* Progress Bar */}
+            {importProgress.active && (
+                <div className="mb-4 p-4 bg-primary/10 border border-primary/30 rounded-xl">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <p className="text-sm text-primary font-medium">{importProgress.message}</p>
+                    </div>
+                    <div className="w-full h-2 bg-background-dark rounded-full overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full animate-pulse" style={{ width: '100%' }} />
+                    </div>
+                </div>
+            )}
+
             {/* Stats */}
-            <div className="grid grid-cols-6 gap-4 mb-6">
-                {[1, 2, 3, 4, 5, 6].map((level) => {
-                    const count = vocabulary.filter(v => v.hskLevel === level).length;
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-6">
+                {[1, 2, 3, 4, 5, 6, 7, 0].map((level) => {
+                    const count = hskStats[level] || 0;
+                    const label = level === 0 ? 'N/A' : level === 7 ? 'Ngoài' : `HSK ${level}`;
                     return (
                         <button
                             key={level}
                             onClick={() => setFilterHsk(filterHsk === level ? '' : level)}
-                            className={`p-4 rounded-xl border transition-colors ${filterHsk === level
-                                ? 'bg-primary/20 border-primary'
+                            className={`p-3 rounded-xl border transition-all ${filterHsk === level
+                                ? 'bg-primary/20 border-primary scale-105'
                                 : 'bg-surface-dark border-border-color hover:border-primary/30'
                                 }`}
                         >
-                            <p className="text-2xl font-bold text-white">{count}</p>
-                            <p className="text-xs text-text-secondary">HSK {level}</p>
+                            <p className="text-xl font-bold text-white">{count}</p>
+                            <p className="text-xs text-text-secondary">{label}</p>
                         </button>
                     );
                 })}
@@ -1294,10 +1304,11 @@ export default function AdminVocabularyPage() {
                         </button>
                         <button
                             onClick={handleImportConfirm}
-                            disabled={importData.length === 0}
-                            className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={importData.length === 0 || isSaving}
+                            className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                         >
-                            Import {importData.length} từ
+                            {isSaving && <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                            {isSaving ? 'Đang import...' : `Import ${importData.length} từ`}
                         </button>
                     </>
                 }
@@ -1604,8 +1615,9 @@ export default function AdminVocabularyPage() {
                         <button
                             onClick={handleUpdateConfirm}
                             disabled={updateData.length === 0 || isSaving}
-                            className="px-6 py-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+                            className="px-6 py-2 bg-gradient-to-r from-purple-500 to-violet-500 text-white font-bold rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2"
                         >
+                            {isSaving && <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
                             {isSaving ? 'Đang cập nhật...' : `Cập nhật ${updateData.length} từ`}
                         </button>
                     </>
