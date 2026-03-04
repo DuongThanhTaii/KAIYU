@@ -145,6 +145,17 @@ export class VocabularyController {
         return this.vocabularyService.update(id, data);
     }
 
+    @Delete('all')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Delete all vocabulary (admin only, for re-import)' })
+    @ApiResponse({ status: 200, description: 'All vocabulary deleted' })
+    async deleteAll() {
+        const count = await this.vocabularyService.deleteAll();
+        return { message: `Đã xóa ${count} từ vựng`, deleted: count };
+    }
+
     @Delete(':id')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')
@@ -233,14 +244,4 @@ export class VocabularyController {
         return this.vocabularyService.bulkUpdateVocabulary(items);
     }
 
-    @Delete('all')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @ApiBearerAuth()
-    @ApiOperation({ summary: 'Delete all vocabulary (admin only, for re-import)' })
-    @ApiResponse({ status: 200, description: 'All vocabulary deleted' })
-    async deleteAll() {
-        const count = await this.vocabularyService.deleteAll();
-        return { message: `Đã xóa ${count} từ vựng`, deleted: count };
-    }
 }
