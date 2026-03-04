@@ -306,41 +306,80 @@ export default function AdminVocabularyPage() {
     };
 
     // Import handlers
+
+    // Helper: detect HSK level from sheet name
+    const getHskLevelFromSheetName = (name: string): number => {
+        const trimmed = name.trim();
+        const hskMatch = trimmed.match(/^HSK\s*(\d+)/i);
+        if (hskMatch) return parseInt(hskMatch[1]);
+        if (trimmed.includes('ngoài HSK') || trimmed.includes('Từ vựng ngoài')) return 7;
+        if (trimmed.includes('không chia') || trimmed.includes('Không chia cấp')) return 0;
+        return 1; // default
+    };
+
+    // Helper: parse one sheet row to ImportVocabularyItem using Vietnamese header keys
+    const parseSheetRow = (row: any, hskLevel: number): ImportVocabularyItem | null => {
+        // Map Vietnamese headers (handles various naming from customer XLSX)
+        const hanzi = row['TỪ VỰNG'] || row['hanzi'] || row['汉字'] || '';
+        const pinyin = (row['PINYIN'] || row['PINYIN '] || row['pinyin'] || row['拼音'] || '').trim();
+        const partOfSpeech = (row['TỪ LOẠI'] || row['TỪ LOẠI '] || row[' TỪ LOẠI '] || row['partOfSpeech'] || '').trim();
+        const meaningVi = row['NGHĨA'] || row['meaningVi'] || row['nghĩa'] || '';
+        const exampleCn = row['VÍ DỤ (CHỮ HÁN)'] || row['example1_cn'] || '';
+        const examplePy = (row['PHIÊN ÂM'] || row['PHIÊN ÂM '] || row['example1_py'] || '').trim();
+        const exampleVi = (row['DỊCH'] || row['DỊCH '] || row['example1_vi'] || '').trim();
+        const synonymRaw = row['TỪ CẬN NGHĨA'] || row['TỪ ĐỒNG NGHĨA'] || row['synonym1'] || '';
+        const antonymRaw = row['TỪ TRÁI NGHĨA'] || row['antonym1'] || '';
+
+        if (!hanzi || !pinyin) return null;
+
+        return {
+            hanzi: hanzi.trim(),
+            pinyin,
+            meaningVi: meaningVi.trim(),
+            meaningEn: '',
+            partOfSpeech: partOfSpeech || undefined,
+            hskLevel,
+            example1_cn: exampleCn.trim() || undefined,
+            example1_py: examplePy || undefined,
+            example1_vi: exampleVi || undefined,
+            synonym1: synonymRaw.trim() || undefined,
+            antonym1: antonymRaw.trim() || undefined,
+        };
+    };
+
     const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
         if (importMode === 'xlsx') {
-            // Parse XLSX
+            // Parse XLSX - multi-sheet support
             const reader = new FileReader();
             reader.onload = (event) => {
                 try {
                     const data = new Uint8Array(event.target?.result as ArrayBuffer);
                     const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                    // Map to ImportVocabularyItem format
-                    const items: ImportVocabularyItem[] = jsonData.map(row => ({
-                        hanzi: row.hanzi || row['汉字'] || '',
-                        pinyin: row.pinyin || row['拼音'] || '',
-                        meaningVi: row.meaningVi || row.meaning_vi || row['nghĩa'] || row['vietnamese'] || '',
-                        meaningEn: row.meaningEn || row.meaning_en || row['english'],
-                        radical: row.radical || row['bộ thủ'],
-                        radicalMeaning: row.radicalMeaning || row.radical_meaning,
-                        strokeCount: parseInt(row.strokeCount || row.stroke_count) || undefined,
-                        partOfSpeech: row.partOfSpeech || row.part_of_speech || row.pos || row['loại từ'],
-                        hskLevel: parseInt(row.hskLevel || row.hsk_level || row.hsk) || 1,
-                        example1_cn: row.example1_cn || row['ví dụ 1'],
-                        example1_py: row.example1_py,
-                        example1_vi: row.example1_vi,
-                        synonym1: row.synonym1 || row['đồng nghĩa'],
-                        antonym1: row.antonym1 || row['trái nghĩa'],
-                    }));
+                    const allItems: ImportVocabularyItem[] = [];
 
-                    setImportData(items.filter(i => i.hanzi && i.pinyin && i.meaningVi));
-                    setImportError(null);
+                    // Read ALL sheets
+                    for (const sheetName of workbook.SheetNames) {
+                        const worksheet = workbook.Sheets[sheetName];
+                        const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
+                        const hskLevel = getHskLevelFromSheetName(sheetName);
+
+                        for (const row of jsonData) {
+                            const item = parseSheetRow(row, hskLevel);
+                            if (item && item.hanzi && item.meaningVi) {
+                                allItems.push(item);
+                            }
+                        }
+                    }
+
+                    setImportData(allItems);
+                    setImportError(allItems.length === 0
+                        ? 'Không tìm thấy từ vựng hợp lệ trong file. Kiểm tra cấu trúc cột.'
+                        : null
+                    );
                 } catch (err) {
                     console.error('XLSX parse error:', err);
                     setImportError('Không thể đọc file XLSX. Vui lòng kiểm tra định dạng.');
@@ -418,7 +457,7 @@ export default function AdminVocabularyPage() {
         }
     };
 
-    // Update file handler (similar to import but for updating)
+    // Update file handler (multi-sheet support, same as import)
     const handleUpdateFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -428,31 +467,28 @@ export default function AdminVocabularyPage() {
             try {
                 const data = new Uint8Array(event.target?.result as ArrayBuffer);
                 const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                // Map to ImportVocabularyItem format
-                const items: ImportVocabularyItem[] = jsonData.map(row => ({
-                    hanzi: row.hanzi || row['汉字'] || '',
-                    pinyin: row.pinyin || row['拼音'] || '',
-                    meaningVi: row.meaningVi || row.meaning_vi || row['nghĩa'] || row['vietnamese'] || '',
-                    meaningEn: row.meaningEn || row.meaning_en || row['english'],
-                    radical: row.radical || row['bộ thủ'],
-                    radicalMeaning: row.radicalMeaning || row.radical_meaning,
-                    strokeCount: parseInt(row.strokeCount || row.stroke_count) || undefined,
-                    partOfSpeech: row.partOfSpeech || row.part_of_speech || row.pos || row['loại từ'],
-                    hskLevel: parseInt(row.hskLevel || row.hsk_level || row.hsk) || 1,
-                    example1_cn: row.example1_cn || row['ví dụ 1'],
-                    example1_py: row.example1_py,
-                    example1_vi: row.example1_vi,
-                    synonym1: row.synonym1 || row['đồng nghĩa'],
-                    antonym1: row.antonym1 || row['trái nghĩa'],
-                    mnemonic: row.mnemonic || row['gợi ý nhớ'],
-                }));
+                const allItems: ImportVocabularyItem[] = [];
 
-                setUpdateData(items.filter(i => i.hanzi)); // Only need hanzi for update
-                setImportError(null);
+                // Read ALL sheets
+                for (const sheetName of workbook.SheetNames) {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
+                    const hskLevel = getHskLevelFromSheetName(sheetName);
+
+                    for (const row of jsonData) {
+                        const item = parseSheetRow(row, hskLevel);
+                        if (item && item.hanzi) {
+                            allItems.push(item);
+                        }
+                    }
+                }
+
+                setUpdateData(allItems);
+                setImportError(allItems.length === 0
+                    ? 'Không tìm thấy từ vựng hợp lệ trong file.'
+                    : null
+                );
             } catch (err) {
                 console.error('XLSX parse error:', err);
                 setImportError('Không thể đọc file XLSX. Vui lòng kiểm tra định dạng.');
@@ -508,90 +544,67 @@ export default function AdminVocabularyPage() {
         URL.revokeObjectURL(url);
     };
 
-    // Download template file
+    // Download template file (multi-sheet, matching customer XLSX format)
     const handleDownloadTemplate = () => {
-        // Sample data với đầy đủ các cột
-        const templateData = [
-            {
-                hanzi: '好',
-                pinyin: 'hǎo',
-                meaningVi: 'tốt, đẹp, khỏe',
-                meaningEn: 'good, fine, well',
-                hskLevel: 1,
-                radical: '女',
-                radicalMeaning: 'nữ, phụ nữ',
-                strokeCount: 6,
-                partOfSpeech: 'adj',
-                tags: 'greeting, common',
-                mnemonic: 'Chữ 好 gồm bộ 女 (nữ) và 子 (con) = người phụ nữ bế con → điều tốt đẹp',
-                example1_cn: '你好！',
-                example1_py: 'Nǐ hǎo!',
-                example1_vi: 'Xin chào!',
-                example2_cn: '很好',
-                example2_py: 'hěn hǎo',
-                example2_vi: 'rất tốt',
-                synonym1: '棒:bàng:tuyệt',
-                synonym2: '佳:jiā:tốt đẹp',
-                antonym1: '坏:huài:xấu',
-                antonym2: '差:chà:kém',
-            },
-            {
-                hanzi: '学',
-                pinyin: 'xué',
-                meaningVi: 'học, học tập',
-                meaningEn: 'to learn, to study',
-                hskLevel: 1,
-                radical: '子',
-                radicalMeaning: 'con, đứa trẻ',
-                strokeCount: 8,
-                partOfSpeech: 'verb',
-                tags: 'education, common',
-                mnemonic: 'Chữ 学 có phần trên giống hai tay đang giữ sách, phần dưới là 子 (con) = đứa trẻ đang học',
-                example1_cn: '我学中文',
-                example1_py: 'Wǒ xué zhōngwén',
-                example1_vi: 'Tôi học tiếng Trung',
-                example2_cn: '',
-                example2_py: '',
-                example2_vi: '',
-                synonym1: '习:xí:học tập',
-                synonym2: '',
-                antonym1: '教:jiào:dạy',
-                antonym2: '',
-            },
-        ];
-
-        // Tạo workbook
-        const ws = XLSX.utils.json_to_sheet(templateData);
         const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'Vocabulary');
 
-        // Set column widths
-        ws['!cols'] = [
-            { wch: 8 },  // hanzi
-            { wch: 12 }, // pinyin
-            { wch: 25 }, // meaningVi
-            { wch: 20 }, // meaningEn
-            { wch: 8 },  // hskLevel
-            { wch: 6 },  // radical
-            { wch: 15 }, // radicalMeaning
-            { wch: 10 }, // strokeCount
-            { wch: 10 }, // partOfSpeech
-            { wch: 15 }, // tags
-            { wch: 40 }, // mnemonic
-            { wch: 15 }, // example1_cn
-            { wch: 15 }, // example1_py
-            { wch: 20 }, // example1_vi
-            { wch: 15 }, // example2_cn
-            { wch: 15 }, // example2_py
-            { wch: 20 }, // example2_vi
-            { wch: 15 }, // synonym1
-            { wch: 15 }, // synonym2
-            { wch: 15 }, // antonym1
-            { wch: 15 }, // antonym2
+        // Column widths for standard sheets
+        const standardCols = [
+            { wch: 5 },   // STT
+            { wch: 10 },  // TỪ VỰNG
+            { wch: 12 },  // PINYIN
+            { wch: 18 },  // TỪ LOẠI
+            { wch: 30 },  // NGHĨA
+            { wch: 25 },  // VÍ DỤ (CHỮ HÁN)
+            { wch: 25 },  // PHIÊN ÂM
+            { wch: 30 },  // DỊCH
+            { wch: 20 },  // TỪ CẬN NGHĨA
+            { wch: 20 },  // TỪ TRÁI NGHĨA
         ];
+
+        // Sample data for HSK1 sheet
+        const hsk1Data = [
+            { 'STT': 1, 'TỪ VỰNG': '爱', 'PINYIN': 'ài', 'TỪ LOẠI': 'Động từ / danh từ', 'NGHĨA': 'quý, yêu, thương', 'VÍ DỤ (CHỮ HÁN)': '我爱你。', 'PHIÊN ÂM': 'Wǒ ài nǐ.', 'DỊCH': 'Tôi yêu bạn.', 'TỪ CẬN NGHĨA': '爱情, 喜爱, 热爱', 'TỪ TRÁI NGHĨA': '恨, 讨厌' },
+            { 'STT': 2, 'TỪ VỰNG': '好', 'PINYIN': 'hǎo', 'TỪ LOẠI': 'Tính từ', 'NGHĨA': 'tốt, đẹp, khỏe', 'VÍ DỤ (CHỮ HÁN)': '你好！', 'PHIÊN ÂM': 'Nǐ hǎo!', 'DỊCH': 'Xin chào!', 'TỪ CẬN NGHĨA': '棒, 佳', 'TỪ TRÁI NGHĨA': '坏, 差' },
+        ];
+
+        // Create sheets for HSK1-6
+        const sheetNames = ['HSK1', 'HSK2', 'HSK3', 'HSK4', 'HSK5', 'HSK6'];
+        sheetNames.forEach((name, idx) => {
+            const data = idx === 0 ? hsk1Data : [
+                { 'STT': 1, 'TỪ VỰNG': '', 'PINYIN': '', 'TỪ LOẠI': '', 'NGHĨA': '', 'VÍ DỤ (CHỮ HÁN)': '', 'PHIÊN ÂM': '', 'DỊCH': '', 'TỪ CẬN NGHĨA': '', 'TỪ TRÁI NGHĨA': '' }
+            ];
+            const ws = XLSX.utils.json_to_sheet(data);
+            ws['!cols'] = standardCols;
+            XLSX.utils.book_append_sheet(wb, ws, name);
+        });
+
+        // Sheet 7: Từ vựng ngoài HSK tiêu chuẩn
+        const extraData = [
+            { 'STT': 1, 'TỪ VỰNG': '', 'PINYIN': '', 'TỪ LOẠI': '', 'NGHĨA': '', 'VÍ DỤ (CHỮ HÁN)': '', 'PHIÊN ÂM': '', 'DỊCH': '', 'TỪ ĐỒNG NGHĨA': '', 'TỪ TRÁI NGHĨA': '' }
+        ];
+        const wsExtra = XLSX.utils.json_to_sheet(extraData);
+        wsExtra['!cols'] = standardCols;
+        XLSX.utils.book_append_sheet(wb, wsExtra, 'Từ vựng ngoài HSK tiêu chuẩn');
+
+        // Sheet 8: Từ vựng không chia cấp độ (fewer columns)
+        const nolevelData = [
+            { 'STT': 1, 'TỪ VỰNG': '', 'PINYIN': '', 'NGHĨA': '', 'VÍ DỤ (CHỮ HÁN)': '', 'PHIÊN ÂM': '', 'DỊCH': '' }
+        ];
+        const wsNoLevel = XLSX.utils.json_to_sheet(nolevelData);
+        wsNoLevel['!cols'] = [
+            { wch: 5 },   // STT
+            { wch: 10 },  // TỪ VỰNG
+            { wch: 12 },  // PINYIN
+            { wch: 30 },  // NGHĨA
+            { wch: 25 },  // VÍ DỤ
+            { wch: 25 },  // PHIÊN ÂM
+            { wch: 30 },  // DỊCH
+        ];
+        XLSX.utils.book_append_sheet(wb, wsNoLevel, 'Từ vựng không chia cấp độ');
 
         // Download
-        XLSX.writeFile(wb, 'vocabulary_template.xlsx');
+        XLSX.writeFile(wb, 'BANG_TU_VUNG_HSK_Template.xlsx');
     };
 
     // Filter vocabulary
@@ -1363,7 +1376,7 @@ export default function AdminVocabularyPage() {
                         </div>
                         <pre className="text-xs text-text-secondary bg-background-dark p-3 rounded overflow-x-auto whitespace-pre-wrap">
                             {importMode === 'xlsx'
-                                ? 'Cột bắt buộc: hanzi, pinyin, meaningVi, hskLevel\nCột tùy chọn: radical, radicalMeaning, strokeCount, partOfSpeech, tags, mnemonic\n           example1_cn, example1_py, example1_vi, example2_cn...\n           synonym1, synonym2, antonym1, antonym2\n\nNhấn "Tải file mẫu" để xem cấu trúc đầy đủ với dữ liệu ví dụ'
+                                ? 'File XLSX gồm nhiều sheet (HSK1-6, Ngoài HSK, Không chia cấp)\nCột bắt buộc: TỪ VỰNG, PINYIN, NGHĨA\nCột tùy chọn: TỪ LOẠI, VÍ DỤ (CHỮ HÁN), PHIÊN ÂM, DỊCH,\n              TỪ CẬN NGHĨA/TỪ ĐỒNG NGHĨA, TỪ TRÁI NGHĨA\n\n💡 HSK level tự động xác định từ tên sheet\n💡 Nhấn "Tải file mẫu" để tải template chuẩn'
                                 : importMode === 'csv'
                                     ? 'hanzi,pinyin,meaningVi,hskLevel,partOfSpeech\n好,hǎo,tốt thích,1,adj'
                                     : '[{\n  "hanzi": "好",\n  "pinyin": "hǎo",\n  "meaningVi": "tốt, thích",\n  "hskLevel": 1\n}]'
@@ -1388,18 +1401,18 @@ export default function AdminVocabularyPage() {
                                 <table className="w-full text-sm">
                                     <thead className="bg-background-dark sticky top-0">
                                         <tr>
-                                            <th className="px-3 py-2 text-left text-text-secondary">Hanzi</th>
+                                            <th className="px-3 py-2 text-left text-text-secondary">Từ vựng</th>
                                             <th className="px-3 py-2 text-left text-text-secondary">Pinyin</th>
-                                            <th className="px-3 py-2 text-left text-text-secondary">English</th>
+                                            <th className="px-3 py-2 text-left text-text-secondary">Nghĩa</th>
                                             <th className="px-3 py-2 text-left text-text-secondary">HSK</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border-color">
                                         {importData.slice(0, 10).map((item, index) => (
                                             <tr key={index}>
-                                                <td className="px-3 py-2 text-white">{item.hanzi}</td>
+                                                <td className="px-3 py-2 text-white font-chinese">{item.hanzi}</td>
                                                 <td className="px-3 py-2 text-primary">{item.pinyin}</td>
-                                                <td className="px-3 py-2 text-text-secondary">{item.meaningEn}</td>
+                                                <td className="px-3 py-2 text-text-secondary">{item.meaningVi}</td>
                                                 <td className="px-3 py-2 text-text-secondary">{item.hskLevel}</td>
                                             </tr>
                                         ))}

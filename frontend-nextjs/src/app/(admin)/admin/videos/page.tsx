@@ -794,6 +794,8 @@ export default function AdminVideosPage() {
                                 <option value="Văn hóa">Văn hóa</option>
                                 <option value="Kinh doanh">Kinh doanh</option>
                                 <option value="Giáo dục">Giáo dục</option>
+                                <option value="Podcast">Podcast</option>
+                                <option value="Hài kịch">Hài kịch</option>
                                 <option value="Khác">Khác</option>
                             </select>
                         </div>
