@@ -637,13 +637,31 @@ export default function AdminVocabularyPage() {
     };
 
     // Filter vocabulary
-    // Search debounce handler
+    // Search debounce handler - clears HSK filter for global search
     const handleSearchChange = (value: string) => {
         setSearchQuery(value);
+        if (value.trim()) {
+            // When searching, clear HSK filter to search globally
+            setFilterHsk('');
+        }
         if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
         searchTimerRef.current = setTimeout(() => {
             fetchVocabulary(1, value);
         }, 400);
+    };
+
+    // Highlight matching text
+    const highlightText = (text: string, query: string) => {
+        if (!query || !text) return text;
+        const idx = text.toLowerCase().indexOf(query.toLowerCase());
+        if (idx === -1) return text;
+        return (
+            <>
+                {text.slice(0, idx)}
+                <span className="bg-amber-500/40 text-white rounded px-0.5">{text.slice(idx, idx + query.length)}</span>
+                {text.slice(idx + query.length)}
+            </>
+        );
     };
 
     // Delete all vocabulary handler
@@ -684,8 +702,8 @@ export default function AdminVocabularyPage() {
             width: '120px',
             render: (vocab: Vocabulary) => (
                 <div className="flex flex-col items-center">
-                    <span className="text-2xl font-bold text-white font-chinese">{vocab.hanzi}</span>
-                    <span className="text-xs text-primary/80">{vocab.pinyin}</span>
+                    <span className="text-2xl font-bold text-white font-chinese">{searchQuery ? highlightText(vocab.hanzi, searchQuery) : vocab.hanzi}</span>
+                    <span className="text-xs text-primary/80">{searchQuery ? highlightText(vocab.pinyin, searchQuery) : vocab.pinyin}</span>
                 </div>
             ),
         },
@@ -705,7 +723,7 @@ export default function AdminVocabularyPage() {
             key: 'meaning',
             header: 'Nghĩa',
             render: (vocab: Vocabulary) => (
-                <span className="text-white text-sm">{vocab.meaningVi || vocab.meaningEn || '-'}</span>
+                <span className="text-white text-sm">{searchQuery ? highlightText(vocab.meaningVi || vocab.meaningEn || '-', searchQuery) : (vocab.meaningVi || vocab.meaningEn || '-')}</span>
             ),
         },
         {

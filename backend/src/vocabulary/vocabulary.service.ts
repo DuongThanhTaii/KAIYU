@@ -230,12 +230,12 @@ export class VocabularyService {
 
         for (const item of items) {
             try {
-                // Validate required fields
-                if (!item.hanzi || !item.pinyin || !item.meaningVi) {
+                // Validate required fields (pinyin is optional - some words missing it)
+                if (!item.hanzi || !item.meaningVi) {
                     result.errors++;
                     result.errorDetails?.push({
                         hanzi: item.hanzi || '(trống)',
-                        error: 'Thiếu thông tin bắt buộc (hanzi, pinyin, meaningVi)',
+                        error: 'Thiếu thông tin bắt buộc (hanzi, meaningVi)',
                     });
                     continue;
                 }
@@ -244,11 +244,6 @@ export class VocabularyService {
                 const existing = await this.prisma.vocabulary.findUnique({
                     where: { hanzi: item.hanzi },
                 });
-
-                if (existing) {
-                    result.skipped++;
-                    continue;
-                }
 
                 // Parse examples from flattened format
                 const examples: ExampleSentenceDto[] = [];
@@ -308,27 +303,51 @@ export class VocabularyService {
                     });
                 }
 
-                // Create vocabulary
-                await this.prisma.vocabulary.create({
-                    data: {
-                        hanzi: item.hanzi,
-                        pinyin: item.pinyin,
-                        meaningVi: item.meaningVi,
-                        meaningEn: item.meaningEn,
-                        radical: item.radical,
-                        radicalMeaning: item.radicalMeaning,
-                        strokeCount: item.strokeCount,
-                        partOfSpeech: item.partOfSpeech,
-                        hskLevel: item.hskLevel ?? 1,
-                        tags: item.tags || [],
-                        examples: examples.length > 0 ? examples : [],
-                        synonyms: synonyms.length > 0 ? synonyms : [],
-                        antonyms: antonyms.length > 0 ? antonyms : [],
-                        mnemonic: item.mnemonic,
-                    } as any,
-                });
+                const vocabData = {
+                    hanzi: item.hanzi,
+                    pinyin: item.pinyin || '',
+                    meaningVi: item.meaningVi,
+                    meaningEn: item.meaningEn,
+                    radical: item.radical,
+                    radicalMeaning: item.radicalMeaning,
+                    strokeCount: item.strokeCount,
+                    partOfSpeech: item.partOfSpeech,
+                    hskLevel: item.hskLevel ?? 1,
+                    tags: item.tags || [],
+                    examples: examples.length > 0 ? examples : [],
+                    synonyms: synonyms.length > 0 ? synonyms : [],
+                    antonyms: antonyms.length > 0 ? antonyms : [],
+                    mnemonic: item.mnemonic,
+                } as any;
 
-                result.created++;
+                if (existing) {
+                    // Update existing: merge richer data, keep lower HSK level
+                    const updateData: any = {};
+                    if (item.pinyin && !existing.pinyin) updateData.pinyin = item.pinyin;
+                    if (item.meaningEn && !existing.meaningEn) updateData.meaningEn = item.meaningEn;
+                    if (item.partOfSpeech && !existing.partOfSpeech) updateData.partOfSpeech = item.partOfSpeech;
+                    if (examples.length > 0 && (!existing.examples || (existing.examples as any[]).length === 0)) {
+                        updateData.examples = examples;
+                    }
+                    if (synonyms.length > 0 && (!existing.synonyms || (existing.synonyms as any[]).length === 0)) {
+                        updateData.synonyms = synonyms;
+                    }
+                    if (antonyms.length > 0 && (!existing.antonyms || (existing.antonyms as any[]).length === 0)) {
+                        updateData.antonyms = antonyms;
+                    }
+
+                    if (Object.keys(updateData).length > 0) {
+                        await this.prisma.vocabulary.update({
+                            where: { hanzi: item.hanzi },
+                            data: updateData,
+                        });
+                    }
+                    result.skipped++;
+                } else {
+                    // Create new
+                    await this.prisma.vocabulary.create({ data: vocabData });
+                    result.created++;
+                }
             } catch (error) {
                 result.errors++;
                 result.errorDetails?.push({
