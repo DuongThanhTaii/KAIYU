@@ -7,6 +7,7 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import DataTable from '@/components/admin/DataTable';
 import Modal from '@/components/admin/Modal';
 import Icon from '@/components/common/Icon';
+import SpeakerButton from '@/components/common/SpeakerButton';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     getAllVocabulary,
@@ -772,6 +773,11 @@ export default function AdminVocabularyPage() {
 
     const actions = (vocab: Vocabulary) => (
         <>
+            <SpeakerButton
+                text={vocab.hanzi}
+                size="sm"
+                className="p-1.5 rounded-lg hover:bg-primary/20 text-primary transition-colors"
+            />
             <button
                 onClick={(e) => {
                     e.stopPropagation();

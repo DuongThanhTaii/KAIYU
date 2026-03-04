@@ -319,7 +319,7 @@ export class VocabularyService {
                         radicalMeaning: item.radicalMeaning,
                         strokeCount: item.strokeCount,
                         partOfSpeech: item.partOfSpeech,
-                        hskLevel: item.hskLevel || 1,
+                        hskLevel: item.hskLevel ?? 1,
                         tags: item.tags || [],
                         examples: examples.length > 0 ? examples : [],
                         synonyms: synonyms.length > 0 ? synonyms : [],
@@ -478,7 +478,7 @@ export class VocabularyService {
                 if (item.radicalMeaning) updateData.radicalMeaning = item.radicalMeaning;
                 if (item.strokeCount) updateData.strokeCount = item.strokeCount;
                 if (item.partOfSpeech) updateData.partOfSpeech = item.partOfSpeech;
-                if (item.hskLevel) updateData.hskLevel = item.hskLevel;
+                if (item.hskLevel !== undefined && item.hskLevel !== null) updateData.hskLevel = item.hskLevel;
                 if (item.mnemonic) updateData.mnemonic = item.mnemonic;
                 if (examples.length > 0) updateData.examples = examples;
                 if (synonyms.length > 0) updateData.synonyms = synonyms;
