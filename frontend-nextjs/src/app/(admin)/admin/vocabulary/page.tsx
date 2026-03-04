@@ -16,6 +16,7 @@ import {
     importVocabulary,
     bulkUpdateVocabulary,
     getVocabularyStats,
+    deleteAllVocabulary,
     type Vocabulary,
     type ImportVocabularyItem
 } from '@/services/adminApi';
@@ -51,6 +52,8 @@ export default function AdminVocabularyPage() {
     const [duplicateConfirm, setDuplicateConfirm] = useState<{ message: string; vocab: Vocabulary } | null>(null);
     const [hskStats, setHskStats] = useState<Record<number, number>>({});
     const [importProgress, setImportProgress] = useState<{ active: boolean; message: string }>({ active: false, message: '' });
+    const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+    const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -101,14 +104,15 @@ export default function AdminVocabularyPage() {
     }, [authLoading, isAuthenticated, user, router]);
 
     // Fetch vocabulary
-    const fetchVocabulary = useCallback(async (page = 1) => {
+    const fetchVocabulary = useCallback(async (page = 1, search?: string) => {
         setLoading(true);
         setError(null);
         try {
             const response = await getAllVocabulary({
                 page,
                 limit: 50,
-                hskLevel: filterHsk || undefined
+                hskLevel: filterHsk || undefined,
+                search: search !== undefined ? search : searchQuery || undefined,
             });
             setVocabulary(response.data);
             setPagination({
@@ -123,7 +127,7 @@ export default function AdminVocabularyPage() {
         } finally {
             setLoading(false);
         }
-    }, [filterHsk]);
+    }, [filterHsk, searchQuery]);
 
     // Fetch HSK stats from database
     const fetchStats = useCallback(async () => {
@@ -632,15 +636,36 @@ export default function AdminVocabularyPage() {
     };
 
     // Filter vocabulary
-    const filteredVocabulary = vocabulary.filter(v => {
-        const matchHsk = !filterHsk || v.hskLevel === filterHsk;
-        const matchSearch = !searchQuery ||
-            v.hanzi.includes(searchQuery) ||
-            v.pinyin.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            v.meaningVi.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (v.meaningEn && v.meaningEn.toLowerCase().includes(searchQuery.toLowerCase()));
-        return matchHsk && matchSearch;
-    });
+    // Search debounce handler
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+        searchTimerRef.current = setTimeout(() => {
+            fetchVocabulary(1, value);
+        }, 400);
+    };
+
+    // Delete all vocabulary handler
+    const handleDeleteAll = async () => {
+        setIsSaving(true);
+        setImportProgress({ active: true, message: 'Đang xóa toàn bộ từ vựng...' });
+        try {
+            const result = await deleteAllVocabulary();
+            setShowDeleteAllConfirm(false);
+            setImportProgress({ active: false, message: '' });
+            fetchVocabulary(1);
+            fetchStats();
+            setError(null);
+        } catch (err: any) {
+            setError(err?.message || 'Xóa thất bại.');
+            setImportProgress({ active: false, message: '' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Pass server data directly (no duplicate client-side filter)
+    const filteredVocabulary = vocabulary;
 
     // Show loading while checking auth
     if (authLoading || !isAuthenticated || user?.role !== 'admin') {
@@ -852,10 +877,10 @@ export default function AdminVocabularyPage() {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-6">
+            <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-4">
                 {[1, 2, 3, 4, 5, 6, 7, 0].map((level) => {
                     const count = hskStats[level] || 0;
-                    const label = level === 0 ? 'N/A' : level === 7 ? 'Ngoài' : `HSK ${level}`;
+                    const label = level === 0 ? 'Không chia cấp' : level === 7 ? 'Ngoài HSK' : `HSK ${level}`;
                     return (
                         <button
                             key={level}
@@ -866,10 +891,23 @@ export default function AdminVocabularyPage() {
                                 }`}
                         >
                             <p className="text-xl font-bold text-white">{count}</p>
-                            <p className="text-xs text-text-secondary">{label}</p>
+                            <p className="text-[10px] text-text-secondary leading-tight">{label}</p>
                         </button>
                     );
                 })}
+            </div>
+            {/* Total + Delete All */}
+            <div className="flex items-center justify-between mb-6">
+                <p className="text-sm text-text-secondary">
+                    Tổng: <span className="text-white font-bold">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng
+                </p>
+                <button
+                    onClick={() => setShowDeleteAllConfirm(true)}
+                    disabled={isSaving}
+                    className="text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                >
+                    Xóa toàn bộ để import lại
+                </button>
             </div>
 
             {/* Filters */}
@@ -882,7 +920,7 @@ export default function AdminVocabularyPage() {
                     <input
                         type="text"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         placeholder="Tìm kiếm từ vựng (Hanzi, Pinyin, nghĩa)..."
                         className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                     />
@@ -890,9 +928,9 @@ export default function AdminVocabularyPage() {
                 {filterHsk && (
                     <button
                         onClick={() => setFilterHsk('')}
-                        className="flex items-center gap-2 px-4 py-3 bg-primary/20 text-primary rounded-xl"
+                        className="flex items-center gap-2 px-4 py-3 bg-primary/20 text-primary rounded-xl whitespace-nowrap"
                     >
-                        HSK {filterHsk}
+                        {filterHsk === 7 ? 'Ngoài HSK' : filterHsk === 0 ? 'Không chia cấp' : `HSK ${filterHsk}`}
                         <Icon name="close" className="text-sm" />
                     </button>
                 )}
@@ -904,7 +942,7 @@ export default function AdminVocabularyPage() {
                 columns={columns}
                 loading={loading}
                 pagination={pagination}
-                onPageChange={(page) => setPagination({ ...pagination, page })}
+                onPageChange={(page) => fetchVocabulary(page)}
                 actions={actions}
                 emptyMessage="Chưa có từ vựng nào"
             />
@@ -1588,6 +1626,48 @@ export default function AdminVocabularyPage() {
                         </div>
                     </div>
                 )}
+            </Modal>
+
+            {/* Delete All Confirmation Modal */}
+            <Modal
+                isOpen={showDeleteAllConfirm}
+                onClose={() => setShowDeleteAllConfirm(false)}
+                title="Xóa toàn bộ Từ vựng"
+                size="sm"
+                footer={
+                    <>
+                        <button
+                            onClick={() => setShowDeleteAllConfirm(false)}
+                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                        >
+                            Hủy
+                        </button>
+                        <button
+                            onClick={handleDeleteAll}
+                            disabled={isSaving}
+                            className="px-6 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-400 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isSaving && <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                            {isSaving ? 'Đang xóa...' : 'Xóa tất cả'}
+                        </button>
+                    </>
+                }
+            >
+                <div className="space-y-4">
+                    <div className="flex justify-center">
+                        <div className="size-16 rounded-full bg-red-500/20 flex items-center justify-center">
+                            <Icon name="delete_forever" className="text-4xl text-red-400" />
+                        </div>
+                    </div>
+                    <div className="text-center space-y-2">
+                        <p className="text-white">
+                            Bạn có chắc muốn xóa <span className="text-red-400 font-bold">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng?
+                        </p>
+                        <p className="text-sm text-text-secondary">
+                            Hành động này không thể hoàn tác. Bạn sẽ cần import lại file XLSX sau khi xóa.
+                        </p>
+                    </div>
+                </div>
             </Modal>
 
             {/* Bulk Update Modal */}

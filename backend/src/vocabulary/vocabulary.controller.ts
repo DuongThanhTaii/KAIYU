@@ -232,4 +232,15 @@ export class VocabularyController {
     async bulkUpdateVocabulary(@Body() items: ImportVocabularyItemDto[]) {
         return this.vocabularyService.bulkUpdateVocabulary(items);
     }
+
+    @Delete('all')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Delete all vocabulary (admin only, for re-import)' })
+    @ApiResponse({ status: 200, description: 'All vocabulary deleted' })
+    async deleteAll() {
+        const count = await this.vocabularyService.deleteAll();
+        return { message: `Đã xóa ${count} từ vựng`, deleted: count };
+    }
 }

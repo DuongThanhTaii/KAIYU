@@ -502,4 +502,12 @@ export class VocabularyService {
 
         return result;
     }
+
+    /**
+     * Delete all vocabulary (for re-import)
+     */
+    async deleteAll(): Promise<number> {
+        const { count } = await this.prisma.vocabulary.deleteMany({});
+        return count;
+    }
 }

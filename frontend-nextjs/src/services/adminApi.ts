@@ -237,12 +237,13 @@ export const addSubtitles = (
 
 // ============ Vocabulary Management ============
 export const getAllVocabulary = (
-    params: { page?: number; limit?: number; hskLevel?: number } = {}
+    params: { page?: number; limit?: number; hskLevel?: number; search?: string } = {}
 ): Promise<PaginatedResponse<Vocabulary>> => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.set('page', String(params.page));
     if (params.limit) searchParams.set('limit', String(params.limit));
     if (params.hskLevel) searchParams.set('hskLevel', String(params.hskLevel));
+    if (params.search) searchParams.set('search', params.search);
 
     const query = searchParams.toString();
     return apiRequest<PaginatedResponse<Vocabulary>>(`/admin/vocabulary${query ? `?${query}` : ''}`);
@@ -288,6 +289,12 @@ export const bulkUpdateVocabulary = (
 
 export const getVocabularyStats = (): Promise<{ hskLevel: number; count: number }[]> => {
     return apiRequest<{ hskLevel: number; count: number }[]>('/vocabulary/stats');
+};
+
+export const deleteAllVocabulary = (): Promise<{ message: string; deleted: number }> => {
+    return apiRequest<{ message: string; deleted: number }>('/vocabulary/all', {
+        method: 'DELETE',
+    });
 };
 
 // ============ User Management ============
