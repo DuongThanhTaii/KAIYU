@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Delete, UseGuards, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator } from '@nestjs/common';
+import { Controller, Get, Post, Delete, UseGuards, UseInterceptors, UploadedFile, ParseFilePipe, MaxFileSizeValidator, FileTypeValidator, Res } from '@nestjs/common';
+import { Response } from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
 import { AuthGuard } from '@nestjs/passport';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
@@ -17,6 +20,20 @@ export class SettingsController {
     async getLogo() {
         const url = await this.settingsService.getLogoUrl();
         return { url };
+    }
+
+    @Get('favicon.ico')
+    @ApiOperation({ summary: 'Get dynamic site favicon' })
+    async getFavicon(@Res() res: Response) {
+        const logoUrl = await this.settingsService.getLogoUrl();
+        if (logoUrl) {
+            // Strip leading slash to safely join with cwd
+            const filepath = path.join(process.cwd(), logoUrl.replace(/^\//, ''));
+            if (fs.existsSync(filepath)) {
+                return res.sendFile(filepath);
+            }
+        }
+        return res.status(404).send('Logo not found');
     }
 
     @Get('public')

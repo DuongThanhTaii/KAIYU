@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import Icon from '../common/Icon';
 import { useAuth } from '../../contexts/AuthContext';
 import { progressApi } from '../../services/progressApi';
+import { useLogo } from '../../hooks/useLogo';
 
 interface NavItem {
     label: string;
@@ -40,6 +41,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     const { user } = useAuth();
     const [dailyProgress, setDailyProgress] = useState<number>(0);
     const [minutesStudied, setMinutesStudied] = useState<number>(0);
+    const { logoUrl } = useLogo();
 
     const isActive = (path: string) => pathname === path;
 
@@ -87,11 +89,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Brand - Hide when collapsed */}
                         {!isCollapsed && (
                             <div className="flex items-center gap-3">
-                                <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
-                                <div className="flex flex-col">
-                                    <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
-                                    <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
-                                </div>
+                                {logoUrl ? (
+                                    <div className="h-10 flex items-center">
+                                        <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
+                                        <div className="flex flex-col">
+                                            <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
+                                            <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         )}
                     </div>
@@ -189,11 +199,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Icon name="close" size="md" className="text-text-secondary" />
                         </button>
                         <div className="flex items-center gap-3">
-                            <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
-                            <div className="flex flex-col">
-                                <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
-                                <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
-                            </div>
+                            {logoUrl ? (
+                                <div className="h-10 flex items-center">
+                                    <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
+                                    <div className="flex flex-col">
+                                        <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
+                                        <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 

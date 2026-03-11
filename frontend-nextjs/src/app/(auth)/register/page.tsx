@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Icon from '@/components/common/Icon';
+import { useLogo } from '@/hooks/useLogo';
 
 export default function RegisterPage() {
     const router = useRouter();
@@ -20,6 +21,7 @@ export default function RegisterPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { logoUrl } = useLogo();
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -90,10 +92,18 @@ export default function RegisterPage() {
                 {/* Logo */}
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-2">
-                        <div className="size-12 rounded-xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center">
-                            <span className="text-2xl font-bold text-on-primary">中</span>
-                        </div>
-                        <span className="text-2xl font-bold text-white">KAIYU</span>
+                        {logoUrl ? (
+                            <div className="h-12 flex items-center">
+                                <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
+                            </div>
+                        ) : (
+                            <>
+                                <div className="size-12 rounded-xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center">
+                                    <span className="text-2xl font-bold text-on-primary">中</span>
+                                </div>
+                                <span className="text-2xl font-bold text-white">KAIYU</span>
+                            </>
+                        )}
                     </Link>
                 </div>
 

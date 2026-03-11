@@ -11,6 +11,8 @@ export default function AdminSettingsPage() {
     const [uploading, setUploading] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [imageTimestamp, setImageTimestamp] = useState(Date.now());
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const fetchLogo = useCallback(async () => {
@@ -40,7 +42,9 @@ export default function AdminSettingsPage() {
         try {
             const result = await uploadLogo(file);
             setLogoUrl(result.url);
-            alert(`Logo uploaded! Size: ${result.width}x${result.height}`);
+            setImageTimestamp(Date.now());
+            setSuccessMessage('Logo đã được tự động cập nhật và sẵn sàng hiển thị trên trang chủ!');
+            setTimeout(() => setSuccessMessage(null), 5000);
         } catch (err) {
             console.error('Failed to upload logo:', err);
             setError('Lỗi upload! Kiểm tra đã install sharp: npm install sharp');
@@ -57,6 +61,9 @@ export default function AdminSettingsPage() {
         try {
             await deleteLogo();
             setLogoUrl(null);
+            setImageTimestamp(Date.now());
+            setSuccessMessage('Đã xóa logo thành công.');
+            setTimeout(() => setSuccessMessage(null), 5000);
         } catch (err) {
             console.error('Failed to delete logo:', err);
         } finally {
@@ -75,10 +82,19 @@ export default function AdminSettingsPage() {
                     </h2>
 
                     {error && (
-                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg animate-in fade-in zoom-in-95">
                             <p className="text-sm text-red-400 flex items-center gap-2">
                                 <Icon name="error" />
                                 {error}
+                            </p>
+                        </div>
+                    )}
+
+                    {successMessage && (
+                        <div className="mb-4 p-3 bg-green-500/10 border border-green-500/30 rounded-lg animate-in fade-in zoom-in-95">
+                            <p className="text-sm text-green-400 flex items-center gap-2">
+                                <Icon name="check_circle" />
+                                {successMessage}
                             </p>
                         </div>
                     )}
@@ -94,7 +110,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-full sm:w-48 h-24 bg-background-dark rounded-lg border border-border-color flex items-center justify-center overflow-hidden shrink-0">
                                     {logoUrl ? (
                                         <img
-                                            src={`${process.env.NEXT_PUBLIC_API_URL}${logoUrl}`}
+                                            src={`${process.env.NEXT_PUBLIC_API_URL}${logoUrl}?t=${imageTimestamp}`}
                                             alt="Logo"
                                             className="max-w-full max-h-full object-contain"
                                         />

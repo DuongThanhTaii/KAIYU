@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/common/Button';
 import Icon from '@/components/common/Icon';
 import { getProgress, type RecentProgress } from '@/services/progressStorage';
+import { useLogo } from '@/hooks/useLogo';
 
 function LoginPageContent() {
     const router = useRouter();
@@ -19,6 +20,7 @@ function LoginPageContent() {
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [savedProgress, setSavedProgress] = useState<RecentProgress | null>(null);
+    const { logoUrl } = useLogo();
 
     // Get redirect path
     const from = searchParams.get('from') || '/dashboard';
@@ -71,10 +73,18 @@ function LoginPageContent() {
             {/* Navigation */}
             <header className="flex items-center justify-between px-6 lg:px-10 py-4 border-b border-border-color bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
                 <Link href="/" className="flex items-center gap-3">
-                    <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
-                        <Icon name="translate" size="md" />
-                    </div>
-                    <h2 className="text-white text-xl font-extrabold leading-tight tracking-[-0.015em]">KAIYU</h2>
+                    {logoUrl ? (
+                        <div className="h-8 flex items-center">
+                            <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
+                        </div>
+                    ) : (
+                        <>
+                            <div className="size-8 bg-primary rounded-lg flex items-center justify-center text-on-primary">
+                                <Icon name="translate" size="md" />
+                            </div>
+                            <h2 className="text-white text-xl font-extrabold leading-tight tracking-[-0.015em]">KAIYU</h2>
+                        </>
+                    )}
                 </Link>
                 <div className="flex items-center gap-4">
                     <span className="hidden sm:block text-sm font-medium text-text-secondary">Chưa có tài khoản?</span>

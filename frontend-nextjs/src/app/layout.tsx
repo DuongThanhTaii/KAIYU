@@ -49,7 +49,7 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <head>
-        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href={`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'}/api/settings/favicon.ico`} sizes="any" />
         {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
