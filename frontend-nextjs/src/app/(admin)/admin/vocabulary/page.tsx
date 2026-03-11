@@ -789,11 +789,15 @@ export default function AdminVocabularyPage() {
         {
             key: 'hanzi',
             header: 'Từ vựng',
-            width: '100px',
+            width: '180px',
             render: (vocab: Vocabulary) => (
-                <div className="flex flex-col items-center">
-                    <span className="text-2xl font-bold text-white font-chinese">{searchQuery ? highlightText(vocab.hanzi, searchQuery) : vocab.hanzi}</span>
-                    <span className="text-xs text-primary/80">{searchQuery ? highlightText(vocab.pinyin, searchQuery) : vocab.pinyin}</span>
+                <div className="flex flex-col items-center justify-center text-center">
+                    <span className="text-2xl font-bold text-white font-chinese break-words" style={{ wordBreak: 'keep-all' }}>
+                        {searchQuery ? highlightText(vocab.hanzi, searchQuery) : vocab.hanzi}
+                    </span>
+                    <span className="text-xs text-primary/80 mt-1">
+                        {searchQuery ? highlightText(vocab.pinyin, searchQuery) : vocab.pinyin}
+                    </span>
                 </div>
             ),
         },
