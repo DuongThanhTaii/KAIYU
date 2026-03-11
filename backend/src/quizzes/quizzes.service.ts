@@ -1,10 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto, UpdateQuestionDto } from './dto';
+import { GeminiService } from '../gemini/gemini.service';
 
 @Injectable()
 export class QuizzesService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private geminiService: GeminiService
+    ) { }
 
     // Get quiz for a video
     async findByVideoId(videoId: string) {
@@ -72,7 +76,7 @@ export class QuizzesService {
         return quiz;
     }
 
-    // Auto-generate quiz from video subtitles
+    // Auto-generate quiz from video subtitles using Gemini AI
     async generateFromSubtitles(videoId: string) {
         // Check if video exists
         const video = await this.prisma.video.findUnique({
@@ -80,11 +84,6 @@ export class QuizzesService {
             include: {
                 subtitles: {
                     orderBy: { sequenceOrder: 'asc' },
-                    include: {
-                        tokens: {
-                            include: { vocabulary: true },
-                        },
-                    },
                 },
             },
         });
@@ -93,7 +92,21 @@ export class QuizzesService {
             throw new NotFoundException('Video not found');
         }
 
-        // Delete existing quiz if any
+        // Prepare bilingual subtitle text context for Gemini
+        const subtitleLines = video.subtitles
+            .filter(sub => sub.hanzi && sub.hanzi.trim().length > 0)
+            .slice(0, 40) // limit to avoid massive token payload
+            .map(sub => `Việt: ${sub.meaningVi || ''} | Trung: ${sub.hanzi}`)
+            .join('\n');
+
+        if (!subtitleLines) {
+            throw new Error('Video này không có nội dung phụ đề tiếng Trung hợp lệ để kết xuất bài tập.');
+        }
+
+        // Call Gemini Service
+        const generatedArray = await this.geminiService.generateQuizQuestions(subtitleLines);
+
+        // Delete existing quiz if any BEFORE creating new (safe since AI succeeded)
         await this.prisma.videoQuiz.deleteMany({
             where: { videoId },
         });
@@ -103,69 +116,48 @@ export class QuizzesService {
             data: {
                 videoId,
                 title: `Bài tập: ${video.title}`,
-                description: `Bài tập điền từ vào chỗ trống từ nội dung video`,
+                description: `Bài tập trắc nghiệm thông minh tự động tạo bởi Google Gemini`,
             },
         });
 
-        // Generate questions from subtitles
-        const questions: CreateQuestionDto[] = [];
+        // Parse AI response to question rows
+        const questionsToCreate: any[] = [];
         let sequenceOrder = 0;
 
-        // Get vocabulary for wrong options
-        const vocabulary = await this.prisma.vocabulary.findMany({
-            where: { hskLevel: { lte: video.hskLevel + 1 } },
-            select: { hanzi: true },
-            take: 200,
-        });
-        const vocabWords = vocabulary.map((v) => v.hanzi);
+        for (const item of generatedArray) {
+            if (!item.sentenceHanzi || !item.blankWord) continue;
 
-        for (const subtitle of video.subtitles) {
-            // Skip if subtitle has no tokens or no Chinese text
-            if (!subtitle.tokens || subtitle.tokens.length === 0) continue;
-            if (!subtitle.hanzi || subtitle.hanzi.trim() === '') continue;
+            // Generate options array including the correct answer
+            const options = this.shuffleArray([item.blankWord, item.option1, item.option2, item.option3].filter(Boolean));
+            let blankPosition = item.sentenceHanzi.indexOf(item.blankWord);
+            if (blankPosition === -1) blankPosition = 0;
 
-            // Find tokens that are vocabulary words (good candidates for blanks)
-            const vocabTokens = subtitle.tokens.filter(
-                (t) => t.vocabulary && t.hanzi.length >= 1
-            );
+            // Match back to subtitle ID if possible
+            const match = video.subtitles.find(sub => sub.hanzi.includes(item.sentenceHanzi) || item.sentenceHanzi.includes(sub.hanzi));
 
-            if (vocabTokens.length === 0) continue;
-
-            // Pick a random token to be the blank
-            const targetToken = vocabTokens[Math.floor(Math.random() * vocabTokens.length)];
-            const blankWord = targetToken.hanzi;
-
-            // Generate wrong options from vocabulary (same HSK level preferred)
-            const wrongOptions = this.getWrongOptions(blankWord, vocabWords, 3);
-
-            // Shuffle options with correct answer
-            const options = this.shuffleArray([blankWord, ...wrongOptions]);
-
-            questions.push({
-                sentenceHanzi: subtitle.hanzi,
-                blankWord,
-                blankPosition: targetToken.position,
+            questionsToCreate.push({
+                quizId: quiz.id,
+                sentenceHanzi: item.sentenceHanzi,
+                blankWord: item.blankWord,
+                blankPosition,
                 options,
-                meaningVi: subtitle.meaningVi || undefined,
+                meaningVi: item.meaningVi,
                 sequenceOrder: sequenceOrder++,
-                subtitleId: subtitle.id,
+                subtitleId: match ? match.id : null,
             });
         }
 
         // Limit to reasonable number of questions (max 20)
-        const limitedQuestions = questions.slice(0, 20);
+        const limitedQuestions = questionsToCreate.slice(0, 20);
 
         // Create all questions
         if (limitedQuestions.length > 0) {
             await this.prisma.quizQuestion.createMany({
-                data: limitedQuestions.map((q) => ({
-                    quizId: quiz.id,
-                    ...q,
-                })),
+                data: limitedQuestions,
             });
         }
 
-        // Return quiz with questions
+        // Return full quiz
         return this.findOne(quiz.id);
     }
 

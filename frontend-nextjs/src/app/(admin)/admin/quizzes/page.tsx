@@ -63,6 +63,10 @@ function QuizContent() {
     // Create quiz manually (empty)
     const handleCreateManual = async () => {
         if (!videoId) return;
+        if (quiz && !confirm('Bạn đã có bài tập cho video này. Việc tạo mới thủ công sẽ xóa toàn bộ câu hỏi hiện tại. Bạn có chắc chắn muốn tiếp tục?')) {
+            return;
+        }
+
         setGenerating(true);
         setError(null);
         try {
@@ -79,6 +83,10 @@ function QuizContent() {
     // Generate quiz from subtitles
     const handleGenerate = async () => {
         if (!videoId) return;
+        if (quiz && !confirm('Hệ thống sẽ dùng AI để phân tích lại toàn bộ phụ đề và tạo bài tập mới. TOÀN BỘ CÂU HỎI CŨ SẼ BỊ XÓA (nếu AI tạo thành công). Bạn có chắc chắn muốn tiếp tục?')) {
+            return;
+        }
+
         setGenerating(true);
         setError(null);
         try {
@@ -86,7 +94,7 @@ function QuizContent() {
             setQuiz(newQuiz);
         } catch (err) {
             console.error('Failed to generate quiz:', err);
-            setError('Không thể tạo tự động. Video có thể chưa có phụ đề.');
+            setError('Lỗi AI: ' + (err instanceof Error ? err.message : 'Không thể tạo tự động.'));
         } finally {
             setGenerating(false);
         }
@@ -353,14 +361,31 @@ function QuizContent() {
                     </div>
 
                     <div className="flex items-center gap-3">
+                        <Button onClick={handleCreateManual} disabled={generating || loading} variant="secondary" size="sm">
+                            {generating ? '...' : (
+                                <>
+                                    <Icon name="add" className="text-[16px]" />
+                                    Tạo thủ công
+                                </>
+                            )}
+                        </Button>
+                        <Button onClick={handleGenerate} disabled={generating || loading} variant="secondary" size="sm" className="bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border-none">
+                            {generating ? 'Đang tạo bằng AI...' : (
+                                <>
+                                    <Icon name="auto_awesome" className="text-[16px] text-amber-500" />
+                                    AI Tự động
+                                </>
+                            )}
+                        </Button>
+                        <div className="w-px h-6 bg-border-color mx-1"></div>
                         {quiz && !quiz.isPublished && (
-                            <Button onClick={handlePublish} variant="primary">
+                            <Button onClick={handlePublish} variant="primary" size="sm">
                                 <Icon name="publish" className="text-lg" />
                                 Xuất bản
                             </Button>
                         )}
                         {quiz?.isPublished && (
-                            <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm">
+                            <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
                                 Đã xuất bản
                             </span>
                         )}
@@ -381,32 +406,14 @@ function QuizContent() {
                     </div>
                 )}
 
-                {/* No Quiz - Create Options */}
+                {/* No Quiz */}
                 {!loading && !quiz && (
                     <div className="bg-surface-dark rounded-2xl border border-border-color p-8 text-center">
                         <Icon name="quiz" className="text-6xl text-text-secondary mx-auto mb-4" />
                         <h2 className="text-xl font-bold text-white mb-2">Chưa có bài tập</h2>
                         <p className="text-text-secondary mb-6">
-                            Tạo bài tập theo cách thủ công hoặc tự động từ phụ đề
+                            Sử dụng các nút phía trên để tạo bài tập thủ công hoặc tự động bằng trí tuệ nhân tạo.
                         </p>
-                        <div className="flex gap-4 justify-center flex-wrap">
-                            <Button onClick={handleCreateManual} disabled={generating} variant="primary">
-                                {generating ? 'Đang tạo...' : (
-                                    <>
-                                        <Icon name="add" className="text-lg" />
-                                        Tạo thủ công
-                                    </>
-                                )}
-                            </Button>
-                            <Button onClick={handleGenerate} disabled={generating} variant="secondary">
-                                {generating ? 'Đang tạo...' : (
-                                    <>
-                                        <Icon name="auto_awesome" className="text-lg" />
-                                        Tự động từ phụ đề
-                                    </>
-                                )}
-                            </Button>
-                        </div>
                     </div>
                 )}
 
