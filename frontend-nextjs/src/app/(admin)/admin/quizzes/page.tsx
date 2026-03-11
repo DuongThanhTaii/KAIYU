@@ -20,6 +20,17 @@ function QuizContent() {
     const [generating, setGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Confirmation Modal State
+    const [confirmAction, setConfirmAction] = useState<{
+        isOpen: boolean;
+        message: string;
+        onConfirm: () => void;
+    }>({
+        isOpen: false,
+        message: '',
+        onConfirm: () => { },
+    });
+
     // Add question modal
     const [showAddQuestion, setShowAddQuestion] = useState(false);
     const [savingQuestion, setSavingQuestion] = useState(false);
@@ -63,40 +74,58 @@ function QuizContent() {
     // Create quiz manually (empty)
     const handleCreateManual = async () => {
         if (!videoId) return;
-        if (quiz && !confirm('Bạn đã có bài tập cho video này. Việc tạo mới thủ công sẽ xóa toàn bộ câu hỏi hiện tại. Bạn có chắc chắn muốn tiếp tục?')) {
-            return;
-        }
 
-        setGenerating(true);
-        setError(null);
-        try {
-            const newQuiz = await quizzesApi.create(videoId);
-            setQuiz(newQuiz);
-        } catch (err) {
-            console.error('Failed to create quiz:', err);
-            setError('Không thể tạo bài tập');
-        } finally {
-            setGenerating(false);
+        const proceedCreate = async () => {
+            setGenerating(true);
+            setError(null);
+            try {
+                const newQuiz = await quizzesApi.create(videoId);
+                setQuiz(newQuiz);
+            } catch (err) {
+                console.error('Failed to create quiz:', err);
+                setError('Không thể tạo bài tập');
+            } finally {
+                setGenerating(false);
+            }
+        };
+
+        if (quiz) {
+            setConfirmAction({
+                isOpen: true,
+                message: 'Bạn đã có bài tập cho video này. Việc tạo mới thủ công sẽ xóa toàn bộ câu hỏi hiện tại. Bạn có chắc chắn muốn tiếp tục?',
+                onConfirm: proceedCreate,
+            });
+        } else {
+            proceedCreate();
         }
     };
 
     // Generate quiz from subtitles
     const handleGenerate = async () => {
         if (!videoId) return;
-        if (quiz && !confirm('Hệ thống sẽ dùng AI để phân tích lại toàn bộ phụ đề và tạo bài tập mới. TOÀN BỘ CÂU HỎI CŨ SẼ BỊ XÓA (nếu AI tạo thành công). Bạn có chắc chắn muốn tiếp tục?')) {
-            return;
-        }
 
-        setGenerating(true);
-        setError(null);
-        try {
-            const newQuiz = await quizzesApi.generate(videoId);
-            setQuiz(newQuiz);
-        } catch (err) {
-            console.error('Failed to generate quiz:', err);
-            setError('Lỗi AI: ' + (err instanceof Error ? err.message : 'Không thể tạo tự động.'));
-        } finally {
-            setGenerating(false);
+        const proceedGenerate = async () => {
+            setGenerating(true);
+            setError(null);
+            try {
+                const newQuiz = await quizzesApi.generate(videoId);
+                setQuiz(newQuiz);
+            } catch (err) {
+                console.error('Failed to generate quiz:', err);
+                setError('Lỗi AI: ' + (err instanceof Error ? err.message : 'Không thể tạo tự động.'));
+            } finally {
+                setGenerating(false);
+            }
+        };
+
+        if (quiz) {
+            setConfirmAction({
+                isOpen: true,
+                message: 'Hệ thống sẽ dùng AI để phân tích lại toàn bộ phụ đề và tạo bài tập mới. TOÀN BỘ CÂU HỎI CŨ SẼ BỊ XÓA (nếu AI tạo thành công). Bạn có chắc chắn muốn tiếp tục?',
+                onConfirm: proceedGenerate,
+            });
+        } else {
+            proceedGenerate();
         }
     };
 
@@ -113,18 +142,23 @@ function QuizContent() {
 
     // Delete question
     const handleDeleteQuestion = async (questionId: string) => {
-        if (!confirm('Xóa câu hỏi này?')) return;
-        try {
-            await quizzesApi.deleteQuestion(questionId);
-            if (quiz) {
-                setQuiz({
-                    ...quiz,
-                    questions: quiz.questions.filter(q => q.id !== questionId),
-                });
+        setConfirmAction({
+            isOpen: true,
+            message: 'Bạn có chắc chắn muốn xóa câu hỏi này không?',
+            onConfirm: async () => {
+                try {
+                    await quizzesApi.deleteQuestion(questionId);
+                    if (quiz) {
+                        setQuiz({
+                            ...quiz,
+                            questions: quiz.questions.filter(q => q.id !== questionId),
+                        });
+                    }
+                } catch (err) {
+                    console.error('Failed to delete question:', err);
+                }
             }
-        } catch (err) {
-            console.error('Failed to delete question:', err);
-        }
+        });
     };
 
     // Add question manually
@@ -747,6 +781,36 @@ function QuizContent() {
                                 {renderPreview(questionForm.sentenceHanzi, questionForm.blankWord)}
                             </div>
                         )}
+                    </div>
+                </Modal>
+
+                {/* Confirm Action Modal */}
+                <Modal
+                    isOpen={confirmAction.isOpen}
+                    onClose={() => setConfirmAction({ ...confirmAction, isOpen: false })}
+                    title="Xác nhận hành động"
+                >
+                    <div className="p-6">
+                        <p className="text-white mb-8 text-center text-lg">{confirmAction.message}</p>
+                        <div className="flex justify-center gap-4">
+                            <Button
+                                variant="secondary"
+                                onClick={() => setConfirmAction({ ...confirmAction, isOpen: false })}
+                            >
+                                Hủy
+                            </Button>
+                            <Button
+                                variant="primary"
+                                className="bg-red-500 hover:bg-red-600 border-none"
+                                onClick={() => {
+                                    confirmAction.onConfirm();
+                                    setConfirmAction({ ...confirmAction, isOpen: false });
+                                }}
+                            >
+                                <Icon name="check_circle" className="text-lg" />
+                                Xác nhận
+                            </Button>
+                        </div>
                     </div>
                 </Modal>
             </div>
