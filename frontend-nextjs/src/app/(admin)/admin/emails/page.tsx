@@ -493,7 +493,7 @@ export default function AdminEmailsPage() {
                                         <div className="absolute top-full right-0 mt-2 w-72 bg-surface-dark border border-primary/20 p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 tooltip-triangle">
                                             <p className="text-xs text-text-secondary">
                                                 <strong className="text-white block mb-1">Hướng dẫn sử dụng:</strong>
-                                                Kéo các khối tử bên phải (Text, Hình ảnh, Nút...) vào vùng thiết kế ở giữa. Bạn có thể sử dụng các biến động (Ví dụ: <code className="text-primary bg-primary/10 px-1 rounded">{{ userName }}</code>) trực tiếp trong các khối văn bản.
+                                                Kéo các khối tử bên phải (Text, Hình ảnh, Nút...) vào vùng thiết kế ở giữa. Bạn có thể sử dụng các biến động (Ví dụ: <code className="text-primary bg-primary/10 px-1 rounded">{'{{userName}}'}</code>) trực tiếp trong các khối văn bản.
                                             </p>
                                         </div>
                                     </div>
