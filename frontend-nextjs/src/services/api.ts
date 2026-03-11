@@ -9,7 +9,7 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
-    timeout: 30000, // 30 seconds
+    timeout: 120000, // 120 seconds (needed for heavy AI Quiz generations)
 });
 
 // Token storage keys
