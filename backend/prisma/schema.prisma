@@ -489,6 +489,7 @@ model EmailTemplate {
   subject         String   @db.VarChar(500)
   htmlBody        String   @map("html_body")
   textBody        String?  @map("text_body")
+  designJson      Json?    @map("design_json")
   variables       String[] @default([]) // ["userName", "streakDays", "dueCount"]
   category        String   @default("reminder") @db.VarChar(50) // reminder, report, engagement
   isActive        Boolean  @default(true) @map("is_active")

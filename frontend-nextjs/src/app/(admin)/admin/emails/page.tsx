@@ -1,6 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import type { EditorRef } from 'react-email-editor';
+
+const EmailEditor = dynamic(() => import('react-email-editor').then(mod => mod.EmailEditor), { ssr: false });
+
 import AdminLayout from '@/components/layout/AdminLayout';
 import Icon from '@/components/common/Icon';
 import { useToastState, ToastContainer } from '@/components/common/Toast';
@@ -52,6 +57,7 @@ export default function AdminEmailsPage() {
     const [testSending, setTestSending] = useState<string | null>(null);
     const [previewHtml, setPreviewHtml] = useState<string>('');
     const [showPreview, setShowPreview] = useState(false);
+    const emailEditorRef = useRef<EditorRef>(null);
 
     // Form state
     const [formData, setFormData] = useState({
@@ -61,6 +67,7 @@ export default function AdminEmailsPage() {
         subject: '',
         htmlBody: '',
         textBody: '',
+        designJson: null as any,
         variables: [] as string[],
         category: 'reminder',
         isActive: true,
@@ -99,6 +106,7 @@ export default function AdminEmailsPage() {
             subject: '',
             htmlBody: '',
             textBody: '',
+            designJson: null,
             variables: [],
             category: 'reminder',
             isActive: true,
@@ -120,6 +128,7 @@ export default function AdminEmailsPage() {
             subject: template.subject,
             htmlBody: template.htmlBody,
             textBody: template.textBody || '',
+            designJson: template.designJson || null,
             variables: template.variables || [],
             category: template.category,
             isActive: template.isActive,
@@ -138,17 +147,33 @@ export default function AdminEmailsPage() {
             return;
         }
 
-        setSaving(true);
-        try {
-            await upsertEmailTemplate(formData);
-            await fetchData();
-            setIsEditing(false);
-            setSelectedTemplate(null);
-            showToast(selectedTemplate ? 'Đã cập nhật template' : 'Đã tạo template mới', 'success');
-        } catch (error) {
-            showToast('Lỗi khi lưu template', 'error');
-        } finally {
-            setSaving(false);
+        const saveTemplate = async (htmlBodyToSave: string, designJsonToSave: any) => {
+            setSaving(true);
+            try {
+                await upsertEmailTemplate({
+                    ...formData,
+                    htmlBody: htmlBodyToSave || formData.htmlBody,
+                    designJson: designJsonToSave || formData.designJson
+                });
+                await fetchData();
+                setIsEditing(false);
+                setSelectedTemplate(null);
+                showToast(selectedTemplate ? 'Đã cập nhật template' : 'Đã tạo template mới', 'success');
+            } catch (error) {
+                showToast('Lỗi khi lưu template', 'error');
+            } finally {
+                setSaving(false);
+            }
+        };
+
+        if (emailEditorRef.current?.editor) {
+            emailEditorRef.current.editor.exportHtml((data) => {
+                const { design, html } = data;
+                setFormData(prev => ({ ...prev, htmlBody: html, designJson: design }));
+                saveTemplate(html, design);
+            });
+        } else {
+            saveTemplate(formData.htmlBody, formData.designJson);
         }
     };
 
@@ -186,12 +211,34 @@ export default function AdminEmailsPage() {
     };
 
     const handlePreview = async () => {
-        try {
-            const result = await previewEmailTemplate(formData.subject, formData.htmlBody);
-            setPreviewHtml(result.html);
-            setShowPreview(true);
-        } catch (error) {
-            showToast('Lỗi tạo preview', 'error');
+        // Build preview string based on the current visual editor status if loaded
+        if (emailEditorRef.current?.editor) {
+            emailEditorRef.current.editor.exportHtml(async (data) => {
+                const { html, design } = data;
+                setFormData(prev => ({ ...prev, htmlBody: html, designJson: design }));
+
+                try {
+                    const result = await previewEmailTemplate(formData.subject, html);
+                    setPreviewHtml(result.html);
+                    setShowPreview(true);
+                } catch (error) {
+                    showToast('Lỗi tạo preview', 'error');
+                }
+            });
+        } else {
+            try {
+                const result = await previewEmailTemplate(formData.subject, formData.htmlBody);
+                setPreviewHtml(result.html);
+                setShowPreview(true);
+            } catch (error) {
+                showToast('Lỗi tạo preview', 'error');
+            }
+        }
+    };
+
+    const onEditorLoad = () => {
+        if (selectedTemplate?.designJson && emailEditorRef.current?.editor) {
+            emailEditorRef.current.editor.loadDesign(selectedTemplate.designJson);
         }
     };
 
@@ -435,15 +482,18 @@ export default function AdminEmailsPage() {
                                 </div>
                             </div>
 
-                            {/* HTML Body */}
-                            <div className="mb-4">
-                                <label className="block text-sm font-medium text-text-secondary mb-1">Nội dung HTML</label>
-                                <textarea
-                                    value={formData.htmlBody}
-                                    onChange={(e) => setFormData({ ...formData, htmlBody: e.target.value })}
-                                    className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-white h-48 font-mono text-sm"
-                                    placeholder="<h1>Chào {{userName}}!</h1>"
-                                />
+                            {/* Default HTML Body text box removed, replaced by No-Code Editor */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-text-secondary mb-1">
+                                    Thiết kế Email (Visual Editor)
+                                </label>
+                                <div className="bg-white rounded-lg overflow-hidden border border-border-color min-h-[600px] w-full">
+                                    <EmailEditor
+                                        ref={emailEditorRef}
+                                        onLoad={onEditorLoad}
+                                        minHeight="600px"
+                                    />
+                                </div>
                             </div>
 
                             {/* Active Toggle */}

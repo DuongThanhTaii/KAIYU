@@ -176,6 +176,7 @@ export class EmailService {
         subject: string;
         htmlBody: string;
         textBody?: string;
+        designJson?: any;
         variables?: string[];
         category?: string;
         isActive?: boolean;
@@ -193,6 +194,7 @@ export class EmailService {
                 subject: data.subject,
                 htmlBody: data.htmlBody,
                 textBody: data.textBody,
+                designJson: data.designJson || null,
                 variables: data.variables || [],
                 category: data.category || 'reminder',
                 isActive: data.isActive ?? true,
@@ -207,6 +209,7 @@ export class EmailService {
                 subject: data.subject,
                 htmlBody: data.htmlBody,
                 textBody: data.textBody,
+                designJson: data.designJson || null,
                 variables: data.variables,
                 category: data.category,
                 isActive: data.isActive,

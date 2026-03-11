@@ -61,6 +61,7 @@ export class EmailController {
             subject: string;
             htmlBody: string;
             textBody?: string;
+            designJson?: any;
             variables?: string[];
             category?: string;
             isActive?: boolean;

@@ -8,6 +8,7 @@ export interface EmailTemplate {
     subject: string;
     htmlBody: string;
     textBody?: string;
+    designJson?: any;
     variables: string[];
     category: string;
     isActive: boolean;
