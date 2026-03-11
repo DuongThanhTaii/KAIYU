@@ -167,7 +167,7 @@ export default function AdminEmailsPage() {
         };
 
         if (emailEditorRef.current?.editor) {
-            emailEditorRef.current.editor.exportHtml((data) => {
+            emailEditorRef.current.editor.exportHtml((data: any) => {
                 const { design, html } = data;
                 setFormData(prev => ({ ...prev, htmlBody: html, designJson: design }));
                 saveTemplate(html, design);
@@ -213,7 +213,7 @@ export default function AdminEmailsPage() {
     const handlePreview = async () => {
         // Build preview string based on the current visual editor status if loaded
         if (emailEditorRef.current?.editor) {
-            emailEditorRef.current.editor.exportHtml(async (data) => {
+            emailEditorRef.current.editor.exportHtml(async (data: any) => {
                 const { html, design } = data;
                 setFormData(prev => ({ ...prev, htmlBody: html, designJson: design }));
 
