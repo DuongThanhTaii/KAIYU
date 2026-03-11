@@ -17,9 +17,9 @@
   --color-text-secondary: #95b5c6;
 
   /* Fonts */
-  --font-family-display: 'Manrope', sans-serif;
-  --font-family-body: 'Noto Sans', sans-serif;
-  --font-family-chinese: 'LXGW WenKai TC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-display: 'Manrope', sans-serif;
+  --font-body: 'Noto Sans', sans-serif;
+  --font-chinese: 'LXGW WenKai TC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
   /* Border Radius */
   --radius-lg: 1.5rem;
@@ -29,7 +29,7 @@
 
 /* Base styles */
 html {
-  font-family: var(--font-family-display);
+  font-family: var(--font-display);
   scroll-behavior: smooth;
 }
 
