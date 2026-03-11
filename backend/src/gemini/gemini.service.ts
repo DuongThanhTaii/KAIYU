@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
@@ -59,7 +59,7 @@ ${subtitleData}
             return parsed;
         } catch (e) {
             this.logger.error('Failed to parse Gemini response or generate content', e);
-            throw new Error('Không thể tạo câu hỏi từ AI hiện tại: ' + e.message);
+            throw new InternalServerErrorException('Không thể tạo câu hỏi từ AI hiện tại: ' + e.message);
         }
     }
 }

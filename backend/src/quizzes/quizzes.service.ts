@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateQuizDto, UpdateQuizDto, CreateQuestionDto, UpdateQuestionDto } from './dto';
 import { GeminiService } from '../gemini/gemini.service';
@@ -100,7 +100,7 @@ export class QuizzesService {
             .join('\n');
 
         if (!subtitleLines) {
-            throw new Error('Video này không có nội dung phụ đề tiếng Trung hợp lệ để kết xuất bài tập.');
+            throw new BadRequestException('Video này không có nội dung phụ đề tiếng Trung hợp lệ để phân tích.');
         }
 
         // Call Gemini Service
