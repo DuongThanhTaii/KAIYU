@@ -484,14 +484,44 @@ export default function AdminEmailsPage() {
 
                             {/* Default HTML Body text box removed, replaced by No-Code Editor */}
                             <div className="mb-6">
-                                <label className="block text-sm font-medium text-text-secondary mb-1">
-                                    Thiết kế Email (Visual Editor)
-                                </label>
-                                <div className="bg-white rounded-lg overflow-hidden border border-border-color min-h-[600px] w-full">
+                                <div className="flex items-center justify-between mb-2">
+                                    <label className="block text-sm font-medium text-text-secondary">
+                                        Thiết kế Email (Visual Editor)
+                                    </label>
+                                    <div className="group relative flex items-center">
+                                        <Icon name="help_outline" className="text-primary text-xl cursor-help" />
+                                        <div className="absolute top-full right-0 mt-2 w-72 bg-surface-dark border border-primary/20 p-3 rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 tooltip-triangle">
+                                            <p className="text-xs text-text-secondary">
+                                                <strong className="text-white block mb-1">Hướng dẫn sử dụng:</strong>
+                                                Kéo các khối tử bên phải (Text, Hình ảnh, Nút...) vào vùng thiết kế ở giữa. Bạn có thể sử dụng các biến động (Ví dụ: <code className="text-primary bg-primary/10 px-1 rounded">{{ userName }}</code>) trực tiếp trong các khối văn bản.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-lg overflow-hidden border border-border-color min-h-[600px] w-full relative email-editor-container">
+                                    <style dangerouslySetInnerHTML={{
+                                        __html: `
+                                        .email-editor-container iframe { border-radius: 8px; }
+                                        /* Attempt to hide Unlayer watermark via css injection if possible, though React-Email-Editor isolates it in an iframe. */
+                                    ` }} />
                                     <EmailEditor
                                         ref={emailEditorRef}
                                         onLoad={onEditorLoad}
                                         minHeight="600px"
+                                        options={{
+                                            locale: 'vi-VN',
+                                            appearance: {
+                                                theme: 'modern_light',
+                                            },
+                                            customJS: [
+                                                `
+                                                // Inject CSS to hide Unlayer watermark
+                                                const style = document.createElement('style');
+                                                style.innerHTML = '.blockbuilder-preferences .unlayer-watermark, a[href*="unlayer.com"] { display: none !important; margin: 0 !important; padding: 0 !important; visibility: hidden !important; }';
+                                                document.head.appendChild(style);
+                                                `
+                                            ]
+                                        }}
                                     />
                                 </div>
                             </div>
