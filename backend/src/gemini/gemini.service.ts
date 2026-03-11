@@ -14,8 +14,8 @@ export class GeminiService {
             this.logger.warn('GEMINI_API_KEY is not set in environment variables. AI features will fail.');
         }
         this.genAI = new GoogleGenerativeAI(apiKey || 'missing-key');
-        // gemini-1.5-flash is fast and good for this task
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        // gemini-2.5-flash is the supported fast model for this API version
+        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
     }
 
     async generateQuizQuestions(subtitleData: string): Promise<any[]> {

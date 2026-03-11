@@ -83,7 +83,8 @@ function QuizContent() {
                 setQuiz(newQuiz);
             } catch (err) {
                 console.error('Failed to create quiz:', err);
-                setError('Không thể tạo bài tập');
+                const errorMsg = (err as any).response?.data?.message || (err as Error).message || 'Không thể tạo tự động.';
+                setError('Lỗi tạo bài tập: ' + errorMsg);
             } finally {
                 setGenerating(false);
             }
@@ -112,7 +113,8 @@ function QuizContent() {
                 setQuiz(newQuiz);
             } catch (err) {
                 console.error('Failed to generate quiz:', err);
-                setError('Lỗi AI: ' + (err instanceof Error ? err.message : 'Không thể tạo tự động.'));
+                const errorMsg = (err as any).response?.data?.message || (err as Error).message || 'Không thể tạo tự động.';
+                setError('Lỗi AI: ' + errorMsg);
             } finally {
                 setGenerating(false);
             }
