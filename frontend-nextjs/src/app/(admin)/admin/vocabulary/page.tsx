@@ -15,6 +15,7 @@ import {
     updateVocabulary,
     deleteVocabulary,
     importVocabulary,
+    validateImport,
     bulkUpdateVocabulary,
     getVocabularyStats,
     deleteAllVocabulary,
@@ -48,13 +49,18 @@ export default function AdminVocabularyPage() {
     const [updateData, setUpdateData] = useState<ImportVocabularyItem[]>([]);
     const [importError, setImportError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [importResult, setImportResult] = useState<{ created: number; skipped: number; errors: number } | null>(null);
+    const [importResult, setImportResult] = useState<{ created: number; skipped: number; merged?: number; errors: number } | null>(null);
     const [updateResult, setUpdateResult] = useState<{ updated: number; skipped: number; errors: number } | null>(null);
     const [duplicateConfirm, setDuplicateConfirm] = useState<{ message: string; vocab: Vocabulary } | null>(null);
     const [hskStats, setHskStats] = useState<Record<number, number>>({});
-    const [importProgress, setImportProgress] = useState<{ active: boolean; message: string }>({ active: false, message: '' });
+    const [importProgress, setImportProgress] = useState<{ active: boolean; message: string; percent?: number }>({ active: false, message: '' });
     const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+    const [deleteAllConfirmText, setDeleteAllConfirmText] = useState('');
     const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // New states for Single-Sheet import and Duplicate review
+    const [importTargetSheet, setImportTargetSheet] = useState<string>('all');
+    const [duplicateConfirmImport, setDuplicateConfirmImport] = useState<{ duplicates: string[], total: number } | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -148,6 +154,28 @@ export default function AdminVocabularyPage() {
             fetchStats();
         }
     }, [fetchVocabulary, fetchStats, isAuthenticated, user]);
+
+    // Auto-scroll to first highlighted search result
+    useEffect(() => {
+        if (searchQuery && vocabulary.length > 0) {
+            const q = searchQuery.toLowerCase();
+            const firstMatch = vocabulary.find(item =>
+                item.hanzi.toLowerCase().includes(q) ||
+                item.pinyin.toLowerCase().includes(q) ||
+                (item.meaningVi || '').toLowerCase().includes(q) ||
+                (item.meaningEn || '').toLowerCase().includes(q)
+            );
+            if (firstMatch) {
+                // Short timeout to ensure DOM update
+                setTimeout(() => {
+                    const row = document.getElementById(`vocab-row-${firstMatch.id}`);
+                    if (row) {
+                        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 100);
+            }
+        }
+    }, [vocabulary, searchQuery]);
 
     const resetForm = () => {
         setFormData({
@@ -340,31 +368,38 @@ export default function AdminVocabularyPage() {
 
     // Helper: parse one sheet row to ImportVocabularyItem using Vietnamese header keys
     const parseSheetRow = (row: any, hskLevel: number): ImportVocabularyItem | null => {
-        // Map Vietnamese headers (handles various naming from customer XLSX)
-        const hanzi = row['TỪ VỰNG'] || row['hanzi'] || row['汉字'] || '';
-        const pinyin = (row['PINYIN'] || row['PINYIN '] || row['pinyin'] || row['拼音'] || '').trim();
-        const partOfSpeech = (row['TỪ LOẠI'] || row['TỪ LOẠI '] || row[' TỪ LOẠI '] || row['partOfSpeech'] || '').trim();
-        const meaningVi = row['NGHĨA'] || row['meaningVi'] || row['nghĩa'] || '';
-        const exampleCn = row['VÍ DỤ (CHỮ HÁN)'] || row['example1_cn'] || '';
-        const examplePy = (row['PHIÊN ÂM'] || row['PHIÊN ÂM '] || row['example1_py'] || '').trim();
-        const exampleVi = (row['DỊCH'] || row['DỊCH '] || row['example1_vi'] || '').trim();
-        const synonymRaw = row['TỪ CẬN NGHĨA'] || row['TỪ ĐỒNG NGHĨA'] || row['synonym1'] || '';
-        const antonymRaw = row['TỪ TRÁI NGHĨA'] || row['antonym1'] || '';
+        let hanzi = '', pinyin = '', meaningVi = '', partOfSpeech = '', exampleCn = '', examplePy = '', exampleVi = '', synonymRaw = '', antonymRaw = '';
 
-        if (!hanzi || !pinyin) return null;
+        Object.keys(row).forEach(k => {
+            const key = k.trim().toLowerCase();
+            const val = String(row[k] || '').trim();
+            if (!val) return;
+
+            if (key === 'từ vựng' || key === 'hanzi' || key === '汉字') hanzi = val;
+            else if (key.includes('pinyin') || key === '拼音') pinyin = val;
+            else if (key.includes('từ loại') || key === 'partofspeech') partOfSpeech = val;
+            else if (key === 'nghĩa' || key === 'meaningvi' || key.includes('ý nghĩa') || key === 'nghia') meaningVi = val;
+            else if (key.includes('ví dụ')) exampleCn = val;
+            else if (key.includes('phiên âm')) examplePy = val;
+            else if (key === 'dịch' || key.includes('nghĩa tiếng việt')) exampleVi = val;
+            else if (key.includes('cận nghĩa') || key.includes('đồng nghĩa')) synonymRaw = val;
+            else if (key.includes('trái nghĩa')) antonymRaw = val;
+        });
+
+        if (!hanzi) return null;
 
         return {
-            hanzi: hanzi.trim(),
-            pinyin,
-            meaningVi: meaningVi.trim(),
+            hanzi,
+            pinyin: pinyin || '-',
+            meaningVi: meaningVi || '-',
             meaningEn: '',
             partOfSpeech: partOfSpeech || undefined,
             hskLevel,
-            example1_cn: exampleCn.trim() || undefined,
+            example1_cn: exampleCn || undefined,
             example1_py: examplePy || undefined,
             example1_vi: exampleVi || undefined,
-            synonym1: synonymRaw.trim() || undefined,
-            antonym1: antonymRaw.trim() || undefined,
+            synonym1: synonymRaw || undefined,
+            antonym1: antonymRaw || undefined,
         };
     };
 
@@ -382,15 +417,17 @@ export default function AdminVocabularyPage() {
 
                     const allItems: ImportVocabularyItem[] = [];
 
-                    // Read ALL sheets
+                    // Read configured sheets
                     for (const sheetName of workbook.SheetNames) {
+                        if (importTargetSheet !== 'all' && sheetName.trim() !== importTargetSheet) continue;
+
                         const worksheet = workbook.Sheets[sheetName];
                         const jsonData: any[] = XLSX.utils.sheet_to_json(worksheet);
                         const hskLevel = getHskLevelFromSheetName(sheetName);
 
                         for (const row of jsonData) {
                             const item = parseSheetRow(row, hskLevel);
-                            if (item && item.hanzi && item.meaningVi) {
+                            if (item && item.hanzi) {
                                 allItems.push(item);
                             }
                         }
@@ -417,13 +454,13 @@ export default function AdminVocabularyPage() {
                         const data = JSON.parse(content);
                         const items = (Array.isArray(data) ? data : [data]).map((item: any) => ({
                             hanzi: item.hanzi || '',
-                            pinyin: item.pinyin || '',
-                            meaningVi: item.meaningVi || item.meaning_vi || '',
+                            pinyin: item.pinyin || '-',
+                            meaningVi: item.meaningVi || item.meaning_vi || '-',
                             meaningEn: item.meaningEn || item.meaning_en,
                             partOfSpeech: item.partOfSpeech || item.part_of_speech,
                             hskLevel: item.hskLevel || item.hsk_level || 1,
                         }));
-                        setImportData(items.filter((i: ImportVocabularyItem) => i.hanzi && i.pinyin && i.meaningVi));
+                        setImportData(items.filter((i: ImportVocabularyItem) => i.hanzi));
                         setImportError(null);
                     } else {
                         // Parse CSV
@@ -445,9 +482,11 @@ export default function AdminVocabularyPage() {
                                 else if (['hsklevel', 'hsk_level', 'hsk'].includes(header)) item.hskLevel = parseInt(values[index]) || 1;
                                 else if (header === 'radical') item.radical = values[index];
                             });
+                            item.pinyin = item.pinyin || '-';
+                            item.meaningVi = item.meaningVi || '-';
                             return item;
                         });
-                        setImportData(items.filter(i => i.hanzi && i.pinyin && i.meaningVi));
+                        setImportData(items.filter(i => i.hanzi));
                         setImportError(null);
                     }
                 } catch {
@@ -461,9 +500,59 @@ export default function AdminVocabularyPage() {
     const handleImportConfirm = async () => {
         setIsSaving(true);
         setError(null);
-        setImportProgress({ active: true, message: `Đang import ${importData.length} từ vựng...` });
+        setImportProgress({ active: true, message: `Đang kiểm tra từ vựng trùng lặp...` });
         try {
-            const result = await importVocabulary(importData);
+            const validation = await validateImport(importData);
+            if (validation.duplicates.length > 0) {
+                setDuplicateConfirmImport(validation);
+                setImportProgress({ active: false, message: '' });
+                setIsSaving(false);
+            } else {
+                await executeImport('skip');
+            }
+        } catch (err: any) {
+            console.error('Failed to validate vocabulary:', err);
+            setImportError(err?.message || 'Kiểm tra thất bại. Vui lòng thử lại.');
+            setImportProgress({ active: false, message: '' });
+            setIsSaving(false);
+        }
+    };
+
+    const executeImport = async (duplicateAction: 'skip' | 'overwrite') => {
+        setIsSaving(true);
+        setDuplicateConfirmImport(null);
+        setImportProgress({ active: true, message: `Bắt đầu import ${importData.length} từ vựng...`, percent: 0 });
+
+        try {
+            const CHUNK_SIZE = 500;
+            const totalItems = importData.length;
+            const chunks = [];
+
+            for (let i = 0; i < totalItems; i += CHUNK_SIZE) {
+                chunks.push(importData.slice(i, i + CHUNK_SIZE));
+            }
+
+            const aggregatedResult = { created: 0, skipped: 0, merged: 0, errors: 0 };
+            let processedItems = 0;
+
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                const result = await importVocabulary(chunk, duplicateAction);
+
+                aggregatedResult.created += result.created;
+                aggregatedResult.skipped += result.skipped;
+                aggregatedResult.merged += (result.merged || 0);
+                aggregatedResult.errors += result.errors;
+
+                processedItems += chunk.length;
+                const percent = Math.round((processedItems / totalItems) * 100);
+
+                setImportProgress({
+                    active: true,
+                    message: `Đang import... (${processedItems}/${totalItems})`,
+                    percent
+                });
+            }
 
             setShowImportModal(false);
             setImportData([]);
@@ -471,8 +560,8 @@ export default function AdminVocabularyPage() {
             fetchVocabulary(1);
             fetchStats();
 
-            // Show result in modal
-            setImportResult(result);
+            // Show aggregated result in modal
+            setImportResult(aggregatedResult);
         } catch (err: any) {
             console.error('Failed to import vocabulary:', err);
             setImportError(err?.message || 'Import thất bại. Vui lòng thử lại.');
@@ -671,6 +760,7 @@ export default function AdminVocabularyPage() {
         try {
             const result = await deleteAllVocabulary();
             setShowDeleteAllConfirm(false);
+            setDeleteAllConfirmText('');
             setImportProgress({ active: false, message: '' });
             fetchVocabulary(1);
             fetchStats();
@@ -699,7 +789,7 @@ export default function AdminVocabularyPage() {
         {
             key: 'hanzi',
             header: 'Từ vựng',
-            width: '120px',
+            width: '100px',
             render: (vocab: Vocabulary) => (
                 <div className="flex flex-col items-center">
                     <span className="text-2xl font-bold text-white font-chinese">{searchQuery ? highlightText(vocab.hanzi, searchQuery) : vocab.hanzi}</span>
@@ -710,21 +800,51 @@ export default function AdminVocabularyPage() {
         {
             key: 'partOfSpeech',
             header: 'Từ loại',
-            width: '100px',
-            render: (vocab: Vocabulary) => (
-                vocab.partOfSpeech ? (
-                    <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">{vocab.partOfSpeech}</span>
-                ) : (
-                    <span className="text-text-secondary">-</span>
-                )
-            ),
+            width: '110px',
+            render: (vocab: Vocabulary) => {
+                if (!vocab.partOfSpeech) {
+                    return <span className="text-text-secondary">-</span>;
+                }
+                const tags = vocab.partOfSpeech.split(/[\/,]/).map(t => t.trim()).filter(Boolean);
+                return (
+                    <div className="flex flex-col gap-1 items-start w-fit">
+                        {tags.map((tag, idx) => (
+                            <span key={idx} className="text-[10px] whitespace-nowrap px-2 py-1 bg-primary/10 text-primary rounded-full">
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                );
+            },
         },
         {
             key: 'meaning',
-            header: 'Nghĩa',
-            render: (vocab: Vocabulary) => (
-                <span className="text-white text-sm">{searchQuery ? highlightText(vocab.meaningVi || vocab.meaningEn || '-', searchQuery) : (vocab.meaningVi || vocab.meaningEn || '-')}</span>
-            ),
+            header: 'Nghĩa (Các biến thể)',
+            width: '280px',
+            render: (vocab: Vocabulary) => {
+                const multi = (vocab.meanings as any[]) || [];
+                if (multi.length > 0) {
+                    return (
+                        <div className="flex flex-col gap-1 min-w-[200px]">
+                            {/* Primary meaning */}
+                            <div className="text-white text-sm">
+                                <span className="text-text-secondary text-xs mr-2">({vocab.pinyin})</span>
+                                {vocab.partOfSpeech && <span className="text-xs px-1 py-0.5 bg-primary/10 text-primary rounded mr-2">{vocab.partOfSpeech}</span>}
+                                {searchQuery ? highlightText(vocab.meaningVi || vocab.meaningEn || '-', searchQuery) : (vocab.meaningVi || vocab.meaningEn || '-')}
+                            </div>
+                            {/* Variants */}
+                            {multi.map((m, idx) => (
+                                <div key={idx} className="text-white/80 text-sm flex items-start border-t border-border-color/50 pt-1 mt-1">
+                                    <span className="text-text-secondary text-xs mr-2 flex-shrink-0">({m.pinyin})</span>
+                                    {m.partOfSpeech && <span className="text-[10px] px-1 py-0.5 bg-surface-highlight text-text-secondary rounded mr-2 mt-0.5 flex-shrink-0">{m.partOfSpeech}</span>}
+                                    <span className="break-words">{m.meanings?.join(', ')}</span>
+                                </div>
+                            ))}
+                        </div>
+                    );
+                }
+                return <span className="text-white text-sm">{searchQuery ? highlightText(vocab.meaningVi || vocab.meaningEn || '-', searchQuery) : (vocab.meaningVi || vocab.meaningEn || '-')}</span>;
+            },
         },
         {
             key: 'examples',
@@ -746,7 +866,7 @@ export default function AdminVocabularyPage() {
         {
             key: 'relatedWords',
             header: 'Cận nghĩa / Trái nghĩa',
-            width: '180px',
+            width: '160px',
             render: (vocab: Vocabulary) => {
                 const synonyms = vocab.synonyms as Array<{ hanzi?: string; meaning?: string }> | null;
                 const antonyms = vocab.antonyms as Array<{ hanzi?: string; meaning?: string }> | null;
@@ -794,14 +914,14 @@ export default function AdminVocabularyPage() {
             <SpeakerButton
                 text={vocab.hanzi}
                 size="sm"
-                className="p-1.5 rounded-lg hover:bg-primary/20 text-primary transition-colors"
+                className="inline-flex items-center justify-center p-2 rounded-full hover:bg-primary/20 text-primary transition-colors"
             />
             <button
                 onClick={(e) => {
                     e.stopPropagation();
                     handleOpenEdit(vocab);
                 }}
-                className="p-1.5 rounded-lg hover:bg-amber-500/20 text-amber-400 transition-colors"
+                className="inline-flex items-center justify-center p-2 rounded-full hover:bg-amber-500/20 text-amber-400 transition-colors"
                 title="Sửa"
             >
                 <Icon name="edit" className="text-lg" />
@@ -811,7 +931,7 @@ export default function AdminVocabularyPage() {
                     e.stopPropagation();
                     setShowDeleteConfirm(vocab.id);
                 }}
-                className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400 transition-colors"
+                className="inline-flex items-center justify-center p-2 rounded-full hover:bg-red-500/20 text-red-400 transition-colors"
                 title="Xóa"
             >
                 <Icon name="delete" className="text-lg" />
@@ -890,12 +1010,22 @@ export default function AdminVocabularyPage() {
             {/* Progress Bar */}
             {importProgress.active && (
                 <div className="mb-4 p-4 bg-primary/10 border border-primary/30 rounded-xl">
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                        <p className="text-sm text-primary font-medium">{importProgress.message}</p>
+                    <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <p className="text-sm text-primary font-medium">{importProgress.message}</p>
+                        </div>
+                        {importProgress.percent !== undefined && (
+                            <span className="text-sm font-bold text-primary">{importProgress.percent}%</span>
+                        )}
                     </div>
                     <div className="w-full h-2 bg-background-dark rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full animate-pulse" style={{ width: '100%' }} />
+                        <div
+                            className="h-full bg-gradient-to-r from-primary to-cyan-400 rounded-full transition-all duration-300 relative overflow-hidden"
+                            style={{ width: `${importProgress.percent || 100}%` }}
+                        >
+                            <div className="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]" />
+                        </div>
                     </div>
                 </div>
             )}
@@ -969,6 +1099,16 @@ export default function AdminVocabularyPage() {
                 onPageChange={(page) => fetchVocabulary(page)}
                 actions={actions}
                 emptyMessage="Chưa có từ vựng nào"
+                rowId={(item: Vocabulary) => `vocab-row-${item.id}`}
+                rowClassName={(item: Vocabulary) => {
+                    if (!searchQuery) return '';
+                    const q = searchQuery.toLowerCase();
+                    const isMatch = item.hanzi.toLowerCase().includes(q) ||
+                        item.pinyin.toLowerCase().includes(q) ||
+                        (item.meaningVi || '').toLowerCase().includes(q) ||
+                        (item.meaningEn || '').toLowerCase().includes(q);
+                    return isMatch ? 'bg-primary/20 border-l-4 border-primary' : '';
+                }}
             />
 
             {/* Create/Edit Modal */}
@@ -1087,6 +1227,8 @@ export default function AdminVocabularyPage() {
                                     {[1, 2, 3, 4, 5, 6].map((level) => (
                                         <option key={level} value={level}>HSK {level}</option>
                                     ))}
+                                    <option value={7}>Ngoài tiêu chuẩn (HSK 7+)</option>
+                                    <option value={0}>Không chia cấp độ</option>
                                 </select>
                             </div>
                             <div>
@@ -1410,6 +1552,28 @@ export default function AdminVocabularyPage() {
                         </div>
                     </div>
 
+                    {/* Target Sheet Selector (XLSX only) */}
+                    {importMode === 'xlsx' && (
+                        <div className="flex items-center gap-4 mb-4">
+                            <span className="text-sm text-text-secondary">Chọn Sheet Import:</span>
+                            <select
+                                value={importTargetSheet}
+                                onChange={(e) => setImportTargetSheet(e.target.value)}
+                                className="px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                            >
+                                <option value="all">Tất cả các Sheet</option>
+                                <option value="HSK1">HSK1</option>
+                                <option value="HSK2">HSK2</option>
+                                <option value="HSK3">HSK3</option>
+                                <option value="HSK4">HSK4</option>
+                                <option value="HSK5">HSK5</option>
+                                <option value="HSK6">HSK6</option>
+                                <option value="HSK7">Ngoài tiêu chuẩn</option>
+                                <option value="HSK0">Không chia cấp độ</option>
+                            </select>
+                        </div>
+                    )}
+
                     {/* File Upload */}
                     <div
                         className="border-2 border-dashed border-border-color rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer"
@@ -1502,6 +1666,69 @@ export default function AdminVocabularyPage() {
                 </div>
             </Modal>
 
+            {/* Duplicate Review Modal */}
+            <Modal
+                isOpen={!!duplicateConfirmImport}
+                onClose={() => setDuplicateConfirmImport(null)}
+                title="Phát hiện từ vựng trùng lặp"
+                size="md"
+                footer={
+                    <>
+                        <button
+                            onClick={() => executeImport('skip')}
+                            disabled={isSaving}
+                            className="px-4 py-2 bg-surface-highlight text-white rounded-lg hover:bg-surface-highlight/80 transition-colors disabled:opacity-50"
+                        >
+                            Chỉ thêm từ mới (Bỏ qua trùng)
+                        </button>
+                        <button
+                            onClick={() => executeImport('overwrite')}
+                            disabled={isSaving}
+                            className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50 flex items-center gap-2"
+                        >
+                            {isSaving && <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
+                            Ghi đè tất cả (Cập nhật trùng)
+                        </button>
+                    </>
+                }
+            >
+                {duplicateConfirmImport && (
+                    <div className="space-y-4">
+                        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                            <div className="flex items-center gap-3 mb-2">
+                                <Icon name="warning" className="text-amber-400 text-xl" />
+                                <h3 className="text-amber-400 font-bold">Trùng lặp dữ liệu</h3>
+                            </div>
+                            <p className="text-sm text-text-secondary">
+                                Tệp import chứa <strong className="text-white">{duplicateConfirmImport.total}</strong> từ vựng.
+                                Phát hiện <strong className="text-amber-400">{duplicateConfirmImport.duplicates.length}</strong> Hán tự đã tồn tại trong hệ thống.
+                            </p>
+                            <p className="text-sm text-text-secondary mt-2">
+                                Bạn muốn xử lý các từ trùng lặp này như thế nào?
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-sm font-medium text-white mb-2">
+                                Xem trước một số từ trùng:
+                            </p>
+                            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-background-dark border border-border-color rounded-lg">
+                                {duplicateConfirmImport.duplicates.slice(0, 20).map((hanzi, idx) => (
+                                    <span key={idx} className="px-2 py-1 bg-surface-highlight text-primary rounded text-sm font-chinese">
+                                        {hanzi}
+                                    </span>
+                                ))}
+                                {duplicateConfirmImport.duplicates.length > 20 && (
+                                    <span className="px-2 py-1 text-text-secondary text-sm italic">
+                                        ...+{duplicateConfirmImport.duplicates.length - 20} từ khác
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </Modal>
+
             {/* Import Result Modal */}
             <Modal
                 isOpen={!!importResult}
@@ -1543,6 +1770,19 @@ export default function AdminVocabularyPage() {
                                 </div>
                             </div>
 
+                            {/* Merged */}
+                            {importResult.merged !== undefined && importResult.merged > 0 && (
+                                <div className="flex items-center gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                    <div className="size-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                        <Icon name="merge_type" className="text-blue-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="text-sm text-text-secondary">Gộp vào từ có sẵn (Nhiều nghĩa)</p>
+                                        <p className="text-xl font-bold text-blue-400">{importResult.merged}</p>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Skipped */}
                             {importResult.skipped > 0 && (
                                 <div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
@@ -1550,7 +1790,7 @@ export default function AdminVocabularyPage() {
                                         <Icon name="skip_next" className="text-amber-400" />
                                     </div>
                                     <div className="flex-1">
-                                        <p className="text-sm text-text-secondary">Bỏ qua (đã tồn tại)</p>
+                                        <p className="text-sm text-text-secondary">Bỏ qua (đã tồn tại / không thao tác)</p>
                                         <p className="text-xl font-bold text-amber-400">{importResult.skipped}</p>
                                     </div>
                                 </div>
@@ -1655,20 +1895,26 @@ export default function AdminVocabularyPage() {
             {/* Delete All Confirmation Modal */}
             <Modal
                 isOpen={showDeleteAllConfirm}
-                onClose={() => setShowDeleteAllConfirm(false)}
+                onClose={() => {
+                    setShowDeleteAllConfirm(false);
+                    setDeleteAllConfirmText('');
+                }}
                 title="Xóa toàn bộ Từ vựng"
                 size="sm"
                 footer={
                     <>
                         <button
-                            onClick={() => setShowDeleteAllConfirm(false)}
+                            onClick={() => {
+                                setShowDeleteAllConfirm(false);
+                                setDeleteAllConfirmText('');
+                            }}
                             className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
                         >
                             Hủy
                         </button>
                         <button
                             onClick={handleDeleteAll}
-                            disabled={isSaving}
+                            disabled={isSaving || deleteAllConfirmText.toLowerCase() !== 'xác nhận xóa'}
                             className="px-6 py-2 bg-red-500 text-white font-bold rounded-lg hover:bg-red-400 transition-colors disabled:opacity-50 flex items-center gap-2"
                         >
                             {isSaving && <div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />}
@@ -1690,6 +1936,18 @@ export default function AdminVocabularyPage() {
                         <p className="text-sm text-text-secondary">
                             Hành động này không thể hoàn tác. Bạn sẽ cần import lại file XLSX sau khi xóa.
                         </p>
+                    </div>
+                    <div className="mt-4">
+                        <label className="block text-sm text-text-secondary mb-2 text-center">
+                            Vui lòng nhập <strong className="text-white">xác nhận xóa</strong> để tiếp tục
+                        </label>
+                        <input
+                            type="text"
+                            value={deleteAllConfirmText}
+                            onChange={(e) => setDeleteAllConfirmText(e.target.value)}
+                            className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-white text-center focus:outline-none focus:border-red-500 transition-colors"
+                            placeholder="xác nhận xóa"
+                        />
                     </div>
                 </div>
             </Modal>

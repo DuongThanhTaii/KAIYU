@@ -71,12 +71,11 @@ const SpeakerButton: React.FC<SpeakerButtonProps> = ({
             }}
             className={`
                 inline-flex items-center justify-center gap-1
-                rounded-full transition-all duration-200
                 ${isSpeaking
                     ? 'bg-primary/20 text-primary animate-pulse'
                     : 'bg-surface-highlight/50 text-text-secondary hover:text-primary hover:bg-primary/10'
                 }
-                ${sizeClasses[size]}
+                ${sizeClasses[size]} p-5 hover:bg-primary/20 hover:text-primary
                 ${className}
             `}
             title={isSpeaking ? 'Dừng phát' : `Phát âm: ${text}`}

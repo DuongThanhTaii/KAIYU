@@ -101,6 +101,7 @@ export interface Vocabulary {
     examples?: { chinese: string; pinyin?: string; vietnamese: string }[];
     synonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
     antonyms?: { hanzi: string; pinyin: string; meaningVi: string }[];
+    meanings?: any;
     mnemonic?: string;
     createdAt: string;
     updatedAt?: string;
@@ -269,12 +270,22 @@ export const deleteVocabulary = (id: string): Promise<{ message: string }> => {
     });
 };
 
-export const importVocabulary = (
+export const validateImport = (
     items: ImportVocabularyItem[]
-): Promise<{ created: number; skipped: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }> => {
-    return apiRequest<{ created: number; skipped: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }>('/vocabulary/import', {
+): Promise<{ duplicates: string[]; total: number }> => {
+    return apiRequest<{ duplicates: string[]; total: number }>('/vocabulary/validate-import', {
         method: 'POST',
         body: JSON.stringify(items),
+    });
+};
+
+export const importVocabulary = (
+    items: ImportVocabularyItem[],
+    duplicateAction: 'skip' | 'overwrite' = 'skip'
+): Promise<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }> => {
+    return apiRequest<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }>('/vocabulary/import', {
+        method: 'POST',
+        body: JSON.stringify({ items, duplicateAction }),
     });
 };
 

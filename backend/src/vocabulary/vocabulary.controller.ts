@@ -23,6 +23,7 @@ import {
     CreateVocabularyDto,
     UpdateVocabularyDto,
     ImportVocabularyItemDto,
+    ImportRequestDto,
     ImportResultDto,
 } from './dto';
 import { JwtAuthGuard, RolesGuard, Roles } from '../auth';
@@ -69,14 +70,15 @@ export class VocabularyController {
 
     @Get('search')
     @ApiOperation({ summary: 'Search vocabulary by query' })
-    @ApiQuery({ name: 'q', required: true, type: String })
+    @ApiResponse({ status: 200, description: 'Return matching vocabulary' })
+    @ApiQuery({ name: 'q', required: true, description: 'Search term' })
     @ApiQuery({ name: 'limit', required: false, type: Number })
-    @ApiResponse({ status: 200, description: 'Search results' })
     async search(
         @Query('q') q: string,
         @Query('limit') limit?: number,
     ) {
-        return this.vocabularyService.search(q, limit ? Number(limit) : 20);
+        if (!q) return [];
+        return this.vocabularyService.searchAll(q, limit ? Number(limit) : 20);
     }
 
     @Get('lookup/:input')
@@ -167,39 +169,32 @@ export class VocabularyController {
         return this.vocabularyService.remove(id);
     }
 
+    @Post('validate-import')
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
+    @ApiBearerAuth()
+    @ApiOperation({ summary: '[Admin] Validate vocabulary data before import to check for duplicates' })
+    @ApiBody({
+        description: 'Array of vocabulary items',
+        type: [ImportVocabularyItemDto]
+    })
+    @ApiResponse({ status: 200, description: 'Validation result with duplicates' })
+    async validateImport(@Body() items: ImportVocabularyItemDto[]) {
+        return this.vocabularyService.validateImport(items);
+    }
+
     @Post('import')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')
     @ApiBearerAuth()
-    @ApiOperation({ summary: '[Admin] Import vocabulary from XLSX/CSV data' })
+    @ApiOperation({ summary: '[Admin] Import vocabulary from XLSX/CSV data with conflict resolution' })
     @ApiBody({
-        description: 'Array of vocabulary items to import',
-        schema: {
-            type: 'array',
-            items: {
-                type: 'object',
-                required: ['hanzi', 'pinyin', 'meaningVi', 'hskLevel'],
-                properties: {
-                    hanzi: { type: 'string', example: '好' },
-                    pinyin: { type: 'string', example: 'hǎo' },
-                    meaningVi: { type: 'string', example: 'tốt, thích' },
-                    meaningEn: { type: 'string', example: 'good, to like' },
-                    partOfSpeech: { type: 'string', example: 'adj,verb' },
-                    hskLevel: { type: 'number', example: 1 },
-                    radical: { type: 'string', example: '女' },
-                    strokeCount: { type: 'number', example: 6 },
-                    example1_cn: { type: 'string', example: '你好' },
-                    example1_py: { type: 'string', example: 'nǐ hǎo' },
-                    example1_vi: { type: 'string', example: 'Xin chào' },
-                    synonym1: { type: 'string', example: '棒' },
-                    antonym1: { type: 'string', example: '坏' },
-                },
-            },
-        },
+        description: 'Import request with items and duplicate action',
+        type: ImportRequestDto
     })
     @ApiResponse({ status: 201, description: 'Import result', type: ImportResultDto })
-    async importVocabulary(@Body() items: ImportVocabularyItemDto[]) {
-        return this.vocabularyService.importVocabulary(items);
+    async importVocabulary(@Body() request: ImportRequestDto) {
+        return this.vocabularyService.importVocabulary(request);
     }
 
     @Post('bulk-update')

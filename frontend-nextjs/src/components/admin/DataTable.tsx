@@ -23,6 +23,8 @@ interface DataTableProps<T> {
     onPageChange?: (page: number) => void;
     onRowClick?: (item: T) => void;
     actions?: (item: T) => React.ReactNode;
+    rowClassName?: (item: T) => string;
+    rowId?: (item: T) => string;
 }
 
 function DataTable<T extends { id: string | number }>({
@@ -34,6 +36,8 @@ function DataTable<T extends { id: string | number }>({
     onPageChange,
     onRowClick,
     actions,
+    rowClassName,
+    rowId,
 }: DataTableProps<T>) {
     const getValue = (item: T, key: string): any => {
         const keys = key.split('.');
@@ -95,9 +99,9 @@ function DataTable<T extends { id: string | number }>({
                         ) : (
                             data.map((item) => (
                                 <tr
+                                    id={rowId ? rowId(item) : undefined}
                                     key={item.id}
-                                    className={`hover:bg-surface-highlight transition-colors ${onRowClick ? 'cursor-pointer' : ''
-                                        }`}
+                                    className={`hover:bg-surface-highlight transition-colors ${onRowClick ? 'cursor-pointer' : ''} ${rowClassName ? rowClassName(item) : ''}`}
                                     onClick={() => onRowClick?.(item)}
                                 >
                                     {columns.map((col) => (

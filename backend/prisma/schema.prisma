@@ -141,6 +141,7 @@ model Vocabulary {
   
   partOfSpeech         String?               @map("part_of_speech") @db.VarChar(100)
   hskLevel             Int                   @default(1) @map("hsk_level")
+  sequenceOrder        Int                   @default(0) @map("sequence_order")
   tags                 String[]              @default([])
   audioUrl             String?               @map("audio_url") @db.VarChar(1000)
   

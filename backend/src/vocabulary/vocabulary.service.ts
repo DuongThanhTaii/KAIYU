@@ -4,6 +4,7 @@ import {
     CreateVocabularyDto,
     UpdateVocabularyDto,
     ImportVocabularyItemDto,
+    ImportRequestDto,
     ImportResultDto,
     ExampleSentenceDto,
     RelatedWordDto,
@@ -47,7 +48,7 @@ export class VocabularyService {
                 where,
                 skip,
                 take: limit,
-                orderBy: [{ hskLevel: 'asc' }, { hanzi: 'asc' }],
+                orderBy: [{ sequenceOrder: 'asc' }, { hskLevel: 'asc' }, { hanzi: 'asc' }],
             }),
             this.prisma.vocabulary.count({ where }),
         ]);
@@ -218,17 +219,47 @@ export class VocabularyService {
     }
 
     /**
+     * Validate import data before proceeding
+     * Returns the list of duplicate hanzi in the system
+     */
+    async validateImport(items: ImportVocabularyItemDto[]): Promise<{ duplicates: string[], total: number }> {
+        const uniqueHanzis = Array.from(new Set(items.map(i => i.hanzi).filter(Boolean)));
+
+        const existing = await this.prisma.vocabulary.findMany({
+            where: { hanzi: { in: uniqueHanzis } },
+            select: { hanzi: true }
+        });
+
+        return {
+            duplicates: existing.map(e => e.hanzi),
+            total: items.length
+        };
+    }
+
+    /**
      * Import vocabulary from XLSX/CSV data
      */
-    async importVocabulary(items: ImportVocabularyItemDto[]): Promise<ImportResultDto> {
+    async importVocabulary(request: ImportRequestDto): Promise<ImportResultDto> {
+        const { items, duplicateAction = 'skip' } = request;
+
         const result: ImportResultDto = {
             created: 0,
             skipped: 0,
+            merged: 0,
             errors: 0,
             errorDetails: [],
         };
 
+        // Get current max sequenceOrder
+        const maxSeqRes = await this.prisma.vocabulary.aggregate({
+            _max: { sequenceOrder: true }
+        });
+        let currentSequence = maxSeqRes._max.sequenceOrder || 0;
+
         for (const item of items) {
+            currentSequence++;
+            const itemSequence = currentSequence;
+
             try {
                 // Validate required fields (pinyin is optional - some words missing it)
                 if (!item.hanzi || !item.meaningVi) {
@@ -321,19 +352,43 @@ export class VocabularyService {
                 } as any;
 
                 if (existing) {
+                    if (duplicateAction === 'skip') {
+                        result.skipped++;
+                        continue;
+                    }
+
                     // Update existing: merge richer data, keep lower HSK level
                     const updateData: any = {};
                     if (item.pinyin && !existing.pinyin) updateData.pinyin = item.pinyin;
                     if (item.meaningEn && !existing.meaningEn) updateData.meaningEn = item.meaningEn;
                     if (item.partOfSpeech && !existing.partOfSpeech) updateData.partOfSpeech = item.partOfSpeech;
-                    if (examples.length > 0 && (!existing.examples || (existing.examples as any[]).length === 0)) {
-                        updateData.examples = examples;
-                    }
-                    if (synonyms.length > 0 && (!existing.synonyms || (existing.synonyms as any[]).length === 0)) {
-                        updateData.synonyms = synonyms;
-                    }
-                    if (antonyms.length > 0 && (!existing.antonyms || (existing.antonyms as any[]).length === 0)) {
-                        updateData.antonyms = antonyms;
+                    if (item.meaningVi) updateData.meaningVi = item.meaningVi;
+                    if (item.hskLevel < existing.hskLevel) updateData.hskLevel = item.hskLevel;
+
+                    if (examples.length > 0) updateData.examples = examples;
+                    if (synonyms.length > 0) updateData.synonyms = synonyms;
+                    if (antonyms.length > 0) updateData.antonyms = antonyms;
+
+                    // Merge meanings logic for duplicates
+                    const existingMeanings = (existing.meanings as any[]) || [];
+                    const isAlreadyInMeanings = existingMeanings.some(m =>
+                        m.pinyin === (item.pinyin || '') &&
+                        m.partOfSpeech === (item.partOfSpeech || '') &&
+                        (m.meanings as string[] || []).includes(item.meaningVi)
+                    );
+                    const isIdenticalToPrimary = (existing.pinyin || '') === (item.pinyin || '') &&
+                        existing.meaningVi === item.meaningVi &&
+                        (existing.partOfSpeech || '') === (item.partOfSpeech || '');
+
+                    let hasMerged = false;
+                    if (!isAlreadyInMeanings && !isIdenticalToPrimary) {
+                        existingMeanings.push({
+                            partOfSpeech: item.partOfSpeech || '',
+                            pinyin: item.pinyin || '',
+                            meanings: [item.meaningVi]
+                        });
+                        updateData.meanings = existingMeanings;
+                        hasMerged = true;
                     }
 
                     if (Object.keys(updateData).length > 0) {
@@ -342,9 +397,14 @@ export class VocabularyService {
                             data: updateData,
                         });
                     }
-                    result.skipped++;
+                    if (hasMerged) {
+                        result.merged = (result.merged || 0) + 1;
+                    } else {
+                        result.skipped++;
+                    }
                 } else {
                     // Create new
+                    vocabData.sequenceOrder = itemSequence;
                     await this.prisma.vocabulary.create({ data: vocabData });
                     result.created++;
                 }
@@ -382,7 +442,7 @@ export class VocabularyService {
     /**
      * Search vocabulary by multiple criteria
      */
-    async search(query: string, limit = 20) {
+    async searchAll(query: string, limit: number = 20) {
         return this.prisma.vocabulary.findMany({
             where: {
                 OR: [
@@ -393,7 +453,7 @@ export class VocabularyService {
                 ],
             },
             take: limit,
-            orderBy: [{ hskLevel: 'asc' }, { hanzi: 'asc' }],
+            orderBy: [{ sequenceOrder: 'asc' }, { hskLevel: 'asc' }, { hanzi: 'asc' }],
         });
     }
 

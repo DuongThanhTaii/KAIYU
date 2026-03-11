@@ -247,7 +247,8 @@ export class ImportVocabularyItemDto {
     hanzi: string;
 
     @IsString()
-    pinyin: string;
+    @IsOptional()
+    pinyin?: string;
 
     @IsString()
     meaningVi: string;
@@ -273,8 +274,8 @@ export class ImportVocabularyItemDto {
     partOfSpeech?: string;
 
     @IsNumber()
-    @Min(1)
-    @Max(6)
+    @Min(0)
+    @Max(9)
     hskLevel: number;
 
     @IsArray()
@@ -372,6 +373,19 @@ export class ImportVocabularyItemDto {
     mnemonic?: string;
 }
 
+export class ImportRequestDto {
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => ImportVocabularyItemDto)
+    items: ImportVocabularyItemDto[];
+
+    @IsOptional()
+    @IsString()
+    // 'skip' = ignore existing hanzi
+    // 'overwrite' = update existing hanzi with imported data
+    duplicateAction?: 'skip' | 'overwrite';
+}
+
 export class ImportVocabularyDto {
     @ApiProperty({ description: 'List of vocabulary items to import', type: [ImportVocabularyItemDto] })
     @IsArray()
@@ -386,6 +400,9 @@ export class ImportResultDto {
 
     @ApiProperty({ description: 'Number of items skipped (duplicates)' })
     skipped: number;
+
+    @ApiPropertyOptional({ description: 'Number of items merged into meanings' })
+    merged?: number;
 
     @ApiProperty({ description: 'Number of items with errors' })
     errors: number;
