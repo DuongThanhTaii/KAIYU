@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans:wght@400;500;700&family=LXGW+WenKai+TC:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
 
 @import "tailwindcss";
@@ -19,7 +19,7 @@
   /* Fonts */
   --font-family-display: 'Manrope', sans-serif;
   --font-family-body: 'Noto Sans', sans-serif;
-  --font-family-chinese: 'Noto Sans SC', sans-serif;
+  --font-family-chinese: 'LXGW WenKai TC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
   /* Border Radius */
   --radius-lg: 1.5rem;
