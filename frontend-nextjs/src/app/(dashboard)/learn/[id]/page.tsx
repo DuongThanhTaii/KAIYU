@@ -40,6 +40,13 @@ const formatTime = (seconds: number): string => {
 
 type SidebarTab = 'subtitles' | 'vocabulary' | 'notes';
 
+// Initialize native Chinese word segmenter
+const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter
+    ? new Intl.Segmenter('zh-CN', { granularity: 'word' })
+    : null;
+
+const playbackSpeeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+
 export default function VideoPlayerPage() {
     const router = useRouter();
     const params = useParams();
@@ -75,10 +82,7 @@ export default function VideoPlayerPage() {
     const [popoverWord, setPopoverWord] = useState<string | null>(null);
     const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
 
-    // Multi-character selection state
-    const [selectionStart, setSelectionStart] = useState<number | null>(null);
-    const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
-    const [isSelecting, setIsSelecting] = useState(false);
+    // Multi-character selection state (Legacy - removed drag dependencies since words are now natively grouped via Segmenter)
 
     // Playback control state
     const [isLoopMode, setIsLoopMode] = useState(false);
@@ -88,7 +92,6 @@ export default function VideoPlayerPage() {
     const [showShadowPrompt, setShowShadowPrompt] = useState(false);
     const [shadowSubtitleIndex, setShadowSubtitleIndex] = useState<number | null>(null);
     const lastSubtitleEndTimeRef = useRef<number>(0);
-    const playbackSpeeds = [0.5, 0.75, 1, 1.25, 1.5];
 
     // View counting state - track if view has been recorded this session
     const viewRecordedRef = useRef(false);
@@ -191,15 +194,6 @@ export default function VideoPlayerPage() {
         }
     }, []);
 
-    // Cycle through preset playback speeds
-    const cyclePlaybackSpeed = useCallback(() => {
-        const currentIndex = playbackSpeeds.indexOf(playbackSpeed);
-        const nextIndex = (currentIndex + 1) % playbackSpeeds.length;
-        setSpeed(playbackSpeeds[nextIndex]);
-    }, [playbackSpeed, playbackSpeeds, setSpeed]);
-
-
-
     useEffect(() => {
         if (!authLoading && !isAuthenticated) {
             router.replace("/login");
@@ -222,7 +216,7 @@ export default function VideoPlayerPage() {
                     setQuiz(quizData);
                 }
                 // Get saved position for this video
-                const thisVideoProgress = progressData.find((p: any) => p.videoId === videoId);
+                const thisVideoProgress = progressData.find((p: { videoId: string; lastPositionSeconds: number }) => p.videoId === videoId);
                 if (thisVideoProgress && thisVideoProgress.lastPositionSeconds && thisVideoProgress.lastPositionSeconds > 0) {
                     setSavedPosition(thisVideoProgress.lastPositionSeconds);
                 }
@@ -547,64 +541,30 @@ export default function VideoPlayerPage() {
                                     </p>
                                 )}
 
-                                {/* Chinese Hanzi Tier - Interactive */}
-                                <p
-                                    className="text-white text-2xl md:text-3xl font-bold tracking-wide leading-normal flex flex-wrap justify-center gap-0.5 font-chinese select-none"
-                                    onMouseUp={() => {
-                                        if (isSelecting && selectionStart !== null && selectionEnd !== null) {
-                                            const start = Math.min(selectionStart, selectionEnd);
-                                            const end = Math.max(selectionStart, selectionEnd);
-                                            const text = (currentSubtitle.hanzi || '').slice(start, end + 1);
-                                            if (text) {
-                                                const chars = document.querySelectorAll('[data-char-index]');
-                                                if (chars[end]) {
-                                                    const rect = (chars[end] as HTMLElement).getBoundingClientRect();
-                                                    setPopoverPosition({ x: rect.left + rect.width / 2, y: rect.top });
-                                                }
-                                                setPopoverWord(text);
-                                                setSelectedWord(text);
-                                            }
+                                {/* Chinese Hanzi Tier - Interactive via Intl Segmenter */}
+                                <p className="text-white text-2xl md:text-3xl font-bold tracking-wide leading-normal flex flex-wrap justify-center gap-x-1 gap-y-2 font-chinese select-none">
+                                    {(segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c }))).map((seg: { segment: string }, i: number) => {
+                                        const word = seg.segment;
+                                        // Render pure whitespace/punctuation without interaction
+                                        if (!word.trim()) {
+                                            return <span key={i}>{word}</span>;
                                         }
-                                        setIsSelecting(false);
-                                    }}
-                                    onMouseLeave={() => setIsSelecting(false)}
-                                >
-                                    {(currentSubtitle.hanzi || '').split("").map((char: string, i: number) => {
-                                        const isInRange = selectionStart !== null && selectionEnd !== null &&
-                                            i >= Math.min(selectionStart, selectionEnd) &&
-                                            i <= Math.max(selectionStart, selectionEnd);
                                         return (
                                             <span
                                                 key={i}
-                                                data-char-index={i}
-                                                onMouseDown={(e) => {
-                                                    e.preventDefault();
-                                                    setSelectionStart(i);
-                                                    setSelectionEnd(i);
-                                                    setIsSelecting(true);
-                                                }}
-                                                onMouseEnter={() => {
-                                                    if (isSelecting) {
-                                                        setSelectionEnd(i);
-                                                    }
-                                                }}
                                                 onClick={(e) => {
-                                                    e.stopPropagation(); // Prevent onMouseUp from also triggering
-                                                    if (!isSelecting || selectionStart === selectionEnd) {
-                                                        const rect = (e.target as HTMLElement).getBoundingClientRect();
-                                                        setPopoverPosition({ x: rect.left + rect.width / 2, y: rect.top });
-                                                        setPopoverWord(char);
-                                                        setSelectedWord(char);
-                                                        setSelectionStart(null);
-                                                        setSelectionEnd(null);
-                                                    }
+                                                    e.stopPropagation();
+                                                    const rect = (e.target as HTMLElement).getBoundingClientRect();
+                                                    setPopoverPosition({ x: rect.left + rect.width / 2, y: rect.top });
+                                                    setPopoverWord(word);
+                                                    setSelectedWord(word);
                                                 }}
-                                                className={`cursor-pointer transition-all hover:text-primary hover:underline hover:decoration-2 hover:underline-offset-4 ${isInRange || selectedWord?.includes(char)
+                                                className={`cursor-pointer transition-all hover:text-primary hover:underline hover:decoration-2 hover:underline-offset-4 ${selectedWord === word
                                                     ? "text-primary underline decoration-2 underline-offset-4"
                                                     : ""
                                                     }`}
                                             >
-                                                {char}
+                                                {word}
                                             </span>
                                         );
                                     })}
