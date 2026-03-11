@@ -83,6 +83,7 @@ function QuizContent() {
                 setQuiz(newQuiz);
             } catch (err) {
                 console.error('Failed to create quiz:', err);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const errorMsg = (err as any).response?.data?.message || (err as Error).message || 'Không thể tạo tự động.';
                 setError('Lỗi tạo bài tập: ' + errorMsg);
             } finally {
@@ -113,6 +114,7 @@ function QuizContent() {
                 setQuiz(newQuiz);
             } catch (err) {
                 console.error('Failed to generate quiz:', err);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const errorMsg = (err as any).response?.data?.message || (err as Error).message || 'Không thể tạo tự động.';
                 setError('Lỗi AI: ' + errorMsg);
             } finally {

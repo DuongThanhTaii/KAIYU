@@ -217,6 +217,9 @@ export class QuizzesService {
         return this.prisma.videoQuiz.update({
             where: { id },
             data: { isPublished: true },
+            include: {
+                questions: { orderBy: { sequenceOrder: 'asc' } },
+            },
         });
     }
 
