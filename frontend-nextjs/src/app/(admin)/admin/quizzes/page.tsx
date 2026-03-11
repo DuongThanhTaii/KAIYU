@@ -361,7 +361,7 @@ function QuizContent() {
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <Button onClick={handleCreateManual} disabled={generating || loading} variant="secondary" size="sm">
+                        <Button onClick={handleCreateManual} disabled={generating || loading} variant="secondary" size="sm" className="whitespace-nowrap">
                             {generating ? '...' : (
                                 <>
                                     <Icon name="add" className="text-[16px]" />
@@ -369,7 +369,7 @@ function QuizContent() {
                                 </>
                             )}
                         </Button>
-                        <Button onClick={handleGenerate} disabled={generating || loading} variant="secondary" size="sm" className="bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border-none">
+                        <Button onClick={handleGenerate} disabled={generating || loading} variant="secondary" size="sm" className="whitespace-nowrap bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border-none">
                             {generating ? 'Đang tạo bằng AI...' : (
                                 <>
                                     <Icon name="auto_awesome" className="text-[16px] text-amber-500" />
@@ -379,13 +379,13 @@ function QuizContent() {
                         </Button>
                         <div className="w-px h-6 bg-border-color mx-1"></div>
                         {quiz && !quiz.isPublished && (
-                            <Button onClick={handlePublish} variant="primary" size="sm">
+                            <Button onClick={handlePublish} variant="primary" size="sm" className="whitespace-nowrap">
                                 <Icon name="publish" className="text-lg" />
                                 Xuất bản
                             </Button>
                         )}
                         {quiz?.isPublished && (
-                            <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium">
+                            <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium whitespace-nowrap">
                                 Đã xuất bản
                             </span>
                         )}
