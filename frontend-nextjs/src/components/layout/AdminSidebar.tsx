@@ -2,9 +2,9 @@
 
 import React, { useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import Icon from '../common/Icon';
-import { useLogo } from '../../hooks/useLogo';
 
 interface NavItem {
     label: string;
@@ -36,7 +36,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     setIsMobileOpen
 }) => {
     const pathname = usePathname();
-    const { logoUrl } = useLogo();
 
     const isActive = (path: string) => {
         if (path === '/admin') {
@@ -69,24 +68,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             <Icon name="menu" size="md" className="text-text-secondary hover:text-white" />
                         </button>
 
-                        {/* Brand - Hide text when collapsed */}
+                        {/* Brand - Hidden entirely when collapsed */}
                         {!isCollapsed && (
-                            <div className="flex items-center gap-3">
-                                {logoUrl ? (
-                                    <div className="h-10 flex items-center">
-                                        <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-full size-10 shadow-lg shadow-amber-500/20 flex items-center justify-center">
-                                            <Icon name="admin_panel_settings" className="text-white text-xl" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <h1 className="text-white text-xl font-bold leading-none tracking-tight">Admin Panel</h1>
-                                            <p className="text-amber-400/70 text-xs font-medium">KAIYU</p>
-                                        </div>
-                                    </>
-                                )}
+                            <div className="flex items-center gap-2">
+                                <div className="size-9 flex items-center justify-center shrink-0">
+                                    <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                </div>
+                                <div className="flex flex-col leading-none">
+                                    <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
+                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">ADMIN PANEL</span>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -167,22 +158,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         >
                             <Icon name="close" size="md" className="text-text-secondary" />
                         </button>
-                        <div className="flex items-center gap-3">
-                            {logoUrl ? (
-                                <div className="h-10 flex items-center">
-                                    <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-full size-10 shadow-lg shadow-amber-500/20 flex items-center justify-center">
-                                        <Icon name="admin_panel_settings" className="text-white text-xl" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h1 className="text-white text-xl font-bold leading-none tracking-tight">Admin Panel</h1>
-                                        <p className="text-amber-400/70 text-xs font-medium">KAIYU</p>
-                                    </div>
-                                </>
-                            )}
+                        <div className="flex items-center gap-2">
+                            <div className="size-9 flex items-center justify-center shrink-0">
+                                <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                            </div>
+                            <div className="flex flex-col leading-none">
+                                <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
+                                <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">ADMIN PANEL</span>
+                            </div>
                         </div>
                     </div>
 

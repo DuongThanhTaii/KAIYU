@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import Icon from '../common/Icon';
 import { useAuth } from '../../contexts/AuthContext';
 import { progressApi } from '../../services/progressApi';
-import { useLogo } from '../../hooks/useLogo';
 
 interface NavItem {
     label: string;
@@ -41,7 +41,6 @@ const Sidebar: React.FC<SidebarProps> = ({
     const { user } = useAuth();
     const [dailyProgress, setDailyProgress] = useState<number>(0);
     const [minutesStudied, setMinutesStudied] = useState<number>(0);
-    const { logoUrl } = useLogo();
 
     const isActive = (path: string) => pathname === path;
 
@@ -86,22 +85,16 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Icon name="menu" size="md" className="text-text-secondary hover:text-white" />
                         </button>
 
-                        {/* Brand - Hide when collapsed */}
+                        {/* Brand - Hidden entirely when collapsed */}
                         {!isCollapsed && (
-                            <div className="flex items-center gap-3">
-                                {logoUrl ? (
-                                    <div className="h-10 flex items-center">
-                                        <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
-                                        <div className="flex flex-col">
-                                            <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
-                                            <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
-                                        </div>
-                                    </>
-                                )}
+                            <div className="flex items-center gap-2">
+                                <div className="size-9 flex items-center justify-center shrink-0">
+                                    <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                </div>
+                                <div className="flex flex-col leading-none">
+                                    <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
+                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                                </div>
                             </div>
                         )}
                     </div>
@@ -198,20 +191,14 @@ const Sidebar: React.FC<SidebarProps> = ({
                         >
                             <Icon name="close" size="md" className="text-text-secondary" />
                         </button>
-                        <div className="flex items-center gap-3">
-                            {logoUrl ? (
-                                <div className="h-10 flex items-center">
-                                    <img src={logoUrl} alt="Logo" className="max-h-full object-contain" />
-                                </div>
-                            ) : (
-                                <>
-                                    <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 shadow-lg shadow-primary/20"></div>
-                                    <div className="flex flex-col">
-                                        <h1 className="text-white text-xl font-bold leading-none tracking-tight">KAIYU</h1>
-                                        <p className="text-text-secondary text-xs font-medium">v2.4 Pro</p>
-                                    </div>
-                                </>
-                            )}
+                        <div className="flex items-center gap-2">
+                            <div className="size-9 flex items-center justify-center shrink-0">
+                                <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                            </div>
+                            <div className="flex flex-col leading-none">
+                                <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
+                                <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                            </div>
                         </div>
                     </div>
 
