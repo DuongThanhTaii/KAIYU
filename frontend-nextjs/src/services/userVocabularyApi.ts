@@ -76,6 +76,7 @@ export interface SaveWordData {
     sourceAudioUrl?: string;
     sourceMeaning?: string;
     sourceTokens?: any[];
+    note?: string;
 }
 
 // User Vocabulary API (requires authentication)
