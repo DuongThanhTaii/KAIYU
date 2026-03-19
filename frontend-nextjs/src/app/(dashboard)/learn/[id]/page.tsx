@@ -578,9 +578,9 @@ export default function VideoPlayerPage() {
 
                                  {/* Chinese Hanzi Tier - Interactive via Tokens or Intl Segmenter */}
                                 <p className="text-white text-2xl md:text-3xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
-                                    {(currentSubtitle.tokens && currentSubtitle.tokens.length > 0 
+                                    {((currentSubtitle.tokens && currentSubtitle.tokens.length > 0
                                         ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
-                                        : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))
+                                        : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))) as any[]
                                     ).map((seg: { segment: string }, i: number) => {
                                         const word = seg.segment;
                                         // Render pure whitespace/punctuation without interaction
