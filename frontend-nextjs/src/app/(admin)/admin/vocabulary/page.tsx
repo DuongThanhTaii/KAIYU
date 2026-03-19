@@ -264,7 +264,13 @@ export default function AdminVocabularyPage() {
             pinyin: '',
             meaningVi: '',
             partOfSpeech: '',
+            meaningEn: '',
+            radical: '',
+            radicalMeaning: '',
+            strokeCount: '',
             hskLevel: 1,
+            tags: '',
+            mnemonic: '',
         });
         setMeaningEntries([{ partOfSpeech: '', pinyin: '', meanings: '' }]);
         setExampleEntries([{ chinese: '', pinyin: '', vietnamese: '' }]);
@@ -285,7 +291,13 @@ export default function AdminVocabularyPage() {
             pinyin: vocab.pinyin,
             meaningVi: vocab.meaningVi,
             partOfSpeech: (vocab.partOfSpeech || '').toLowerCase(),
+            meaningEn: vocab.meaningEn || '',
+            radical: vocab.radical || '',
+            radicalMeaning: vocab.radicalMeaning || '',
+            strokeCount: vocab.strokeCount !== undefined ? String(vocab.strokeCount) : '',
             hskLevel: vocab.hskLevel,
+            tags: Array.isArray(vocab.tags) ? vocab.tags.join(', ') : (vocab.tags || ''),
+            mnemonic: vocab.mnemonic || '',
         });
         
         // Load meanings if available
