@@ -21,4 +21,5 @@ export const POS_COLORS: Record<string, string> = {
     'Số từ': 'text-yellow-400',
     'Lượng từ': 'text-teal-400',
     'Trợ từ': 'text-indigo-400',
+    'Danh từ riêng': 'text-blue-300',
 };

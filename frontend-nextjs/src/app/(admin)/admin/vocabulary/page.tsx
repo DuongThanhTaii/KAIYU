@@ -24,31 +24,79 @@ import {
 } from '@/services/adminApi';
 import { HSK_COLORS, POS_COLORS } from '@/constants/vocabulary';
 
+const POS_OPTIONS = [
+    'Danh từ', 'Danh từ riêng', 'Động từ', 'Tính từ', 'Trạng từ', 
+    'Số từ', 'Lượng từ', 'Giới từ', 'Liên từ', 'Đại từ', 
+    'Thán từ', 'Trợ từ', 'Cụm từ'
+];
+
 /**
  * Format a Vietnamese meaning line by removing numbering and colorizing the part of speech
  */
+// Helper for case-insensitive POS_COLORS lookup
+const getPosColor = (pos: string) => {
+    if (!pos) return 'text-text-secondary';
+    // Find key case-insensitively
+    const key = Object.keys(POS_COLORS).find(k => k.toLowerCase() === pos.toLowerCase());
+    return key ? POS_COLORS[key] : 'text-text-secondary';
+};
+
 const renderFormattedMeaning = (text: string) => {
     if (!text) return null;
     
-    // 1. Strip leading number (e.g., "1. ", " 2. ")
-    const cleanText = text.replace(/^\s*\d+\.\s*/, '').trim();
-
-    // 2. Look for part of speech at the beginning before a colon
-    const match = cleanText.match(/^([^:]+):/);
-    if (match) {
-        const pos = match[1].trim();
-        const meaning = cleanText.substring(match[0].length).trim();
-        const colorClass = POS_COLORS[pos] || 'text-text-secondary';
-
+    // Check if the text has numbering like "1. ... 2. ..."
+    const hasNumbering = /\d+\./.test(text);
+    
+    if (hasNumbering) {
+        const parts = text.split(/\s*(?:\d+)\.\s*/).filter(p => p.trim());
+        
         return (
-            <>
-                <span className={`${colorClass} font-bold mr-2 whitespace-nowrap`}>{pos}:</span>
-                <span className="text-white">{meaning}</span>
-            </>
+            <div className="flex flex-col gap-1.5 py-1">
+                {parts.map((part, idx) => {
+                    const cleanPart = part.trim();
+                    const colonIndex = cleanPart.indexOf(':');
+                    
+                    if (colonIndex > 0) {
+                        const pos = cleanPart.substring(0, colonIndex).trim();
+                        const meaning = cleanPart.substring(colonIndex + 1).trim();
+                        const colorClass = getPosColor(pos);
+                        
+                        return (
+                            <div key={idx} className="flex items-start gap-1 leading-tight">
+                                <div className="text-sm">
+                                    <span className={`${colorClass} font-bold mr-1.5 uppercase tracking-tighter text-[10px]`}>{pos}:</span>
+                                    <span className="text-white/90">{meaning}</span>
+                                </div>
+                            </div>
+                        );
+                    }
+                    
+                    return (
+                        <div key={idx} className="flex items-start gap-1 leading-tight">
+                            <span className="text-sm text-white/90">{cleanPart}</span>
+                        </div>
+                    );
+                })}
+            </div>
         );
     }
 
-    return <span className="text-white">{cleanText}</span>;
+    // Default formatting for single line without numbering
+    const match = text.match(/^([^:]+):/);
+    if (match) {
+        const pos = match[1].trim();
+        const meaning = text.substring(match[0].length).trim();
+        const colorClass = getPosColor(pos);
+
+        return (
+            <div className="text-sm py-0.5">
+                <span className={`${colorClass} font-bold mr-2 uppercase tracking-tighter text-[10px]`}>{pos}:</span>
+                <span className="text-white">{meaning}</span>
+            </div>
+        );
+    }
+
+    return <span className="text-white text-sm">{text}</span>;
 }
 
 export default function AdminVocabularyPage() {
@@ -115,6 +163,7 @@ export default function AdminVocabularyPage() {
         hanzi: '',
         pinyin: '',
         meaningVi: '',
+        partOfSpeech: '',
         meaningEn: '',
         radical: '',
         radicalMeaning: '',
@@ -214,13 +263,8 @@ export default function AdminVocabularyPage() {
             hanzi: '',
             pinyin: '',
             meaningVi: '',
-            meaningEn: '',
-            radical: '',
-            radicalMeaning: '',
-            strokeCount: '',
+            partOfSpeech: '',
             hskLevel: 1,
-            tags: '',
-            mnemonic: '',
         });
         setMeaningEntries([{ partOfSpeech: '', pinyin: '', meanings: '' }]);
         setExampleEntries([{ chinese: '', pinyin: '', vietnamese: '' }]);
@@ -240,24 +284,24 @@ export default function AdminVocabularyPage() {
             hanzi: vocab.hanzi,
             pinyin: vocab.pinyin,
             meaningVi: vocab.meaningVi,
-            meaningEn: vocab.meaningEn || '',
-            radical: vocab.radical || '',
-            radicalMeaning: vocab.radicalMeaning || '',
-            strokeCount: vocab.strokeCount?.toString() || '',
+            partOfSpeech: (vocab.partOfSpeech || '').toLowerCase(),
             hskLevel: vocab.hskLevel,
-            tags: vocab.tags?.join(', ') || '',
-            mnemonic: vocab.mnemonic || '',
         });
+        
         // Load meanings if available
         const vocabMeanings = (vocab as any).meanings;
         if (vocabMeanings && Array.isArray(vocabMeanings) && vocabMeanings.length > 0) {
             setMeaningEntries(vocabMeanings.map((m: any) => ({
-                partOfSpeech: m.partOfSpeech || '',
+                partOfSpeech: (m.partOfSpeech || '').toLowerCase(),
                 pinyin: m.pinyin || '',
-                meanings: Array.isArray(m.meanings) ? m.meanings.join(', ') : '',
+                meanings: Array.isArray(m.meanings) ? m.meanings.join('; ') : (m.meanings || ''),
             })));
         } else {
-            setMeaningEntries([{ partOfSpeech: vocab.partOfSpeech || '', pinyin: vocab.pinyin, meanings: vocab.meaningVi }]);
+            setMeaningEntries([{ 
+                partOfSpeech: (vocab.partOfSpeech || '').toLowerCase(), 
+                pinyin: vocab.pinyin || '', 
+                meanings: vocab.meaningVi || '' 
+            }]);
         }
         // Load examples
         const vocabExamples = vocab.examples;
@@ -301,14 +345,18 @@ export default function AdminVocabularyPage() {
         setError(null);
 
         try {
-            // Build meanings array from form
+            // Build meanings array
             const meanings = meaningEntries
                 .filter(m => m.partOfSpeech || m.meanings)
                 .map(m => ({
                     partOfSpeech: m.partOfSpeech,
                     pinyin: m.pinyin || formData.pinyin,
-                    meanings: m.meanings.split(',').map(s => s.trim()).filter(Boolean),
+                    meanings: m.meanings.split(';').map(s => s.trim()).filter(Boolean),
                 }));
+
+            // Use the first one as primary for compatibility
+            const primaryMeaning = meanings[0]?.meanings?.join('; ') || formData.meaningVi;
+            const primaryPoS = meanings[0]?.partOfSpeech || formData.partOfSpeech;
 
             // Build examples array
             const examples = exampleEntries
@@ -319,24 +367,13 @@ export default function AdminVocabularyPage() {
                     vietnamese: e.vietnamese,
                 }));
 
-            // Combine meaningVi from meanings or use direct input
-            let primaryMeaningVi = formData.meaningVi;
-            if (meanings.length > 0) {
-                primaryMeaningVi = meanings.flatMap(m => m.meanings).join('; ');
-            }
-
             const vocabData: any = {
                 hanzi: formData.hanzi,
                 pinyin: formData.pinyin,
-                meaningVi: primaryMeaningVi,
-                meaningEn: formData.meaningEn || undefined,
-                radical: formData.radical || undefined,
-                radicalMeaning: formData.radicalMeaning || undefined,
-                strokeCount: formData.strokeCount ? parseInt(formData.strokeCount) : undefined,
+                meaningVi: primaryMeaning,
+                partOfSpeech: primaryPoS || undefined,
                 hskLevel: formData.hskLevel,
-                tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
-                mnemonic: formData.mnemonic || undefined,
-                examples: examples.length > 0 ? examples : undefined,
+                examples: examples,
                 meanings: meanings.length > 0 ? meanings : undefined,
                 synonyms: parseRelatedWords(synonyms),
                 antonyms: parseRelatedWords(antonyms),
@@ -864,23 +901,19 @@ export default function AdminVocabularyPage() {
                     return (
                         <div className="flex flex-col gap-1 min-w-[200px]">
                             {/* Primary meaning */}
-                            <div className="text-white text-sm">
-                                <span className="text-text-secondary text-xs mr-2 font-pinyin">({vocab.pinyin})</span>
-                                {vocab.partOfSpeech && <span className="text-xs px-1 py-0.5 bg-primary/10 text-primary rounded mr-2">{vocab.partOfSpeech}</span>}
-                                {searchQuery ? highlightText(vocab.meaningVi || vocab.meaningEn || '-', searchQuery) : (vocab.meaningVi || vocab.meaningEn || '-')}
-                            </div>
+                            {renderFormattedMeaning(vocab.meaningVi || vocab.meaningEn || '-')}
+                            
                             {/* Variants */}
                             {multi.map((m, idx) => (
-                                <div key={idx} className="text-white/80 text-sm flex items-start border-t border-border-color/50 pt-1 mt-1">
-                                    <span className="text-text-secondary text-xs mr-2 flex-shrink-0 font-pinyin">({m.pinyin})</span>
-                                    {m.partOfSpeech && <span className="text-[10px] px-1 py-0.5 bg-surface-highlight text-text-secondary rounded mr-2 mt-0.5 flex-shrink-0">{m.partOfSpeech}</span>}
-                                    <span className="break-words">{m.meanings?.join(', ')}</span>
+                                <div key={idx} className="border-t border-border-color/30 pt-1 mt-1">
+                                    <div className="text-[10px] text-primary/60 font-pinyin mb-0.5">({m.pinyin})</div>
+                                    {renderFormattedMeaning(`${m.partOfSpeech ? m.partOfSpeech + ': ' : ''}${Array.isArray(m.meanings) ? m.meanings.join(', ') : m.meanings}`)}
                                 </div>
                             ))}
                         </div>
                     );
                 }
-                return <span className="text-white text-sm">{searchQuery ? highlightText(vocab.meaningVi || vocab.meaningEn || '-', searchQuery) : (vocab.meaningVi || vocab.meaningEn || '-')}</span>;
+                return renderFormattedMeaning(vocab.meaningVi || vocab.meaningEn || '-');
             },
         },
         {
@@ -1322,7 +1355,7 @@ export default function AdminVocabularyPage() {
                     resetForm();
                 }}
                 title={editingVocab ? 'Chỉnh sửa Từ vựng' : 'Thêm Từ vựng mới'}
-                size="md"
+                size="lg"
                 footer={
                     <>
                         <button
@@ -1345,12 +1378,12 @@ export default function AdminVocabularyPage() {
             >
                 <form onSubmit={handleSubmit} className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
                     {/* Section 1: Basic Info */}
-                    <div className="bg-surface-highlight/30 rounded-xl p-4 space-y-4">
-                        <h4 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                    <div className="bg-surface-highlight/30 border border-border-color rounded-xl p-4 space-y-4">
+                        <h4 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2 mb-2">
                             <Icon name="info" size="sm" />
                             Thông tin cơ bản
                         </h4>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-medium text-text-secondary mb-1">
                                     Hán tự <span className="text-red-400">*</span>
@@ -1359,41 +1392,14 @@ export default function AdminVocabularyPage() {
                                     type="text"
                                     value={formData.hanzi}
                                     onChange={(e) => setFormData({ ...formData, hanzi: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-2xl text-center placeholder-text-secondary focus:outline-none focus:border-amber-500 font-chinese"
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-2xl font-chinese font-bold"
                                     placeholder="好"
                                     required
                                 />
                             </div>
                             <div>
                                 <label className="block text-xs font-medium text-text-secondary mb-1">
-                                    Bộ thủ
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.radical}
-                                    onChange={(e) => setFormData({ ...formData, radical: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-xl text-center font-chinese"
-                                    placeholder="女"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-text-secondary mb-1">
-                                    Số nét
-                                </label>
-                                <input
-                                    type="number"
-                                    value={formData.strokeCount}
-                                    onChange={(e) => setFormData({ ...formData, strokeCount: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-center"
-                                    placeholder="6"
-                                    min="1"
-                                />
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-medium text-text-secondary mb-1">
-                                    Pinyin chính <span className="text-red-400">*</span>
+                                    Pinyin <span className="text-red-400">*</span>
                                 </label>
                                 <input
                                     type="text"
@@ -1402,18 +1408,6 @@ export default function AdminVocabularyPage() {
                                     className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white font-pinyin"
                                     placeholder="hǎo"
                                     required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-medium text-text-secondary mb-1">
-                                    Nghĩa bộ thủ
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.radicalMeaning}
-                                    onChange={(e) => setFormData({ ...formData, radicalMeaning: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white"
-                                    placeholder="nữ, phụ nữ"
                                 />
                             </div>
                         </div>
@@ -1434,227 +1428,203 @@ export default function AdminVocabularyPage() {
                                     <option value={0}>Không chia cấp độ</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="block text-xs font-medium text-text-secondary mb-1">
-                                    Tags (phẩy cách)
-                                </label>
-                                <input
-                                    type="text"
-                                    value={formData.tags}
-                                    onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white"
-                                    placeholder="greeting, common"
-                                />
-                            </div>
                         </div>
                     </div>
 
-                    {/* Section 2: Meanings (Dynamic) */}
-                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 space-y-3">
+                    {/* Section 2: Meanings & Parts of Speech */}
+                    <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold text-blue-400 uppercase tracking-wider flex items-center gap-2">
                                 <Icon name="translate" size="sm" />
                                 Nghĩa và Loại từ
                             </h4>
-                            <button
-                                type="button"
-                                onClick={() => setMeaningEntries([...meaningEntries, { partOfSpeech: '', pinyin: '', meanings: '' }])}
-                                className="text-xs px-2 py-1 bg-blue-500/20 text-blue-400 rounded hover:bg-blue-500/30"
-                            >
-                                + Thêm nghĩa
-                            </button>
                         </div>
-                        {meaningEntries.map((entry, idx) => (
-                            <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                                <div className="col-span-3">
-                                    <label className="block text-xs text-text-secondary mb-1">Loại từ</label>
-                                    <select
-                                        value={entry.partOfSpeech}
-                                        onChange={(e) => {
-                                            const newEntries = [...meaningEntries];
-                                            newEntries[idx].partOfSpeech = e.target.value;
-                                            setMeaningEntries(newEntries);
-                                        }}
-                                        className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm"
-                                    >
-                                        <option value="">Chọn</option>
-                                        <option value="noun">Danh từ</option>
-                                        <option value="verb">Động từ</option>
-                                        <option value="adj">Tính từ</option>
-                                        <option value="adv">Trạng từ</option>
-                                        <option value="prep">Giới từ</option>
-                                        <option value="conj">Liên từ</option>
-                                        <option value="phrase">Cụm từ</option>
-                                        <option value="other">Khác</option>
-                                    </select>
+                        
+                        <div className="space-y-4">
+                            {meaningEntries.map((entry, idx) => (
+                                <div key={idx} className="relative bg-background-dark/50 p-3 rounded-lg border border-border-color/50 space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="col-span-2">
+                                            <label className="block text-[10px] font-medium text-text-secondary uppercase mb-1.5">Loại từ (Chọn nhiều)</label>
+                                            <div className="flex flex-wrap gap-1.5 p-1 bg-background-dark/30 rounded border border-border-color/30">
+                                                {POS_OPTIONS.map(pos => {
+                                                    const currentTags = entry.partOfSpeech.split(/[\/,]/).map(t => t.trim().toLowerCase()).filter(Boolean);
+                                                    const isSelected = currentTags.includes(pos.toLowerCase());
+                                                    const colorClass = getPosColor(pos);
+                                                    
+                                                    return (
+                                                        <button
+                                                            key={pos}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const currentTagsRaw = entry.partOfSpeech.split(/[\/,]/).map(t => t.trim()).filter(Boolean);
+                                                                let nextTags;
+                                                                if (isSelected) {
+                                                                    nextTags = currentTagsRaw.filter(p => p.toLowerCase() !== pos.toLowerCase());
+                                                                } else {
+                                                                    nextTags = [...currentTagsRaw, pos];
+                                                                }
+                                                                const newEntries = [...meaningEntries];
+                                                                newEntries[idx].partOfSpeech = nextTags.join(', ');
+                                                                setMeaningEntries(newEntries);
+                                                            }}
+                                                            className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                                                                isSelected 
+                                                                    ? `${colorClass.replace('text-', 'bg-').replace('-400', '-500/20').replace('-300', '-500/20')} ${colorClass} border-current ring-1 ring-current/30` 
+                                                                    : 'bg-background-dark/50 text-text-secondary border-border-color hover:border-text-secondary'
+                                                            }`}
+                                                        >
+                                                            {pos}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                        <div className="col-span-2">
+                                            <label className="block text-[10px] font-medium text-text-secondary uppercase mb-1">Pinyin (nếu khác {formData.pinyin})</label>
+                                            <input
+                                                type="text"
+                                                value={entry.pinyin}
+                                                onChange={(e) => {
+                                                    const newEntries = [...meaningEntries];
+                                                    newEntries[idx].pinyin = e.target.value;
+                                                    setMeaningEntries(newEntries);
+                                                }}
+                                                className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-pinyin"
+                                                placeholder={formData.pinyin || "hǎo"}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-medium text-text-secondary uppercase mb-1">Dịch nghĩa (cách nhau bởi dấu chấm phẩy)</label>
+                                        <textarea
+                                            value={entry.meanings}
+                                            onChange={(e) => {
+                                                const newEntries = [...meaningEntries];
+                                                newEntries[idx].meanings = e.target.value;
+                                                setMeaningEntries(newEntries);
+                                            }}
+                                            className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm min-h-[60px]"
+                                            placeholder="tốt; đẹp; khỏe"
+                                            required={idx === 0}
+                                        />
+                                    </div>
                                 </div>
-                                <div className="col-span-3">
-                                    <label className="block text-xs text-text-secondary mb-1">Pinyin</label>
-                                    <input
-                                        type="text"
-                                        value={entry.pinyin}
-                                        onChange={(e) => {
-                                            const newEntries = [...meaningEntries];
-                                            newEntries[idx].pinyin = e.target.value;
-                                            setMeaningEntries(newEntries);
-                                        }}
-                                        className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-pinyin"
-                                        placeholder="hǎo"
-                                    />
-                                </div>
-                                <div className="col-span-5">
-                                    <label className="block text-xs text-text-secondary mb-1">Nghĩa (phẩy cách)</label>
-                                    <input
-                                        type="text"
-                                        value={entry.meanings}
-                                        onChange={(e) => {
-                                            const newEntries = [...meaningEntries];
-                                            newEntries[idx].meanings = e.target.value;
-                                            setMeaningEntries(newEntries);
-                                        }}
-                                        className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm"
-                                        placeholder="tốt, đẹp, khỏe"
-                                    />
-                                </div>
-                                <div className="col-span-1">
-                                    {meaningEntries.length > 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={() => setMeaningEntries(meaningEntries.filter((_, i) => i !== idx))}
-                                            className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
-                                        >
-                                            <Icon name="delete" size="sm" />
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                        ))}
-                        <p className="text-xs text-text-secondary italic">
-                            💡 Thêm nhiều nghĩa nếu từ có nhiều cách đọc/loại từ khác nhau
-                        </p>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Section 3: Examples (Dynamic) */}
-                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 space-y-3">
+                    {/* Section 3: Examples */}
+                    <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4 space-y-4">
                         <div className="flex items-center justify-between">
                             <h4 className="text-sm font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
                                 <Icon name="format_quote" size="sm" />
-                                Ví dụ câu
+                                Ví dụ tiêu biểu
                             </h4>
-                            {exampleEntries.length < 3 && (
-                                <button
-                                    type="button"
-                                    onClick={() => setExampleEntries([...exampleEntries, { chinese: '', pinyin: '', vietnamese: '' }])}
-                                    className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30"
-                                >
-                                    + Thêm ví dụ
-                                </button>
-                            )}
+                            <button
+                                type="button"
+                                onClick={() => setExampleEntries([...exampleEntries, { chinese: '', pinyin: '', vietnamese: '' }])}
+                                className="text-xs px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded hover:bg-emerald-500/30 transition-colors"
+                            >
+                                + Thêm ví dụ
+                            </button>
                         </div>
-                        {exampleEntries.map((ex, idx) => (
-                            <div key={idx} className="grid grid-cols-12 gap-2 items-end">
-                                <div className="col-span-4">
-                                    <label className="block text-xs text-text-secondary mb-1">Câu tiếng Trung</label>
-                                    <input
-                                        type="text"
-                                        value={ex.chinese}
-                                        onChange={(e) => {
-                                            const newExamples = [...exampleEntries];
-                                            newExamples[idx].chinese = e.target.value;
-                                            setExampleEntries(newExamples);
-                                        }}
-                                        className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-chinese"
-                                        placeholder="我很好"
-                                    />
-                                </div>
-                                <div className="col-span-3">
-                                    <label className="block text-xs text-text-secondary mb-1">Pinyin</label>
-                                    <input
-                                        type="text"
-                                        value={ex.pinyin}
-                                        onChange={(e) => {
-                                            const newExamples = [...exampleEntries];
-                                            newExamples[idx].pinyin = e.target.value;
-                                            setExampleEntries(newExamples);
-                                        }}
-                                        className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-pinyin"
-                                        placeholder="wǒ hěn hǎo"
-                                    />
-                                </div>
-                                <div className="col-span-4">
-                                    <label className="block text-xs text-text-secondary mb-1">Dịch tiếng Việt</label>
-                                    <input
-                                        type="text"
-                                        value={ex.vietnamese}
-                                        onChange={(e) => {
-                                            const newExamples = [...exampleEntries];
-                                            newExamples[idx].vietnamese = e.target.value;
-                                            setExampleEntries(newExamples);
-                                        }}
-                                        className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm"
-                                        placeholder="Tôi rất khỏe"
-                                    />
-                                </div>
-                                <div className="col-span-1">
+                        
+                        <div className="space-y-4">
+                            {exampleEntries.map((ex, idx) => (
+                                <div key={idx} className="relative bg-background-dark/50 p-3 rounded-lg border border-border-color/50 space-y-3">
                                     {exampleEntries.length > 1 && (
                                         <button
                                             type="button"
                                             onClick={() => setExampleEntries(exampleEntries.filter((_, i) => i !== idx))}
-                                            className="p-1.5 text-red-400 hover:bg-red-500/20 rounded"
+                                            className="absolute top-2 right-2 p-1 text-red-400 hover:bg-red-500/10 rounded transition-colors"
                                         >
                                             <Icon name="delete" size="sm" />
                                         </button>
                                     )}
+                                    <div className="space-y-3">
+                                        <div>
+                                            <label className="block text-[10px] font-medium text-text-secondary uppercase mb-1">Câu bằng chữ Hán</label>
+                                            <input
+                                                type="text"
+                                                value={ex.chinese}
+                                                onChange={(e) => {
+                                                    const newExamples = [...exampleEntries];
+                                                    newExamples[idx].chinese = e.target.value;
+                                                    setExampleEntries(newExamples);
+                                                }}
+                                                className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-chinese"
+                                                placeholder="我很好"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-secondary uppercase mb-1">Phiên âm (Pinyin)</label>
+                                                <input
+                                                    type="text"
+                                                    value={ex.pinyin}
+                                                    onChange={(e) => {
+                                                        const newExamples = [...exampleEntries];
+                                                        newExamples[idx].pinyin = e.target.value;
+                                                        setExampleEntries(newExamples);
+                                                    }}
+                                                    className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-pinyin"
+                                                    placeholder="wǒ hěn hǎo"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] font-medium text-text-secondary uppercase mb-1">Dịch nghĩa</label>
+                                                <input
+                                                    type="text"
+                                                    value={ex.vietnamese}
+                                                    onChange={(e) => {
+                                                        const newExamples = [...exampleEntries];
+                                                        newExamples[idx].vietnamese = e.target.value;
+                                                        setExampleEntries(newExamples);
+                                                    }}
+                                                    className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm"
+                                                    placeholder="Tôi rất khỏe"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
 
                     {/* Section 4: Related Words */}
                     <div className="bg-violet-500/10 border border-violet-500/20 rounded-xl p-4 space-y-3">
                         <h4 className="text-sm font-bold text-violet-400 uppercase tracking-wider flex items-center gap-2">
                             <Icon name="hub" size="sm" />
-                            Từ liên quan
+                            Từ cận nghĩa / trái nghĩa
                         </h4>
-                        <div>
-                            <label className="block text-xs text-text-secondary mb-1">
-                                Đồng nghĩa <span className="text-text-secondary">(format: hanzi:pinyin:nghĩa, ...)</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={synonyms}
-                                onChange={(e) => setSynonyms(e.target.value)}
-                                className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm"
-                                placeholder="棒:bàng:tuyệt vời, 佳:jiā:tốt đẹp"
-                            />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-xs text-text-secondary mb-1">
+                                    Từ cận nghĩa
+                                </label>
+                                <input
+                                    type="text"
+                                    value={synonyms}
+                                    onChange={(e) => setSynonyms(e.target.value)}
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm"
+                                    placeholder="棒, 佳"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs text-text-secondary mb-1">
+                                    Từ trái nghĩa
+                                </label>
+                                <input
+                                    type="text"
+                                    value={antonyms}
+                                    onChange={(e) => setAntonyms(e.target.value)}
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm"
+                                    placeholder="坏, 差"
+                                />
+                            </div>
                         </div>
-                        <div>
-                            <label className="block text-xs text-text-secondary mb-1">
-                                Trái nghĩa <span className="text-text-secondary">(format: hanzi:pinyin:nghĩa, ...)</span>
-                            </label>
-                            <input
-                                type="text"
-                                value={antonyms}
-                                onChange={(e) => setAntonyms(e.target.value)}
-                                className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm"
-                                placeholder="坏:huài:xấu, 差:chà:kém"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Section 5: Mnemonic */}
-                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4">
-                        <h4 className="text-sm font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2 mb-3">
-                            <Icon name="lightbulb" size="sm" />
-                            Gợi ý nhớ (Mnemonic)
-                        </h4>
-                        <textarea
-                            value={formData.mnemonic}
-                            onChange={(e) => setFormData({ ...formData, mnemonic: e.target.value })}
-                            className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm resize-none"
-                            rows={2}
-                            placeholder="Ví dụ: Chữ 好 gồm bộ 女 (nữ) và 子 (con), ý nghĩa: một người phụ nữ bế con → điều tốt đẹp..."
-                        />
                     </div>
                 </form>
             </Modal>

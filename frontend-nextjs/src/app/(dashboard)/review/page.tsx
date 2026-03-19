@@ -355,7 +355,11 @@ export default function FlashcardReviewPage() {
                             const exMeaning = (ex.vietnamese && ex.vietnamese.trim()) || (ex.translation && ex.translation.trim()) || (ex.meaningVi && ex.meaningVi.trim()) || ex.meaning;
                             if (!exHanzi && !exPinyin) return null;
                             return (
-                                <div className="w-full max-w-md p-4 bg-surface-highlight/20 border border-border-color/30 rounded-2xl group hover:bg-surface-highlight/40 transition-all text-left mb-4">
+                                <div 
+                                    className="w-full max-w-md p-4 bg-surface-highlight/20 border border-border-color/30 rounded-2xl group hover:bg-surface-highlight/40 transition-all text-left mb-4"
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onPointerUp={(e) => e.stopPropagation()}
+                                >
                                     <div className="flex items-center justify-between mb-2">
                                         <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest opacity-80">Ví dụ</span>
                                         <SpeakerButton text={exHanzi || ''} size="sm" className="opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
@@ -374,7 +378,11 @@ export default function FlashcardReviewPage() {
                             if (!hasContext) return null;
                             const word = vocab.hanzi || '';
                             return (
-                                <div className="w-full max-w-md bg-primary/5 rounded-2xl p-5 border border-primary/20 space-y-4 shadow-lg shadow-primary/5">
+                                <div 
+                                    className="w-full max-w-md bg-primary/5 rounded-2xl p-5 border border-primary/20 space-y-4 shadow-lg shadow-primary/5"
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onPointerUp={(e) => e.stopPropagation()}
+                                >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2 text-[10px] text-primary font-black uppercase tracking-widest">
                                             <Icon name="play_circle" size="sm" />Học trong ngữ cảnh
@@ -462,32 +470,32 @@ export default function FlashcardReviewPage() {
                 </button>
             </div>
 
-            {/* Swipe Hints */}
-            <div className="absolute top-0 flex justify-between w-full max-w-2xl px-12 pointer-events-none opacity-40">
-                <div className="flex flex-col items-center gap-1.5">
-                    <div className="size-8 rounded-full border border-rose-500/30 flex items-center justify-center text-rose-400"><Icon name="west" size="sm" /></div>
-                    <span className="text-[10px] font-bold text-rose-400/60 uppercase tracking-widest">Chưa thuộc</span>
-                </div>
-                <div className="flex flex-col items-center gap-1.5">
-                    <div className="size-8 rounded-full border border-emerald-500/30 flex items-center justify-center text-emerald-400"><Icon name="east" size="sm" /></div>
-                    <span className="text-[10px] font-bold text-emerald-400/60 uppercase tracking-widest">Đã thuộc</span>
-                </div>
-            </div>
-
             {/* Swipeable Card */}
             <div className="w-full max-w-3xl mt-12 mb-8 relative">
+                {/* Swipe Hints - Improved Visibility & Positioning */}
+                <div className="absolute -top-15 left-0 right-0 flex justify-between w-full px-4 pointer-events-none z-20">
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-rose-500/10 border border-rose-500/30 backdrop-blur-sm shadow-sm ring-1 ring-rose-500/10">
+                        <Icon name="west" size="sm" className="text-rose-400" />
+                        <span className="text-xs font-black text-rose-400 uppercase tracking-widest">Chưa thuộc</span>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 backdrop-blur-sm shadow-sm ring-1 ring-emerald-500/10">
+                        <span className="text-xs font-black text-emerald-400 uppercase tracking-widest">Đã thuộc</span>
+                        <Icon name="east" size="sm" className="text-emerald-400" />
+                    </div>
+                </div>
+
                 {isHistory && (
                     <div className="absolute -top-6 left-1/2 -translate-x-1/2 px-4 py-1 bg-yellow-500/20 border border-yellow-500/40 rounded-full text-[10px] font-black text-yellow-500 uppercase tracking-tighter z-20">
                         Đang xem lại lịch sử ({historyIdx + 1}/{historyCount})
                     </div>
                 )}
-                <SwipeCard onSwipeLeft={onSwipeLeft} onSwipeRight={onSwipeRight} disabled={swipeDisabled}>
-                    <div className="w-full h-[520px] perspective-1000" onClick={() => setRevealed(!revealed)}>
+                <SwipeCard onSwipeLeft={onSwipeLeft} onSwipeRight={onSwipeRight} disabled={swipeDisabled} onClick={() => setRevealed(!revealed)}>
+                    <div className="w-full h-[520px] perspective-1000 cursor-pointer">
                         {renderCardFaces(displayedCard, revealed,
                             revealed ? (
                                 <div className="flex items-center gap-2 animate-pulse text-primary font-bold">
                                     <Icon name={isHistory ? 'visibility' : 'swipe'} size="sm" />
-                                    <span className="text-sm">{isHistory ? 'Đã xem đáp án' : 'Vuốt để trả lời'}</span>
+                                    <span className="text-sm">{isHistory ? 'Đã xem đáp án' : 'Vuốt để trả lời • Nhấn để lật lại'}</span>
                                 </div>
                             ) : (
                                 <div className="flex items-center gap-2 opacity-60">
@@ -500,12 +508,18 @@ export default function FlashcardReviewPage() {
                 </SwipeCard>
             </div>
 
-            {/* Reveal Button */}
-            {!revealed && (
-                <Button variant="primary" size="lg" className="rounded-full px-12 py-6 text-xl shadow-xl shadow-primary/20 animate-bounce-slow" onClick={() => setRevealed(true)}>
-                    <div className="flex items-center gap-3"><Icon name="visibility" size="lg" />Lật thẻ</div>
-                </Button>
-            )}
+            {/* Flip Toggle Button */}
+            <Button
+                variant={revealed ? "secondary" : "primary"}
+                size="lg"
+                className={`rounded-full px-12 py-6 text-xl shadow-xl transition-all ${!revealed ? 'animate-bounce-slow shadow-primary/20' : 'opacity-80 hover:opacity-100'}`}
+                onClick={() => setRevealed(!revealed)}
+            >
+                <div className="flex items-center gap-3">
+                    <Icon name={revealed ? "rotate_left" : "visibility"} size="lg" />
+                    {revealed ? "Lật lại" : "Lật thẻ"}
+                </div>
+            </Button>
         </>
     );
 
@@ -714,11 +728,17 @@ export default function FlashcardReviewPage() {
                                             )}
                                         </div>
                                     </div>
-                                    {!masteredRevealed && (
-                                        <Button variant="primary" size="lg" className="rounded-full px-12 py-6 text-xl shadow-xl shadow-primary/20" onClick={() => setMasteredRevealed(true)}>
-                                            <div className="flex items-center gap-3"><Icon name="visibility" size="lg" />Lật thẻ</div>
-                                        </Button>
-                                    )}
+                                    <Button
+                                        variant={masteredRevealed ? "secondary" : "primary"}
+                                        size="lg"
+                                        className="rounded-full px-12 py-6 text-xl shadow-xl"
+                                        onClick={() => setMasteredRevealed(!masteredRevealed)}
+                                    >
+                                        <div className="flex items-center gap-3">
+                                            <Icon name={masteredRevealed ? "rotate_left" : "visibility"} size="lg" />
+                                            {masteredRevealed ? "Lật lại" : "Lật thẻ"}
+                                        </div>
+                                    </Button>
                                 </div>
                             ) : (
                                 /* Mastered Grid View */

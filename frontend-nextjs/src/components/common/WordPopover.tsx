@@ -39,6 +39,8 @@ interface WordPopoverProps {
     sourceSentence?: string;
     sourcePinyin?: string;
     videoUrl?: string;
+    onSubtitlesUpdated?: () => void;
+    currentSubtitleTokens?: { hanzi: string; pinyin?: string; meaning?: string }[];
 }
 
 type PanelType = 'dictionary' | 'related' | 'flashcard' | 'history' | 'admin_edit';
@@ -51,7 +53,9 @@ export function WordPopover({
     sourceTimestamp,
     sourceSentence,
     sourcePinyin,
-    videoUrl
+    videoUrl,
+    onSubtitlesUpdated,
+    currentSubtitleTokens
 }: WordPopoverProps) {
     // Data states
     const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
@@ -92,6 +96,18 @@ export function WordPopover({
     const [editMeaning, setEditMeaning] = useState('');
     const [editPos, setEditPos] = useState('');
     const [isSavingGlobal, setIsSavingGlobal] = useState(false);
+
+    // "Not found" admin search/create states
+    const [notFoundMode, setNotFoundMode] = useState<'info' | 'search' | 'create'>('info');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState<LookupResult[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [newWordPinyin, setNewWordPinyin] = useState('');
+    const [newWordMeaning, setNewWordMeaning] = useState('');
+    const [newWordPos, setNewWordPos] = useState('');
+    const [newWordHsk, setNewWordHsk] = useState(1);
+    const [isCreatingWord, setIsCreatingWord] = useState(false);
+    const [createSuccess, setCreateSuccess] = useState(false);
 
     // History state
     const [lookupHistory, setLookupHistory] = useState<{ word: string; pinyin: string; meaning: string; timestamp: number }[]>([]);
@@ -317,23 +333,39 @@ export function WordPopover({
 
     // Save Global Dictionary Changes
     const handleSaveGlobal = async () => {
-        if (!lookupResult?.found || !lookupResult.id) return;
         setIsSavingGlobal(true);
         try {
-            await adminApi.updateVocabulary(lookupResult.id, {
-                hanzi: editHanzi,
-                pinyin: editPinyin,
-                meaningVi: editMeaning,
-                partOfSpeech: editPos,
-            });
-            // Update local state
-            setLookupResult(prev => prev ? {
-                ...prev,
-                pinyin: editPinyin,
-                pinyinDisplay: editPinyin,
-                meaningVi: editMeaning,
-                partOfSpeech: editPos
-            } : null);
+            if (lookupResult?.found && lookupResult.id) {
+                // Update existing word
+                await adminApi.updateVocabulary(lookupResult.id, {
+                    hanzi: editHanzi,
+                    pinyin: editPinyin,
+                    meaningVi: editMeaning,
+                    partOfSpeech: editPos,
+                });
+            } else {
+                // Create new word
+                await adminApi.createVocabulary({
+                    hanzi: editHanzi,
+                    pinyin: editPinyin,
+                    meaningVi: editMeaning,
+                    partOfSpeech: editPos,
+                    hskLevel: 1, // Default or add a field
+                });
+                // Clear cache so we can re-lookup
+                await dictionaryApi.clearCache();
+            }
+            
+            // Re-lookup to get fresh data (especially if newly created)
+            const freshResult = await dictionaryApi.lookup(word, sourcePinyin);
+            setLookupResult(freshResult);
+            if (freshResult.found) {
+                setEditPinyin(freshResult.pinyin || '');
+                setEditMeaning(freshResult.meaningVi || freshResult.meaningEn || '');
+                setEditPos(freshResult.partOfSpeech || '');
+                // Also update history if needed
+            }
+            
             triggerXp(50); // Admin bonus
         } catch (error) {
             console.error("Failed to save global changes:", error);
@@ -387,13 +419,77 @@ export function WordPopover({
             });
             setSaveSuccess(true);
             triggerXp(100);
-            // Wait for parent refresh or update local state
+            // Auto-reload subtitles in parent
+            onSubtitlesUpdated?.();
         } catch (error) {
             console.error("Failed to update subtitle:", error);
         } finally {
             setIsUpdatingSubtitle(false);
         }
     };
+
+    // Admin: search existing words in DB
+    const handleSearchWord = async (query: string) => {
+        setSearchQuery(query);
+        if (query.trim().length === 0) {
+            setSearchResults([]);
+            return;
+        }
+        setIsSearching(true);
+        try {
+            const results = await dictionaryApi.search(query, 8);
+            setSearchResults(results);
+        } catch (error) {
+            console.error('Search failed:', error);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    // Admin: link an existing word → re-trigger lookup
+    const handleLinkWord = async (result: LookupResult) => {
+        setLookupResult(result);
+        setEditPinyin(result.pinyin || '');
+        setEditMeaning(result.meaningVi || result.meaningEn || '');
+        setEditPos(result.partOfSpeech || '');
+        setNotFoundMode('info');
+        setSearchResults([]);
+        setSearchQuery('');
+    };
+
+    // Admin: create a brand new word in DB
+    const handleCreateNewWord = async () => {
+        if (!newWordPinyin.trim() || !newWordMeaning.trim()) return;
+        setIsCreatingWord(true);
+        try {
+            await adminApi.createVocabulary({
+                hanzi: word,
+                pinyin: newWordPinyin.trim(),
+                meaningVi: newWordMeaning.trim(),
+                partOfSpeech: newWordPos.trim() || undefined,
+                hskLevel: newWordHsk,
+            });
+            setCreateSuccess(true);
+            triggerXp(50);
+            // Clear dictionary cache for this word and re-lookup
+            await dictionaryApi.clearCache();
+            const freshResult = await dictionaryApi.lookup(word, sourcePinyin);
+            setLookupResult(freshResult);
+            if (freshResult.found) {
+                setEditPinyin(freshResult.pinyin || '');
+                setEditMeaning(freshResult.meaningVi || freshResult.meaningEn || '');
+                setEditPos(freshResult.partOfSpeech || '');
+            }
+        } catch (error) {
+            console.error('Failed to create word:', error);
+        } finally {
+            setIsCreatingWord(false);
+        }
+    };
+
+    // Find matching token from current subtitle for "not found" fallback
+    const matchingToken = currentSubtitleTokens?.find(t => t.hanzi === word);
 
     return (
         <div
@@ -1101,9 +1197,397 @@ export function WordPopover({
                     </div>
                 </>
             ) : (
-                <div className="text-center py-12 px-4 flex-1 flex flex-col justify-center">
-                    <Icon name="search_off" className="text-4xl text-text-secondary mb-3" />
-                    <p className="text-text-secondary">Không tìm thấy từ trong từ điển</p>
+                <div className="flex-1 flex flex-col max-h-[70vh] overflow-y-auto custom-scrollbar">
+                    {/* Header for unknown word */}
+                    <div className="p-5 border-b border-border-color bg-surface-highlight/10">
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                                <h2 className={`font-bold text-white font-chinese leading-[1.1] ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
+                                    {word}
+                                </h2>
+                                {matchingToken?.pinyin && (
+                                    <div className="text-primary text-xl font-semibold font-pinyin tracking-tight mt-1 opacity-90">
+                                        {matchingToken.pinyin}
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center bg-surface-dark/50 border border-border-color/30 rounded-2xl p-1 shrink-0">
+                                <SpeakerButton text={word} size="sm" />
+                                
+                                {isAdmin && (
+                                    <button
+                                        onClick={() => setActivePanel('admin_edit')}
+                                        className={`inline-flex items-center justify-center p-2 rounded-full transition-all hover:scale-110 active:scale-95 ${activePanel === 'admin_edit'
+                                            ? 'bg-amber-500/20 text-amber-500'
+                                            : 'text-text-secondary hover:text-amber-400 hover:bg-amber-500/10'
+                                            }`}
+                                        title="Chỉnh sửa phân đoạn (Admin)"
+                                    >
+                                        <Icon name="edit" size="sm" />
+                                    </button>
+                                )}
+
+                                <div className="w-px h-6 bg-border-color/30 mx-1" />
+                                <button
+                                    onClick={onClose}
+                                    className="inline-flex items-center justify-center p-2 hover:bg-rose-500/20 text-text-secondary hover:text-rose-400 rounded-full transition-all"
+                                >
+                                    <Icon name="close" size="sm" />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Token meaning from admin segmentation (all users see this) */}
+                    {matchingToken?.meaning ? (
+                        <div className="px-5 py-4 border-b border-border-color/30">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Icon name="auto_fix_high" size="sm" className="text-amber-400" />
+                                <span className="text-[10px] text-amber-300 font-black uppercase tracking-widest">Nghĩa theo ngữ cảnh video</span>
+                            </div>
+                            <p className="text-xl text-white font-semibold leading-snug">{matchingToken.meaning}</p>
+                        </div>
+                    ) : (
+                        <div className="px-5 py-4 border-b border-border-color/30">
+                            <div className="flex items-center gap-2">
+                                <Icon name="search_off" className="text-2xl text-text-secondary" />
+                                <p className="text-text-secondary text-sm">Chưa có nghĩa cho từ này</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Admin: Segmentation panel OR Search/Link/Create word */}
+                    {isAdmin && (
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            {activePanel === 'admin_edit' ? (
+                                /* Admin Edit Panel - same as in found state */
+                                <div className="p-4 space-y-4">
+                                    {/* Sub-tabs */}
+                                    <div className="flex bg-surface-highlight/30 p-1 rounded-xl">
+                                        <button 
+                                            onClick={() => setAdminSubTab('word')}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'word' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                        >
+                                            Từ vựng (Global)
+                                        </button>
+                                        <button 
+                                            onClick={() => setAdminSubTab('segment')}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'segment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                        >
+                                            Phân đoạn (Video)
+                                        </button>
+                                    </div>
+
+                                    {adminSubTab === 'word' ? (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-1">
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Hanzi</label>
+                                                    <input 
+                                                        value={editHanzi} 
+                                                        onChange={e => setEditHanzi(e.target.value)}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary font-chinese"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Pinyin</label>
+                                                    <input 
+                                                        value={editPinyin} 
+                                                        onChange={e => setEditPinyin(e.target.value)}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Loại từ (POS)</label>
+                                                    <input 
+                                                        value={editPos} 
+                                                        onChange={e => setEditPos(e.target.value)}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
+                                                        placeholder="e.g. Danh từ, Động từ..."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Nghĩa tiếng Việt</label>
+                                                    <textarea 
+                                                        value={editMeaning} 
+                                                        onChange={e => setEditMeaning(e.target.value)}
+                                                        rows={3}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full py-3" 
+                                                onClick={handleSaveGlobal}
+                                                isLoading={isSavingGlobal}
+                                            >
+                                                Lưu vào Từ điển Global
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-1">
+                                            <div className="bg-surface-highlight/20 p-3 rounded-xl border border-border-color/30">
+                                                <h4 className="text-[10px] text-text-secondary uppercase tracking-wider mb-3">Kịch bản phân đoạn hiện tại</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {editingTokens.map((token: any, idx: number) => (
+                                                        <div key={idx} className="group relative flex flex-col items-center">
+                                                            <div 
+                                                                onClick={() => setSelectedTokenIndex(idx)}
+                                                                className={`flex items-center bg-primary/10 border ${selectedTokenIndex === idx ? 'border-primary ring-1 ring-primary' : 'border-primary/30'} rounded-lg px-3 py-2 hover:border-primary transition-all cursor-pointer`}
+                                                            >
+                                                                <span className="text-lg font-chinese text-primary">{token.hanzi}</span>
+                                                                <div className="ml-2 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    {token.hanzi.length > 1 && (
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); handleSplitToken(idx); }}
+                                                                            className="p-0.5 hover:text-white text-text-secondary" title="Split"
+                                                                        >
+                                                                            <Icon name="content_cut" size="sm" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {idx < editingTokens.length - 1 && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleMergeTokens(idx); }}
+                                                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 size-6 bg-surface-dark border border-border-color rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary shadow-lg group-hover:scale-110 transition-transform"
+                                                                    title="Merge with next"
+                                                                >
+                                                                    <Icon name="link" size="sm" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Token detail editor */}
+                                            {selectedTokenIndex !== null && editingTokens[selectedTokenIndex] && (
+                                                <div className="p-3 bg-surface-highlight/20 border border-border-color rounded-xl space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="flex items-center justify-between">
+                                                        <h5 className="text-xs text-primary font-bold">Chỉnh sửa: {editingTokens[selectedTokenIndex].hanzi}</h5>
+                                                        <button onClick={() => setSelectedTokenIndex(null)} className="text-text-secondary hover:text-white">
+                                                            <Icon name="close" size="sm" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] text-text-secondary uppercase mb-1 block">Pinyin Override</label>
+                                                            <input 
+                                                                value={editingTokens[selectedTokenIndex].pinyin || ''} 
+                                                                onChange={e => {
+                                                                    const newTokens = [...editingTokens];
+                                                                    newTokens[selectedTokenIndex].pinyin = e.target.value;
+                                                                    setEditingTokens(newTokens);
+                                                                }}
+                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-primary focus:outline-none font-pinyin"
+                                                                placeholder="e.g. nǐ hǎo"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-text-secondary uppercase mb-1 block">Quick Meaning</label>
+                                                            <input 
+                                                                value={editingTokens[selectedTokenIndex].meaning || ''} 
+                                                                onChange={e => {
+                                                                    const newTokens = [...editingTokens];
+                                                                    newTokens[selectedTokenIndex].meaning = e.target.value;
+                                                                    setEditingTokens(newTokens);
+                                                                }}
+                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                                                                placeholder="Nghĩa nhanh..."
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                                                <p className="text-[10px] text-amber-300 leading-relaxed italic">
+                                                    Thay đổi ở tab này chỉ áp dụng cho video này. Hệ thống sẽ bỏ qua bộ phân đoạn tự động.
+                                                </p>
+                                            </div>
+
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full py-3" 
+                                                onClick={handleSaveSubtitle}
+                                                isLoading={isUpdatingSubtitle}
+                                            >
+                                                Lưu kịch bản cho Video
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                /* Search/Link/Create word UI */
+                                <div className="p-4 space-y-4">
+                                    {/* Mode switcher */}
+                                    <div className="flex bg-surface-highlight/30 p-1 rounded-xl">
+                                        <button
+                                            onClick={() => setNotFoundMode('search')}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${notFoundMode === 'search' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                        >
+                                            <Icon name="search" size="sm" />
+                                            Tìm từ có sẵn
+                                        </button>
+                                        <button
+                                            onClick={() => setNotFoundMode('create')}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${notFoundMode === 'create' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                        >
+                                            <Icon name="add_circle" size="sm" />
+                                            Tạo từ mới
+                                        </button>
+                                    </div>
+
+                                    {/* Search existing words mode */}
+                                    {notFoundMode === 'search' && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
+                                            <div className="relative">
+                                                <Icon name="search" size="sm" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary" />
+                                                <input
+                                                    value={searchQuery}
+                                                    onChange={e => handleSearchWord(e.target.value)}
+                                                    placeholder={`Tìm "${word}" hoặc từ tương tự...`}
+                                                    className="w-full bg-surface-dark border border-border-color rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary transition-colors"
+                                                    autoFocus
+                                                />
+                                                {isSearching && (
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                        <div className="size-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Search results */}
+                                            {searchResults.length > 0 ? (
+                                                <div className="space-y-1.5 max-h-[200px] overflow-y-auto custom-scrollbar-thin pr-1">
+                                                    {searchResults.map((result, idx) => (
+                                                        <button
+                                                            key={idx}
+                                                            onClick={() => handleLinkWord(result)}
+                                                            className="w-full flex items-center gap-3 p-3 bg-surface-highlight/30 hover:bg-primary/10 hover:border-primary/30 border border-border-color/20 rounded-xl transition-all text-left group active:scale-[0.98]"
+                                                        >
+                                                            <span className="text-xl font-chinese text-white group-hover:text-primary transition-colors" lang="zh-CN">
+                                                                {result.hanzi}
+                                                            </span>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-primary text-sm font-pinyin tracking-tight">{result.pinyinDisplay}</p>
+                                                                <p className="text-text-secondary text-xs truncate">{result.meaningVi || result.meaningEn}</p>
+                                                            </div>
+                                                            <Icon name="link" size="sm" className="text-text-secondary group-hover:text-primary opacity-0 group-hover:opacity-100 transition-all" />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            ) : searchQuery.trim() && !isSearching ? (
+                                                <div className="text-center py-6">
+                                                    <Icon name="search_off" className="text-3xl text-text-secondary/50 mb-2" />
+                                                    <p className="text-text-secondary text-xs">Không tìm thấy từ "{searchQuery}"</p>
+                                                    <button
+                                                        onClick={() => setNotFoundMode('create')}
+                                                        className="mt-2 text-primary text-xs font-bold hover:underline"
+                                                    >
+                                                        → Tạo từ mới
+                                                    </button>
+                                                </div>
+                                            ) : !searchQuery.trim() ? (
+                                                <div className="text-center py-4">
+                                                    <p className="text-text-secondary/60 text-xs">Nhập từ hoặc pinyin để tìm kiếm</p>
+                                                </div>
+                                            ) : null}
+                                        </div>
+                                    )}
+
+                                    {/* Create new word mode */}
+                                    {notFoundMode === 'create' && (
+                                        <div className="space-y-3 animate-in fade-in slide-in-from-bottom-1">
+                                            {createSuccess ? (
+                                                <div className="text-center py-6">
+                                                    <div className="size-12 bg-emerald-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                        <Icon name="check_circle" className="text-emerald-500 text-2xl" />
+                                                    </div>
+                                                    <p className="text-emerald-400 font-bold">Đã tạo từ thành công!</p>
+                                                    <p className="text-text-secondary text-xs mt-1">Từ đã được thêm vào từ điển</p>
+                                                </div>
+                                            ) : (
+                                                <>
+                                                    <div>
+                                                        <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Hanzi</label>
+                                                        <input
+                                                            value={word}
+                                                            disabled
+                                                            className="w-full bg-surface-dark/50 border border-border-color/30 rounded-lg px-3 py-2 text-white/60 font-chinese cursor-not-allowed"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Pinyin *</label>
+                                                        <input
+                                                            value={newWordPinyin}
+                                                            onChange={e => setNewWordPinyin(e.target.value)}
+                                                            placeholder="e.g. nǐ hǎo"
+                                                            className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
+                                                            autoFocus
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Nghĩa tiếng Việt *</label>
+                                                        <textarea
+                                                            value={newWordMeaning}
+                                                            onChange={e => setNewWordMeaning(e.target.value)}
+                                                            rows={2}
+                                                            placeholder="Nhập nghĩa..."
+                                                            className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary resize-none"
+                                                        />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Loại từ</label>
+                                                            <input
+                                                                value={newWordPos}
+                                                                onChange={e => setNewWordPos(e.target.value)}
+                                                                placeholder="Danh từ, Động từ..."
+                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-blue-400 focus:outline-none focus:border-primary"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">HSK Level</label>
+                                                            <select
+                                                                value={newWordHsk}
+                                                                onChange={e => setNewWordHsk(Number(e.target.value))}
+                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary"
+                                                            >
+                                                                {[1,2,3,4,5,6,7,8,9].map(level => (
+                                                                    <option key={level} value={level}>HSK {level}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        variant="primary"
+                                                        className="w-full py-3"
+                                                        onClick={handleCreateNewWord}
+                                                        isLoading={isCreatingWord}
+                                                        disabled={!newWordPinyin.trim() || !newWordMeaning.trim() || isCreatingWord}
+                                                    >
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Icon name="add_circle" size="sm" />
+                                                            <span className="font-bold">Tạo từ mới vào từ điển</span>
+                                                        </div>
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {notFoundMode === 'info' && (
+                                        <div className="text-center py-4">
+                                            <p className="text-text-secondary/60 text-xs">Chọn một hành động ở trên để thêm nghĩa cho từ này</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

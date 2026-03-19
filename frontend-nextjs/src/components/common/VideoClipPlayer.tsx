@@ -86,7 +86,11 @@ export default function VideoClipPlayer({
     const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
 
     return (
-        <div className={`relative rounded-xl overflow-hidden bg-black ${className}`}>
+        <div 
+            className={`relative rounded-xl overflow-hidden bg-black ${className}`}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
+        >
             {!isPlaying ? (
                 // Thumbnail with play button
                 <div className="relative aspect-video">
@@ -106,6 +110,8 @@ export default function VideoClipPlayer({
                     {showControls && (
                         <button
                             onClick={handlePlay}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onPointerUp={(e) => e.stopPropagation()}
                             className="absolute inset-0 flex items-center justify-center group"
                         >
                             <div className="size-14 rounded-full bg-primary/90 backdrop-blur-sm flex items-center justify-center shadow-lg group-hover:scale-110 group-hover:bg-primary transition-all">

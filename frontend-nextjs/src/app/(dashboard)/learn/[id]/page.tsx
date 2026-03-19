@@ -437,6 +437,16 @@ export default function VideoPlayerPage() {
         }
     };
 
+    // Refresh subtitles after admin saves segment changes
+    const refreshSubtitles = useCallback(async () => {
+        try {
+            const freshSubtitles = await videoApi.getSubtitles(videoId);
+            setSubtitles(freshSubtitles);
+        } catch (error) {
+            console.error('Failed to refresh subtitles:', error);
+        }
+    }, [videoId]);
+
     if (authLoading || !isAuthenticated) {
         return (
             <div className="min-h-screen bg-background-dark flex items-center justify-center">
@@ -1049,6 +1059,9 @@ export default function VideoPlayerPage() {
                         sourcePinyin={currentSubtitle?.pinyin}
                         // Video URL for thumbnail capture
                         videoUrl={video?.videoUrl}
+                        // Segmentation: auto-reload subtitles + token meanings
+                        onSubtitlesUpdated={refreshSubtitles}
+                        currentSubtitleTokens={currentSubtitle?.tokens}
                     />
                 )
             }

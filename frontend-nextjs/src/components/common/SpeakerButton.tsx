@@ -69,6 +69,8 @@ const SpeakerButton: React.FC<SpeakerButtonProps> = ({
                 e.stopPropagation();
                 isSpeaking ? handleStop() : handleSpeak();
             }}
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             className={`
                 inline-flex items-center justify-center rounded-full transition-all shrink-0
                 ${isSpeaking

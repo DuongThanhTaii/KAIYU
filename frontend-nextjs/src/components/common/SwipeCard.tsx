@@ -8,6 +8,7 @@ interface SwipeCardProps {
     onSwipeRight: () => void;
     threshold?: number;
     disabled?: boolean;
+    onClick?: () => void;
 }
 
 export default function SwipeCard({ 
@@ -15,7 +16,8 @@ export default function SwipeCard({
     onSwipeLeft, 
     onSwipeRight, 
     threshold = 100,
-    disabled = false
+    disabled = false,
+    onClick
 }: SwipeCardProps) {
     const [offsetX, setOffsetX] = useState(0);
     const [isDragging, setIsDragging] = useState(false);
@@ -23,10 +25,9 @@ export default function SwipeCard({
     const cardRef = useRef<HTMLDivElement>(null);
 
     const handlePointerDown = (e: React.PointerEvent) => {
-        if (disabled) return;
         setIsDragging(true);
         startX.current = e.clientX;
-        if (cardRef.current) {
+        if (!disabled && cardRef.current) {
             cardRef.current.setPointerCapture(e.pointerId);
         }
     };
@@ -49,6 +50,9 @@ export default function SwipeCard({
             onSwipeRight();
         } else if (offsetX < -threshold) {
             onSwipeLeft();
+        } else if (Math.abs(offsetX) < 10) {
+            // Small movement is considered a click
+            onClick?.();
         }
         
         setOffsetX(0);
