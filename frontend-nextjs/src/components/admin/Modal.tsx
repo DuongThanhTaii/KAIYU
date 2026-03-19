@@ -9,8 +9,9 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
-    size?: 'sm' | 'md' | 'lg' | 'xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
     footer?: React.ReactNode;
+    compact?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -20,6 +21,7 @@ const Modal: React.FC<ModalProps> = ({
     children,
     size = 'md',
     footer,
+    compact = false,
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [mounted, setMounted] = useState(false);
@@ -53,6 +55,7 @@ const Modal: React.FC<ModalProps> = ({
         md: 'max-w-lg',
         lg: 'max-w-2xl',
         xl: 'max-w-4xl',
+        '2xl': 'max-w-6xl',
     };
 
     const modalContent = (
@@ -66,11 +69,11 @@ const Modal: React.FC<ModalProps> = ({
             {/* Modal Content */}
             <div
                 ref={modalRef}
-                className={`relative w-full ${sizeClasses[size]} bg-surface-dark rounded-2xl border border-border-color shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200`}
+                className={`relative w-full ${sizeClasses[size]} bg-surface-dark rounded-2xl border border-border-color shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200 overflow-hidden`}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-border-color">
-                    <h2 className="text-lg font-bold text-white">{title}</h2>
+                <div className={`flex items-center justify-between px-6 border-b border-border-color ${compact ? 'py-2' : 'py-4'}`}>
+                    <h2 className={`${compact ? 'text-base' : 'text-lg'} font-bold text-white`}>{title}</h2>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-white inline-flex items-center justify-center cursor-pointer"
@@ -80,7 +83,7 @@ const Modal: React.FC<ModalProps> = ({
                 </div>
 
                 {/* Body */}
-                <div className="px-6 py-4 max-h-[70vh] overflow-y-auto">
+                <div className={`px-6 max-h-[92vh] overflow-y-auto custom-scrollbar pr-4 ${compact ? 'py-2' : 'py-4'}`}>
                     {children}
                 </div>
 

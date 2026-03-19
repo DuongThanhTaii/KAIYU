@@ -278,9 +278,9 @@ export default function VideoDetailPage() {
                                     key={index}
                                     className="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-surface-highlight/50 hover:bg-surface-highlight border border-transparent hover:border-primary/50 rounded-full transition-all"
                                 >
-                                    <span className="text-white font-bold">{vocab.hanzi}</span>
+                                    <span className="text-white font-bold" lang="zh-CN">{vocab.hanzi}</span>
                                     {vocab.pinyin && (
-                                        <span className="text-text-secondary text-sm font-medium">{vocab.pinyin}</span>
+                                        <span className="text-text-secondary text-sm font-medium font-pinyin tracking-tight">{vocab.pinyin}</span>
                                     )}
                                     <button className="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
                                         <Icon name="volume_up" size="sm" />

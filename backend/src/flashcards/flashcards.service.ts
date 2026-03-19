@@ -20,11 +20,10 @@ export class FlashcardsService {
      * Level 5: Mastered (interval > 30 days)
      */
     getLevel(intervalDays: number): number {
-        if (intervalDays === 0) return 1;      // Mới học
-        if (intervalDays <= 3) return 2;       // Đang học  
-        if (intervalDays <= 7) return 3;       // Quen
-        if (intervalDays <= 30) return 4;      // Thuộc
-        return 5;                              // Thành thạo
+        if (intervalDays === 0) return 1;      // Mới
+        if (intervalDays <= 5) return 2;       // Đang học  
+        if (intervalDays <= 30) return 3;      // Cần ôn
+        return 4;                              // Đã học
     }
 
     async getQueue(userId: string) {
@@ -278,18 +277,18 @@ export class FlashcardsService {
         let proficiency: string;
         let proficiencyPercent: number;
 
-        if (status === 'new') {
+        if (status === 'new' || interval === 0) {
             proficiency = 'new';
             proficiencyPercent = 0;
-        } else if (status === 'learning') {
+        } else if (interval <= 5) {
             proficiency = 'learning';
-            proficiencyPercent = Math.min(40, interval * 10);
-        } else if (interval < 21) {
+            proficiencyPercent = Math.min(40, interval * 8);
+        } else if (interval <= 30) {
             proficiency = 'review';
-            proficiencyPercent = Math.min(80, 40 + interval * 2);
+            proficiencyPercent = Math.min(80, 40 + interval * 1.5);
         } else {
             proficiency = 'mastered';
-            proficiencyPercent = Math.min(100, 80 + interval);
+            proficiencyPercent = 100;
         }
 
         await this.prisma.userVocabulary.updateMany({
@@ -339,7 +338,7 @@ export class FlashcardsService {
             select: { intervalDays: true },
         });
 
-        const levelCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+        const levelCounts = { 1: 0, 2: 0, 3: 0, 4: 0 };
 
         allCards.forEach(card => {
             const level = this.getLevel(card.intervalDays);
@@ -350,11 +349,10 @@ export class FlashcardsService {
             total: allCards.length,
             levels: levelCounts,
             levelLabels: {
-                1: 'Mới học',
+                1: 'Mới',
                 2: 'Đang học',
-                3: 'Quen',
-                4: 'Thuộc',
-                5: 'Thành thạo',
+                3: 'Cần ôn',
+                4: 'Đã học',
             },
         };
     }

@@ -253,6 +253,42 @@ export class AdminService {
         return { message: `Created ${subtitles.count} subtitles` };
     }
 
+    async updateSubtitle(id: string, data: any) {
+        const { tokens, ...subtitleData } = data;
+
+        // Update subtitle metadata
+        const updatedSubtitle = await this.prisma.subtitle.update({
+            where: { id },
+            data: subtitleData,
+        });
+
+        // If tokens are provided, replace them
+        if (tokens && Array.isArray(tokens)) {
+            // Delete old tokens
+            await this.prisma.subtitleToken.deleteMany({
+                where: { subtitleId: id },
+            });
+
+            // Create new ones
+            if (tokens.length > 0) {
+                await this.prisma.subtitleToken.createMany({
+                    data: tokens.map((token: any) => ({
+                        subtitleId: id,
+                        hanzi: token.hanzi,
+                        pinyin: token.pinyin,
+                        meaning: token.meaning,
+                        position: token.position,
+                        hskLevel: token.hskLevel,
+                        partOfSpeech: token.partOfSpeech,
+                        vocabularyId: token.vocabularyId,
+                    })),
+                });
+            }
+        }
+
+        return updatedSubtitle;
+    }
+
     // ============ Vocabulary Management ============
     async getAllVocabulary(query: { page?: number; limit?: number; hskLevel?: number }) {
         const { page = 1, limit = 50, hskLevel } = query;

@@ -223,6 +223,14 @@ export const videoApi = {
         return response.data;
     },
 
+    /**
+     * Update a specific subtitle and its tokens (Admin)
+     */
+    async updateSubtitle(id: string, data: any): Promise<Subtitle> {
+        const response = await api.put<Subtitle>(`/admin/subtitles/${id}`, data);
+        return response.data;
+    },
+
     // Saved Videos Methods
     /**
      * Get list of saved video IDs for current user

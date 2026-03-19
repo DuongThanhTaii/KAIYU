@@ -150,7 +150,7 @@ export default function LandingPage() {
           <div className="flex flex-col gap-6 scroll-mt-24" id="features">
             <div className="flex items-center justify-between px-2">
               <h2 className="text-2xl md:text-3xl font-bold">Tính năng nổi bật</h2>
-              <a href="#" className="text-primary font-bold text-sm hover:underline flex items-center">
+              <a href="#" className="text-primary font-bold text-sm  flex items-center">
                 Xem tất cả <Icon name="arrow_forward" size="sm" className="ml-1" />
               </a>
             </div>
@@ -185,6 +185,20 @@ export default function LandingPage() {
                 <div className="size-20 bg-primary rounded-full flex items-center justify-center text-on-primary shadow-xl group-hover:scale-110 transition-transform">
                   <Icon name="psychology" size="xl" />
                 </div>
+              </Card>
+
+              {/* Feature Card 5 - Vocabulary Storage */}
+              <Card variant="default" padding="lg" hover className="md:col-span-2 relative overflow-hidden group">
+                <div className="z-10">
+                  <div className="size-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-4">
+                    <Icon name="bookmark_add" size="lg" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Lưu trữ từ vựng thông minh</h3>
+                  <p className="text-sm text-gray-300">
+                    Xây dựng kho báu ngôn ngữ của riêng bạn. Mọi từ vựng quan trọng được lưu giữ khoa học, giúp bạn cá nhân hóa lộ trình chinh phục tiếng Trung và biến kiến thức thành tài sản vĩnh cửu.
+                  </p>
+                </div>
+                <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl"></div>
               </Card>
 
               {/* Feature Card 3 */}
@@ -237,86 +251,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Pricing Section */}
-          <div className="py-16 scroll-mt-20" id="pricing">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold mb-3">Bảng giá đơn giản</h2>
-              <p className="text-text-secondary">Bắt đầu miễn phí, nâng cấp khi bạn sẵn sàng.</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-              {/* Free Plan */}
-              <Card variant="default" padding="lg" className="flex flex-col">
-                <div className="mb-4">
-                  <span className="bg-surface-highlight text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                    Cơ bản
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-black">0₫</span>
-                  <span className="text-text-secondary">/tháng</span>
-                </div>
-                <ul className="flex-1 space-y-4 mb-8">
-                  <li className="flex items-center gap-3 text-sm">
-                    <Icon name="check_circle" className="text-green-500" size="md" />
-                    <span>3 video mỗi ngày</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm">
-                    <Icon name="check_circle" className="text-green-500" size="md" />
-                    <span>Tra từ điển cơ bản</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm text-text-secondary">
-                    <Icon name="cancel" size="md" />
-                    <span>Lưu từ vựng không giới hạn</span>
-                  </li>
-                </ul>
-                <Button variant="outline" fullWidth>
-                  Đăng ký miễn phí
-                </Button>
-              </Card>
-
-              {/* Pro Plan */}
-              <Card
-                variant="elevated"
-                padding="lg"
-                className="relative border-2 border-primary flex flex-col shadow-[0_0_30px_rgba(76,223,32,0.15)]"
-              >
-                <div className="absolute top-0 right-0 bg-primary text-on-primary text-xs font-bold px-4 py-1 rounded-bl-xl rounded-tr-xl">
-                  PHỔ BIẾN NHẤT
-                </div>
-                <div className="mb-4">
-                  <span className="text-primary text-xs font-bold px-3 py-1 rounded-full border border-primary/30 uppercase tracking-wider bg-primary/10">
-                    Pro
-                  </span>
-                </div>
-                <div className="flex items-baseline gap-1 mb-6">
-                  <span className="text-4xl font-black">99k</span>
-                  <span className="text-text-secondary">/tháng</span>
-                </div>
-                <ul className="flex-1 space-y-4 mb-8">
-                  <li className="flex items-center gap-3 text-sm">
-                    <Icon name="check_circle" className="text-primary" size="md" />
-                    <span>Video không giới hạn</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm">
-                    <Icon name="check_circle" className="text-primary" size="md" />
-                    <span>Tra từ điển nâng cao & Offline</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm">
-                    <Icon name="check_circle" className="text-primary" size="md" />
-                    <span>Hệ thống ôn tập thông minh (SRS)</span>
-                  </li>
-                  <li className="flex items-center gap-3 text-sm">
-                    <Icon name="check_circle" className="text-primary" size="md" />
-                    <span>Không quảng cáo</span>
-                  </li>
-                </ul>
-                <Button variant="primary" fullWidth>
-                  Nâng cấp Pro
-                </Button>
-              </Card>
-            </div>
-          </div>
 
           {/* FAQ Section */}
           <div className="py-10 max-w-2xl mx-auto w-full scroll-mt-24" id="faq">

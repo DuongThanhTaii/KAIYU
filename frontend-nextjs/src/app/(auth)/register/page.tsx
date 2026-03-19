@@ -93,7 +93,7 @@ export default function RegisterPage() {
                 <div className="text-center mb-8">
                     <Link href="/" className="inline-flex items-center gap-3">
                         <div className="size-12 flex items-center justify-center shrink-0">
-                            <Image src="/logo.png" alt="KAIYU Logo" width={48} height={48} className="object-contain rounded-full" />
+                            <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={48} height={48} className="object-contain rounded-full" />
                         </div>
                         <div className="flex flex-col leading-none">
                             <span className="font-extrabold text-2xl tracking-widest text-white uppercase">KAIYU</span>

@@ -52,9 +52,9 @@ const SpeakerButton: React.FC<SpeakerButtonProps> = ({
     }
 
     const sizeClasses = {
-        sm: 'size-6 text-sm',
-        md: 'size-8 text-base',
-        lg: 'size-10 text-lg',
+        sm: 'size-8 text-sm p-1.5',
+        md: 'size-10 text-base p-2',
+        lg: 'size-12 text-lg p-2.5',
     };
 
     const iconSizes = {
@@ -70,12 +70,12 @@ const SpeakerButton: React.FC<SpeakerButtonProps> = ({
                 isSpeaking ? handleStop() : handleSpeak();
             }}
             className={`
-                inline-flex items-center justify-center gap-1
+                inline-flex items-center justify-center rounded-full transition-all shrink-0
                 ${isSpeaking
                     ? 'bg-primary/20 text-primary animate-pulse'
-                    : 'bg-surface-highlight/50 text-text-secondary hover:text-primary hover:bg-primary/10'
+                    : 'text-text-secondary hover:text-primary hover:bg-surface-highlight/30'
                 }
-                ${sizeClasses[size]} p-5 hover:bg-primary/20 hover:text-primary
+                ${sizeClasses[size]}
                 ${className}
             `}
             title={isSpeaking ? 'Dừng phát' : `Phát âm: ${text}`}

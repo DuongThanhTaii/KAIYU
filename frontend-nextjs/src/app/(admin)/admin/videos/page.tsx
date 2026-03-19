@@ -6,9 +6,51 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import DataTable from '@/components/admin/DataTable';
 import Modal from '@/components/admin/Modal';
 import FileUpload from '@/components/admin/FileUpload';
-import Icon from '@/components/common/Icon';
-import { videoApi, type Video, type CreateVideoDto } from '@/services/videoApi';
+import { videoApi, type Video, type CreateVideoDto, type Subtitle } from '@/services/videoApi';
 import { useAuth } from '@/contexts/AuthContext';
+import YouTubePlayer, { type YouTubePlayerHandle } from '@/components/video/YouTubePlayer';
+import { WordPopover, Icon } from '@/components/common';
+
+// Initialize native Chinese word segmenter
+const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter
+    ? new Intl.Segmenter('zh-CN', { granularity: 'word' })
+    : null;
+
+// Helper to group Pinyin syllables to match Hanzi word segmentation
+const renderGroupedPinyin = (hanzi: string, pinyin: string, tokens?: any[]) => {
+    if (!pinyin) return pinyin;
+
+    // IF explicit tokens exist (admin re-segmented), use their pinyin directly
+    if (tokens && tokens.length > 0) {
+        return tokens.map(t => t.pinyin || '').join(' ').replace(/\s+/g, ' ').trim();
+    }
+
+    if (!segmenter) return pinyin;
+
+    const syllables = pinyin.split(/\s+/);
+    const segments = Array.from(segmenter.segment(hanzi));
+    const groupedPinyin: string[] = [];
+    let syllableIndex = 0;
+
+    for (const seg of segments) {
+        const word = seg.segment;
+        const charCount = word.length;
+
+        if (seg.isWordLike) {
+            // Take n syllables corresponding to the word's character count
+            const wordPinyin = syllables.slice(syllableIndex, syllableIndex + charCount).join('');
+            groupedPinyin.push(wordPinyin);
+            syllableIndex += charCount;
+        } else {
+            // For punctuation/whitespace, just append if it's whitespace or skip if it matches nothing
+            if (word.trim() === '') {
+                groupedPinyin.push(' ');
+            }
+        }
+    }
+
+    return groupedPinyin.join(' ');
+};
 
 export default function AdminVideosPage() {
     const router = useRouter();
@@ -29,6 +71,19 @@ export default function AdminVideosPage() {
     const [showSubtitlesModal, setShowSubtitlesModal] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Preview state
+    const [showPreviewModal, setShowPreviewModal] = useState(false);
+    const [previewVideo, setPreviewVideo] = useState<Video | null>(null);
+    const [previewSubtitles, setPreviewSubtitles] = useState<Subtitle[]>([]);
+    const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+    const [popoverWord, setPopoverWord] = useState<string | null>(null);
+    const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
+    const [selectedWord, setSelectedWord] = useState<string | null>(null);
+    const youtubePlayerRef = React.useRef<YouTubePlayerHandle>(null);
+    const nativeVideoRef = React.useRef<HTMLVideoElement>(null);
+    const subtitleListRef = React.useRef<HTMLDivElement>(null);
+    const subtitleItemRefs = React.useRef<(HTMLDivElement | null)[]>([]);
 
     // Form state
     const [formData, setFormData] = useState<CreateVideoDto>({
@@ -195,11 +250,55 @@ export default function AdminVideosPage() {
         }
     };
 
-    const formatDuration = (seconds: number) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    const formatSecondsToTime = (seconds: number) => {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = Math.floor(seconds % 60);
+        if (h > 0) {
+            return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+        return `${m}:${s.toString().padStart(2, '0')}`;
     };
+
+    // Fetch subtitles for preview
+    useEffect(() => {
+        if (showPreviewModal && previewVideo) {
+            videoApi.getSubtitles(previewVideo.id)
+                .then(setPreviewSubtitles)
+                .catch(err => console.error('Failed to load preview subtitles:', err));
+        } else {
+            setPreviewSubtitles([]);
+            setPreviewCurrentTime(0);
+        }
+    }, [showPreviewModal, previewVideo]);
+
+    const handlePreviewTimeUpdate = (time: number) => {
+        setPreviewCurrentTime(time);
+    };
+
+    const currentSubtitleIndex = previewSubtitles.findIndex(
+        (sub) => previewCurrentTime >= sub.startTime && previewCurrentTime <= sub.endTime
+    );
+
+    const currentSubtitle = previewSubtitles[currentSubtitleIndex];
+
+    const handleSeekTo = (seconds: number) => {
+        if (youtubePlayerRef.current) {
+            youtubePlayerRef.current.seekTo(seconds);
+        } else if (nativeVideoRef.current) {
+            nativeVideoRef.current.currentTime = seconds;
+        }
+    };
+
+    // Auto-scroll to current subtitle in the list
+    useEffect(() => {
+        if (showPreviewModal && currentSubtitleIndex >= 0 && subtitleItemRefs.current[currentSubtitleIndex]) {
+            subtitleItemRefs.current[currentSubtitleIndex]?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+            });
+        }
+    }, [currentSubtitleIndex, showPreviewModal]);
 
     // Subtitle management functions
     const generateId = () => Math.random().toString(36).substring(2, 9);
@@ -214,11 +313,6 @@ export default function AdminVideosPage() {
         return 0;
     };
 
-    const formatSecondsToTime = (seconds: number): string => {
-        const mins = Math.floor(seconds / 60);
-        const secs = Math.floor(seconds % 60);
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
 
     const loadSubtitles = async (videoId: string) => {
         setLoadingSubtitles(true);
@@ -451,11 +545,13 @@ export default function AdminVideosPage() {
             header: 'Thumbnail',
             width: '80px',
             render: (video: Video) => (
-                <img
-                    src={video.thumbnailUrl || 'https://via.placeholder.com/80x45?text=No+Image'}
-                    alt={video.title}
-                    className="w-20 h-12 object-cover rounded-lg"
-                />
+                <div className="relative group block overflow-hidden rounded-lg">
+                    <img
+                        src={video.thumbnailUrl || 'https://via.placeholder.com/80x45?text=No+Image'}
+                        alt={video.title}
+                        className="w-20 h-12 object-cover transition-transform group-hover:scale-110"
+                    />
+                </div>
             ),
         },
         {
@@ -484,7 +580,7 @@ export default function AdminVideosPage() {
             header: 'Thời lượng',
             width: '80px',
             render: (video: Video) => (
-                <span className="text-text-secondary">{formatDuration(video.durationSeconds)}</span>
+                <span className="text-text-secondary">{formatSecondsToTime(video.durationSeconds)}</span>
             ),
         },
         {
@@ -635,9 +731,175 @@ export default function AdminVideosPage() {
                 loading={loading}
                 pagination={pagination}
                 onPageChange={(page) => fetchVideos(page)}
+                onRowClick={(video: Video) => {
+                    setPreviewVideo(video);
+                    setShowPreviewModal(true);
+                }}
                 actions={actions}
                 emptyMessage="Chưa có video nào"
             />
+
+            {/* Video Preview Modal */}
+            <Modal
+                isOpen={showPreviewModal}
+                onClose={() => {
+                    setShowPreviewModal(false);
+                    setPreviewVideo(null);
+                    setPopoverWord(null);
+                    setSelectedWord(null);
+                }}
+                title={previewVideo?.title || 'Xem Video'}
+                size="2xl"
+                compact={true}
+            >
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[82vh]">
+                    {/* Left Column: Video & Active Subtitle (8/12) */}
+                    <div className="lg:col-span-8 flex flex-col gap-4 overflow-visible">
+                        <div className="aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-border-color shrink-0">
+                            {previewVideo && (
+                                videoApi.isYouTubeUrl(previewVideo.videoUrl) ? (
+                                    <YouTubePlayer 
+                                        ref={youtubePlayerRef}
+                                        videoId={videoApi.getYouTubeId(previewVideo.videoUrl) || ''} 
+                                        onTimeUpdate={handlePreviewTimeUpdate}
+                                        className="w-full h-full"
+                                    />
+                                ) : (
+                                    <video 
+                                        ref={nativeVideoRef}
+                                        src={previewVideo.videoUrl} 
+                                        controls 
+                                        className="w-full h-full"
+                                        autoPlay
+                                        onTimeUpdate={(e) => handlePreviewTimeUpdate(e.currentTarget.currentTime)}
+                                    />
+                                )
+                            )}
+                        </div>
+
+                        {/* Interactive Subtitle Box - Current Sentence */}
+                        <div className="bg-surface-dark rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-1 border border-border-color shadow-lg min-h-[130px] shrink-0">
+                            {currentSubtitle ? (
+                                <>
+                                    {/* Pinyin Tier */}
+                                    {currentSubtitle.pinyin && (
+                                        <p className="text-text-secondary text-sm font-medium tracking-tight font-pinyin">
+                                            {renderGroupedPinyin(currentSubtitle.hanzi || '', currentSubtitle.pinyin, currentSubtitle.tokens)}
+                                        </p>
+                                    )}
+
+                                     {/* Chinese Hanzi Tier */}
+                                    <p className="text-white text-2xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
+                                        {(currentSubtitle.tokens && currentSubtitle.tokens.length > 0 
+                                            ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
+                                            : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))
+                                        ).map((seg: { segment: string }, i: number) => {
+                                            const word = seg.segment;
+                                            if (!word.trim()) {
+                                                return <span key={i}>{word}</span>;
+                                            }
+                                            return (
+                                                <span
+                                                    key={i}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const rect = (e.target as HTMLElement).getBoundingClientRect();
+                                                        setPopoverPosition({ x: rect.left + rect.width / 2, y: rect.top });
+                                                        setPopoverWord(word);
+                                                        setSelectedWord(word);
+                                                    }}
+                                                    className={`cursor-pointer transition-all hover:text-primary hover:underline hover:decoration-2 hover:underline-offset-4 ${selectedWord === word
+                                                        ? "text-primary underline decoration-2 underline-offset-4"
+                                                        : ""
+                                                        }`}
+                                                >
+                                                    {word}
+                                                </span>
+                                            );
+                                        })}
+                                    </p>
+
+                                    {/* Vietnamese Tier */}
+                                    {currentSubtitle.meaningVi && (
+                                        <p className="text-white/70 text-lg font-medium mt-1">
+                                            {currentSubtitle.meaningVi}
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                <p className="text-text-secondary py-4 italic">Đang chờ phụ đề...</p>
+                            )}
+                        </div>
+
+                    </div>
+
+                    {/* Right Column: Full Subtitle List (4/12) */}
+                    <div className="lg:col-span-4 flex flex-col bg-background-dark/50 rounded-2xl border border-border-color overflow-hidden">
+                        <div className="p-3 border-b border-border-color bg-surface-dark flex items-center gap-2">
+                            <Icon name="subtitles" size="sm" className="text-primary" />
+                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Danh sách phụ đề</h3>
+                        </div>
+                        <div 
+                            ref={subtitleListRef}
+                            className="flex-1 overflow-y-auto p-2 custom-scrollbar flex flex-col gap-1.5"
+                        >
+                            {previewSubtitles.length > 0 ? (
+                                previewSubtitles.map((sub, index) => (
+                                    <div
+                                        key={index}
+                                        ref={el => { subtitleItemRefs.current[index] = el; }}
+                                        onClick={() => handleSeekTo(sub.startTime)}
+                                        className={`p-3 rounded-xl transition-all cursor-pointer border-l-3 group shrink-0 ${currentSubtitleIndex === index
+                                            ? "bg-surface-highlight/40 border-l-primary shadow-sm"
+                                            : "hover:bg-surface-highlight/20 border-l-transparent"
+                                            }`}
+                                    >
+                                        <div className="flex justify-between items-center mb-1 text-[10px] font-mono">
+                                            <span className={currentSubtitleIndex === index ? 'text-primary font-bold' : 'text-text-secondary/50'}>
+                                                {formatSecondsToTime(sub.startTime)}
+                                            </span>
+                                            {currentSubtitleIndex === index && (
+                                                <div className="size-1.5 bg-primary rounded-full animate-pulse shadow-[0_0_8px_rgba(76,223,32,0.8)]" />
+                                            )}
+                                        </div>
+                                        <p className={`font-chinese leading-relaxed ${currentSubtitleIndex === index
+                                            ? 'text-white text-base font-bold'
+                                            : 'text-text-secondary group-hover:text-white text-sm'
+                                            }`} lang="zh-CN">
+                                            {sub.hanzi}
+                                        </p>
+                                        {sub.meaningVi && (
+                                            <p className={`text-xs mt-0.5 leading-snug line-clamp-2 ${currentSubtitleIndex === index
+                                                ? 'text-white/60'
+                                                : 'text-text-secondary/40'
+                                                }`}>
+                                                {sub.meaningVi}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="flex flex-col items-center justify-center h-full text-text-secondary/40 gap-2">
+                                    <Icon name="subtitles_off" size="lg" />
+                                    <p className="text-xs italic">Chưa có phụ đề</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Dictionary Popover */}
+                {popoverWord && (
+                    <WordPopover
+                        word={popoverWord}
+                        position={popoverPosition}
+                        onClose={() => {
+                            setPopoverWord(null);
+                            setSelectedWord(null);
+                        }}
+                    />
+                )}
+            </Modal>
 
             {/* Create/Edit Modal */}
             <Modal
@@ -941,14 +1203,14 @@ export default function AdminVideosPage() {
                                             value={line.hanzi}
                                             onChange={(e) => updateSubtitleLine(line.id, 'hanzi', e.target.value)}
                                             placeholder="你好"
-                                            className="flex-1 min-w-[100px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none"
+                                            className="flex-1 min-w-[100px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none font-chinese"
                                         />
                                         <input
                                             type="text"
                                             value={line.pinyin}
                                             onChange={(e) => updateSubtitleLine(line.id, 'pinyin', e.target.value)}
                                             placeholder="nǐ hǎo"
-                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none"
+                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none font-pinyin"
                                         />
                                         <input
                                             type="text"

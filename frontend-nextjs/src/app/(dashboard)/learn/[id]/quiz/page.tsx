@@ -223,7 +223,7 @@ export default function QuizPage() {
                     <div className="bg-surface-dark rounded-2xl border border-border-color p-6">
                         {/* Question */}
                         <p className="text-sm text-primary font-medium mb-2">Điền vào chỗ trống</p>
-                        <p className="text-2xl text-white font-chinese leading-relaxed mb-4">
+                        <p className="text-2xl text-white font-chinese leading-relaxed mb-4 tracking-tight" lang="zh-CN">
                             {renderSentenceWithBlank(currentQuestion.sentenceHanzi, currentQuestion.blankWord)}
                         </p>
                         {currentQuestion.meaningVi && (
@@ -238,7 +238,7 @@ export default function QuizPage() {
                                 const isSelected = selectedAnswer === option;
                                 const isCorrect = option === currentQuestion.blankWord;
 
-                                let buttonClass = 'p-4 rounded-xl border-2 text-left transition-all font-chinese text-lg ';
+                                let buttonClass = 'p-4 rounded-xl border-2 text-left transition-all font-chinese text-lg tracking-tight ';
 
                                 if (showResult) {
                                     if (isCorrect) {
@@ -255,11 +255,12 @@ export default function QuizPage() {
                                 }
 
                                 return (
-                                    <button
+                                        <button
                                         key={idx}
                                         onClick={() => handleSelectAnswer(option)}
                                         disabled={showResult}
                                         className={buttonClass}
+                                        lang="zh-CN"
                                     >
                                         {option}
                                     </button>

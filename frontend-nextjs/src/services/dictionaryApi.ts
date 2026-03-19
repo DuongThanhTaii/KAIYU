@@ -24,6 +24,7 @@ export interface DictionaryEntry {
 }
 
 export interface LookupResult {
+    id?: string;
     hanzi: string;
     pinyin: string;
     pinyinDisplay: string;

@@ -21,6 +21,9 @@ export interface FlashcardReview {
     sourceImageUrl?: string;
     sourceAudioUrl?: string;
     sourceVideoUrl?: string; // For video clip playback
+    sourceVideoId?: string; // Database ID for subtitles lookup
+    sourceMeaning?: string;
+    sourceTokens?: any[];
     // Backend returns 'word', frontend types as 'vocabulary'
     word?: {
         id: string;
@@ -35,6 +38,7 @@ export interface FlashcardReview {
             hanzi: string;
             pinyin: string;
             meaning: string;
+            meaningVi?: string;
         }>;
     };
     vocabulary?: {
@@ -50,6 +54,7 @@ export interface FlashcardReview {
             hanzi: string;
             pinyin: string;
             meaning: string;
+            meaningVi?: string;
         }>;
     };
 }

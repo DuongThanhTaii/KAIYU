@@ -14,7 +14,7 @@ const LandingNavbar: React.FC = () => {
             <nav className="bg-white/4 dark:bg-surface-dark/80 backdrop-blur-md border border-white/10 dark:border-border-color rounded-full px-6 py-3 flex items-center justify-between w-full max-w-[960px] shadow-lg">
                 <Link href="/" className="flex items-center gap-3">
                     <div className="size-9 flex items-center justify-center shrink-0">
-                        <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                        <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                     </div>
                     <div className="hidden sm:flex flex-col leading-none">
                         <span className="font-extrabold text-lg tracking-widest text-white uppercase">
@@ -28,7 +28,6 @@ const LandingNavbar: React.FC = () => {
 
                 <div className="hidden md:flex items-center gap-8">
                     <a href="/#features" className="text-sm font-medium hover:text-primary transition-colors">Tính năng</a>
-                    <a href="/#pricing" className="text-sm font-medium hover:text-primary transition-colors">Bảng giá</a>
                     <a href="/#faq" className="text-sm font-medium hover:text-primary transition-colors">FAQ</a>
                 </div>
 

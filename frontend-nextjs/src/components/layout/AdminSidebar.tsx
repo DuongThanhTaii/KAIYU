@@ -72,7 +72,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         {!isCollapsed && (
                             <div className="flex items-center gap-2">
                                 <div className="size-9 flex items-center justify-center shrink-0">
-                                    <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                    <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                                 </div>
                                 <div className="flex flex-col leading-none">
                                     <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
@@ -160,7 +160,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                         </button>
                         <div className="flex items-center gap-2">
                             <div className="size-9 flex items-center justify-center shrink-0">
-                                <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                             </div>
                             <div className="flex flex-col leading-none">
                                 <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>

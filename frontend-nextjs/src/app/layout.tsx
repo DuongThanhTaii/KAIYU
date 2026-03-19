@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "KAIYU Team" }],
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/images/logo_xoanen.png",
+    shortcut: "/images/logo_xoanen.png",
+    apple: "/images/logo_xoanen.png",
   },
   openGraph: {
     title: "KAIYU - Học Tiếng Trung Online",
@@ -54,12 +54,12 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <head>
-        <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
+        <link rel="icon" href="/images/logo_xoanen.png" type="image/png" />
         {/* Google Fonts */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans:wght@400;500;700&family=LXGW+WenKai+TC:wght@400;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Manrope:wght@200..800&family=Noto+Sans:wght@400;500;700&family=Inter:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
         {/* Material Symbols Icons */}

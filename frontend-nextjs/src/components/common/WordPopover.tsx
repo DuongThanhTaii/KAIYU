@@ -6,14 +6,12 @@ import SpeakerButton from "./SpeakerButton";
 import { dictionaryApi, type LookupResult, type ExampleSentence, type EnrichedWordData } from "@/services/dictionaryApi";
 import { vocabularyFoldersApi, type VocabularyFolder } from "@/services/vocabularyFoldersApi";
 import { userVocabularyApi } from "@/services/userVocabularyApi";
+import { useAuth } from "@/contexts/AuthContext";
+import { videoApi, type Subtitle, type SubtitleToken } from "@/services/videoApi";
+import * as adminApi from "@/services/adminApi";
+import { Button } from "./index";
+import { renderFormattedMeaning } from "@/utils/chinese";
 
-// Dynamic import for HanziWriter (client-side only)
-let HanziWriter: any = null;
-if (typeof window !== 'undefined') {
-    import('hanzi-writer').then(module => {
-        HanziWriter = module.default;
-    });
-}
 
 // Helper: Extract YouTube video ID and generate thumbnail URL
 const getYouTubeThumbnail = (videoUrl?: string): string | undefined => {
@@ -29,16 +27,8 @@ const getYouTubeThumbnail = (videoUrl?: string): string | undefined => {
     }
     return undefined;
 };
+import { HSK_COLORS, POS_COLORS } from "@/constants/vocabulary";
 
-// HSK Level colors (flat, no gradients)
-const HSK_COLORS: Record<number, string> = {
-    1: 'bg-emerald-500',
-    2: 'bg-cyan-500',
-    3: 'bg-blue-500',
-    4: 'bg-violet-500',
-    5: 'bg-orange-500',
-    6: 'bg-rose-500',
-};
 
 interface WordPopoverProps {
     word: string;
@@ -51,7 +41,7 @@ interface WordPopoverProps {
     videoUrl?: string;
 }
 
-type PanelType = 'dictionary' | 'stroke' | 'tutor' | 'related' | 'flashcard' | 'history';
+type PanelType = 'dictionary' | 'related' | 'flashcard' | 'history' | 'admin_edit';
 
 export function WordPopover({
     word,
@@ -80,18 +70,35 @@ export function WordPopover({
     const [activePanel, setActivePanel] = useState<PanelType>('dictionary');
     const [xpGained, setXpGained] = useState(0);
     const [showXpAnimation, setShowXpAnimation] = useState(false);
+    
+    // New Flashcard states
+    const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+    const [newFolderName, setNewFolderName] = useState("");
+    const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+    const [note, setNote] = useState("");
+    
+    // Admin state
+    const { user } = useAuth();
+    const isAdmin = user?.role === 'admin';
+    const [subtitle, setSubtitle] = useState<Subtitle | null>(null);
+    const [isUpdatingSubtitle, setIsUpdatingSubtitle] = useState(false);
+    const [adminSubTab, setAdminSubTab] = useState<'word' | 'segment'>('word');
+    const [editingTokens, setEditingTokens] = useState<any[]>([]);
+    const [selectedTokenIndex, setSelectedTokenIndex] = useState<number | null>(null);
+    
+    // Form states for global word edit
+    const [editHanzi, setEditHanzi] = useState(word);
+    const [editPinyin, setEditPinyin] = useState('');
+    const [editMeaning, setEditMeaning] = useState('');
+    const [editPos, setEditPos] = useState('');
+    const [isSavingGlobal, setIsSavingGlobal] = useState(false);
 
     // History state
     const [lookupHistory, setLookupHistory] = useState<{ word: string; pinyin: string; meaning: string; timestamp: number }[]>([]);
 
-    // Stroke practice states
-    const [strokeMode, setStrokeMode] = useState<'animate' | 'quiz'>('animate');
-    const [quizResult, setQuizResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
 
     // Refs
     const popoverRef = useRef<HTMLDivElement>(null);
-    const strokeContainerRef = useRef<HTMLDivElement>(null);
-    const hanziWriterRef = useRef<any>(null);
     const [popupHeight, setPopupHeight] = useState(0);
     const [isPositioned, setIsPositioned] = useState(false);
 
@@ -103,9 +110,7 @@ export function WordPopover({
     // Panel definitions
     const panels: { id: PanelType; icon: string; label: string }[] = [
         { id: 'dictionary', icon: 'menu_book', label: 'Từ điển' },
-        { id: 'stroke', icon: 'draw', label: 'Luyện viết' },
-        { id: 'tutor', icon: 'psychology', label: 'AI Tutor' },
-        { id: 'related', icon: 'hub', label: 'Từ liên quan' },
+        { id: 'related', icon: 'hub', label: 'Cận nghĩa/Trái nghĩa' },
         { id: 'flashcard', icon: 'style', label: 'Flashcard' },
         { id: 'history', icon: 'history', label: 'Lịch sử' },
     ];
@@ -167,6 +172,17 @@ export function WordPopover({
             hasFetchedRef.current = word;
             setIsLoading(true);
             try {
+                // Determine subtitle if sourceVideoId is provided
+                if (sourceVideoId) {
+                    videoApi.getSubtitles(sourceVideoId).then(subs => {
+                        const sub = subs.find(s => 
+                            Number(s.startTime) <= (sourceTimestamp || 0) && 
+                            Number(s.endTime) >= (sourceTimestamp || 0)
+                        );
+                        if (sub) setSubtitle(sub);
+                    });
+                }
+
                 const [result, foldersList] = await Promise.all([
                     // Pass sourcePinyin for context-aware entry prioritization
                     dictionaryApi.lookup(word, sourcePinyin),
@@ -175,6 +191,9 @@ export function WordPopover({
                 setLookupResult(result);
                 setFolders(foldersList);
                 if (result.found) {
+                    setEditPinyin(result.pinyin || '');
+                    setEditMeaning(result.meaningVi || result.meaningEn || '');
+                    setEditPos(result.partOfSpeech || '');
                     dictionaryApi.getExamples(word)
                         .then(exs => setExamples(exs))
                         .catch(() => setExamples([]));
@@ -187,11 +206,11 @@ export function WordPopover({
             }
         };
         if (word) fetchData();
-    }, [word, sourcePinyin]);
+    }, [word, sourcePinyin, sourceVideoId, sourceTimestamp]);
 
     // Fetch enriched data when switching to panels that need it
     useEffect(() => {
-        const needsEnrich = ['stroke', 'tutor', 'related'].includes(activePanel);
+        const needsEnrich = ['related'].includes(activePanel);
         if (needsEnrich && hasEnrichedRef.current !== word && lookupResult?.found) {
             hasEnrichedRef.current = word;
             setIsEnrichLoading(true);
@@ -209,66 +228,25 @@ export function WordPopover({
                 setLookupHistory(history);
             });
         }
-    }, [activePanel]);
-
-    // Initialize HanziWriter when stroke panel is active
-    useEffect(() => {
-        if (activePanel === 'stroke' && strokeContainerRef.current && word.length === 1 && HanziWriter) {
-            if (hanziWriterRef.current) {
-                hanziWriterRef.current = null;
-            }
-            strokeContainerRef.current.innerHTML = '';
-
-            try {
-                const options: any = {
-                    width: 200,
-                    height: 200,
-                    padding: 5,
-                    showOutline: true,
-                    strokeAnimationSpeed: 1,
-                    delayBetweenStrokes: 200,
-                    strokeColor: '#22c55e',
-                    outlineColor: '#374151',
-                    drawingColor: '#3b82f6',
-                    showHintAfterMisses: 3,
-                };
-
-                hanziWriterRef.current = HanziWriter.create(strokeContainerRef.current, word, options);
-            } catch (e) {
-                console.log('HanziWriter init error:', e);
+        
+        // Prepare tokens for segmentation tab
+        if (activePanel === 'admin_edit' && adminSubTab === 'segment' && subtitle && editingTokens.length === 0) {
+            if (subtitle.tokens && subtitle.tokens.length > 0) {
+                setEditingTokens(subtitle.tokens.map(t => ({ ...t })));
+            } else {
+                // Fallback to Intl.Segmenter initial guess
+                const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
+                const segments = Array.from(segmenter.segment(subtitle.hanzi));
+                setEditingTokens(segments.filter(s => s.segment.trim()).map((s, i) => ({
+                    hanzi: s.segment,
+                    pinyin: '',
+                    meaning: '',
+                    position: i
+                })));
             }
         }
-        return () => {
-            if (hanziWriterRef.current) {
-                hanziWriterRef.current = null;
-            }
-        };
-    }, [activePanel, word]);
+    }, [activePanel, adminSubTab, subtitle]);
 
-    // Stroke animation
-    const animateStrokes = useCallback(() => {
-        if (hanziWriterRef.current) {
-            hanziWriterRef.current.animateCharacter();
-        }
-    }, []);
-
-    // Quiz mode
-    const startQuiz = useCallback(() => {
-        setStrokeMode('quiz');
-        setQuizResult('idle');
-        if (hanziWriterRef.current) {
-            hanziWriterRef.current.quiz({
-                onComplete: (summaryData: any) => {
-                    if (summaryData.totalMistakes === 0) {
-                        setQuizResult('correct');
-                        triggerXp(20);
-                    } else {
-                        setQuizResult('wrong');
-                    }
-                }
-            });
-        }
-    }, []);
 
     // XP animation
     const triggerXp = useCallback((amount: number) => {
@@ -293,6 +271,9 @@ export function WordPopover({
                 sourceSentence,
                 sourcePinyin,
                 sourceImageUrl,
+                sourceMeaning: subtitle?.meaningVi || undefined,
+                sourceTokens: subtitle?.tokens || undefined,
+                note: note.trim() || undefined,
             });
             setSaveSuccess(true);
             triggerXp(10);
@@ -311,12 +292,108 @@ export function WordPopover({
         }
     };
 
+    const handleCreateFolder = async () => {
+        if (!newFolderName.trim()) return;
+        setIsCreatingFolder(true);
+        try {
+            const newFolder = await vocabularyFoldersApi.create({
+                name: newFolderName.trim(),
+            });
+            setFolders(prev => [newFolder, ...prev]);
+            setSelectedFolderId(newFolder.id);
+            setNewFolderName("");
+            setShowNewFolderInput(false);
+            triggerXp(5); // Small bonus for organizing
+        } catch (error) {
+            console.error("Failed to create folder:", error);
+        } finally {
+            setIsCreatingFolder(false);
+        }
+    };
+
     const displayDefinitions = lookupResult?.definitionsVi?.length
         ? lookupResult.definitionsVi
         : lookupResult?.definitions || [];
 
-    // Get HSK level (mock - would come from DB)
-    const hskLevel = 1; // TODO: Get from lookup result
+    // Save Global Dictionary Changes
+    const handleSaveGlobal = async () => {
+        if (!lookupResult?.found || !lookupResult.id) return;
+        setIsSavingGlobal(true);
+        try {
+            await adminApi.updateVocabulary(lookupResult.id, {
+                hanzi: editHanzi,
+                pinyin: editPinyin,
+                meaningVi: editMeaning,
+                partOfSpeech: editPos,
+            });
+            // Update local state
+            setLookupResult(prev => prev ? {
+                ...prev,
+                pinyin: editPinyin,
+                pinyinDisplay: editPinyin,
+                meaningVi: editMeaning,
+                partOfSpeech: editPos
+            } : null);
+            triggerXp(50); // Admin bonus
+        } catch (error) {
+            console.error("Failed to save global changes:", error);
+        } finally {
+            setIsSavingGlobal(false);
+        }
+    };
+
+    // Subtitle Re-segmentation Logic
+    const handleSplitToken = (index: number) => {
+        const token = editingTokens[index];
+        if (token.hanzi.length <= 1) return;
+        
+        const newTokens = [...editingTokens];
+        const chars = Array.from(token.hanzi);
+        const splitTokens = chars.map((char, i) => ({
+            hanzi: char,
+            pinyin: '', // Will fetch/guess later
+            meaning: '',
+            position: token.position + i
+        }));
+        
+        newTokens.splice(index, 1, ...splitTokens);
+        setEditingTokens(newTokens);
+    };
+
+    const handleMergeTokens = (index: number) => {
+        if (index >= editingTokens.length - 1) return;
+        
+        const newTokens = [...editingTokens];
+        const t1 = newTokens[index];
+        const t2 = newTokens[index + 1];
+        
+        const mergedToken = {
+            hanzi: t1.hanzi + t2.hanzi,
+            pinyin: (t1.pinyin + ' ' + t2.pinyin).trim(),
+            meaning: '',
+            position: t1.position
+        };
+        
+        newTokens.splice(index, 2, mergedToken);
+        setEditingTokens(newTokens);
+    };
+
+    const handleSaveSubtitle = async () => {
+        if (!subtitle) return;
+        setIsUpdatingSubtitle(true);
+        try {
+            await videoApi.updateSubtitle(subtitle.id, {
+                tokens: editingTokens
+            });
+            setSaveSuccess(true);
+            triggerXp(100);
+            // Wait for parent refresh or update local state
+        } catch (error) {
+            console.error("Failed to update subtitle:", error);
+        } finally {
+            setIsUpdatingSubtitle(false);
+        }
+    };
 
     return (
         <div
@@ -338,121 +415,154 @@ export function WordPopover({
                 </div>
             )}
 
-            <div className="relative bg-surface-dark/95 backdrop-blur-xl border border-border-color rounded-2xl shadow-2xl overflow-hidden">
+            <div className="relative bg-surface-dark/95 backdrop-blur-xl border border-border-color rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
                     </div>
                 ) : lookupResult?.found ? (
                     <>
-                        {/* Header - Large Character Display */}
-                        <div className="p-5 border-b border-border-color bg-surface-highlight/20">
-                            {/* AI Warning Banner */}
+                        {/* Bento-style Header Section */}
+                        <div className="p-5 border-b border-border-color bg-surface-highlight/10">
+                            {/* AI Warning Banner - Integrated into Bento flow */}
                             {lookupResult.source === 'ai' && !lookupResult.isSystemWord && (
-                                <div className="mb-3 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-lg flex items-center gap-2">
+                                <div className="mb-4 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2">
                                     <Icon name="smart_toy" className="text-amber-400" size="sm" />
-                                    <span className="text-amber-300 text-xs font-medium">
-                                        Từ ngoài thư viện (AI dịch) - Không thể lưu
+                                    <span className="text-amber-300 text-xs font-semibold tracking-wide uppercase">
+                                        Dictionary Match Not Found (AI Assisted)
                                     </span>
                                 </div>
                             )}
 
-                            <div className="flex items-start justify-between">
-                                <div className="flex items-center gap-4">
-                                    {/* Large Hanzi */}
-                                    <div className="text-5xl font-bold text-white font-chinese leading-none">
-                                        {word}
+                            <div className="grid grid-cols-1 gap-4">
+                                {/* Top Bento Row: Hanzi + Actions */}
+                                <div className="flex items-start justify-between gap-6">
+                                    <div className="min-w-0 flex-1">
+                                        {/* Large Hanzi - Guaranteed Single Line */}
+                                        <h2 className={`font-bold text-white font-chinese leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
+                                            {word}
+                                        </h2>
+                                        
+                                        {/* Pinyin directly below for better vertical flow */}
+                                        <div className="text-primary text-xl font-semibold font-pinyin tracking-tight mt-1 opacity-90">
+                                            {lookupResult.pinyinDisplay}
+                                        </div>
                                     </div>
 
-                                    {/* Info Column */}
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-primary text-lg font-medium">{lookupResult.pinyinDisplay}</span>
+                                    {/* Action Bento Box - Right Aligned */}
+                                    <div className="flex items-center bg-surface-dark/50 border border-border-color/30 rounded-2xl p-1 shrink-0 backdrop-blur-md">
+                                        <SpeakerButton text={word} size="sm" />
+                                        
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => setActivePanel('admin_edit')}
+                                                className={`inline-flex items-center justify-center p-2 rounded-full transition-all hover:scale-110 active:scale-95 ${activePanel === 'admin_edit'
+                                                    ? 'bg-amber-500/20 text-amber-500'
+                                                    : 'text-text-secondary hover:text-amber-400 hover:bg-amber-500/10'
+                                                    }`}
+                                                title="Chỉnh sửa (Admin)"
+                                            >
+                                                <Icon name="edit" size="sm" />
+                                            </button>
+                                        )}
 
-                                        {/* Badges */}
-                                        <div className="flex items-center gap-2">
-                                            {lookupResult.isSystemWord && lookupResult.hskLevel && (
-                                                <span className={`px-2 py-0.5 ${HSK_COLORS[lookupResult.hskLevel] || 'bg-gray-500'} text-white text-xs font-bold rounded`}>
-                                                    HSK {lookupResult.hskLevel}
-                                                </span>
-                                            )}
-                                            {lookupResult.partOfSpeech && (
-                                                <span className="px-2 py-0.5 bg-surface-highlight text-text-secondary text-xs rounded">
-                                                    {lookupResult.partOfSpeech}
-                                                </span>
-                                            )}
-                                            {lookupResult.source === 'ai' && (
-                                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded flex items-center gap-1">
-                                                    <Icon name="auto_awesome" size="sm" /> AI
-                                                </span>
-                                            )}
-                                        </div>
+                                        {lookupResult.isSystemWord && (
+                                            <button
+                                                onClick={handleSave}
+                                                disabled={isSaving || saveSuccess}
+                                                className={`inline-flex items-center justify-center p-2 rounded-full transition-all hover:scale-110 active:scale-95 ${saveSuccess
+                                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                                    : 'hover:bg-primary/10 text-text-secondary hover:text-primary'
+                                                    }`}
+                                                title="Lưu từ"
+                                            >
+                                                {isSaving ? (
+                                                    <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                ) : (
+                                                    <Icon name={saveSuccess ? "check" : "bookmark_add"} size="sm" />
+                                                )}
+                                            </button>
+                                        )}
+                                        
+                                        <div className="w-px h-6 bg-border-color/30 mx-1" />
+                                        
+                                        <button
+                                            onClick={onClose}
+                                            className="inline-flex items-center justify-center p-2 hover:bg-rose-500/20 text-text-secondary hover:text-rose-400 rounded-full transition-all hover:scale-110 active:scale-95"
+                                            title="Đóng"
+                                        >
+                                            <Icon name="close" size="sm" />
+                                        </button>
                                     </div>
                                 </div>
 
-                                {/* Action Icons */}
-                                <div className="flex items-center gap-1">
-                                    <SpeakerButton
-                                        text={word}
-                                        size="sm"
-                                        className="p-2 hover:bg-surface-highlight text-text-secondary hover:text-primary rounded-full transition-colors"
-                                    />
-                                    {/* Save button - ONLY show if isSystemWord */}
-                                    {lookupResult.isSystemWord && (
-                                        <button
-                                            onClick={handleSave}
-                                            disabled={isSaving || saveSuccess}
-                                            className={`inline-flex items-center justify-center p-2 rounded-full transition-all ${saveSuccess
-                                                ? 'bg-emerald-500 text-white'
-                                                : 'hover:bg-surface-highlight text-text-secondary hover:text-primary'
-                                                }`}
-                                            title="Lưu từ"
-                                        >
-                                            {isSaving ? (
-                                                <div className="size-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                            ) : (
-                                                <Icon name={saveSuccess ? "check" : "bookmark_add"} size="sm" />
-                                            )}
-                                        </button>
+                                {/* Bottom Bento Row: Badges and Quick Info */}
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {lookupResult.isSystemWord && lookupResult.hskLevel ? (
+                                        <div className={`px-3 py-1 ${HSK_COLORS[lookupResult.hskLevel] || 'bg-gray-500'} bg-opacity-20 text-white text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm`}>
+                                            <span className="opacity-70 text-[8px] font-bold">LEVEL</span>
+                                            HSK {lookupResult.hskLevel}
+                                        </div>
+                                    ) : null}
+                                    
+                                    {lookupResult.partOfSpeech && (
+                                        <div className="px-3 py-1 bg-surface-highlight border border-border-color/50 text-text-secondary text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1.5">
+                                            <Icon name="category" size="sm" className="opacity-50" />
+                                            {lookupResult.partOfSpeech}
+                                        </div>
                                     )}
-                                    {/* Close button */}
-                                    <button
-                                        onClick={onClose}
-                                        className="inline-flex items-center justify-center p-1.5 ml-1 hover:bg-rose-500/20 text-text-secondary hover:text-rose-400 rounded-full transition-colors"
-                                        title="Đóng"
-                                    >
-                                        <Icon name="close" size="sm" />
-                                    </button>
+                                    
+                                    {lookupResult.source === 'ai' && (
+                                        <div className="px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-black rounded-lg uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                                            <Icon name="auto_awesome" size="sm" /> AI
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Vietnamese Meaning - Prominent */}
+                        </div>
+
+                        {/* Scrollable Body: Everything else */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            {/* Vietnamese Meaning - Integrated as a clean bottom Bento block */}
                             {lookupResult.meaningVi && (
-                                <p className="mt-3 text-xl text-white font-medium">
-                                    {lookupResult.meaningVi}
-                                </p>
+                                <div className="px-5 py-3 bg-surface-highlight/5 border-b border-border-color/30 animate-in fade-in slide-in-from-bottom-2 duration-300" lang="vi">
+                                    <div className="space-y-2">
+                                        {lookupResult.meaningVi.includes('1.') ? (
+                                            lookupResult.meaningVi.split(/(?=\d+\.)/).map((part, i) => (
+                                                <div key={i} className="text-lg font-medium leading-relaxed group transition-colors hover:text-primary">
+                                                    {renderFormattedMeaning(part)}
+                                                </div>
+                                            ))
+                                        ) : (
+                                            <p className="text-xl text-white font-semibold leading-snug tracking-tight">
+                                                {lookupResult.meaningVi}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
                             )}
-                        </div>
 
-                        {/* Panel Navigation - Icon Grid */}
-                        <div className="grid grid-cols-6 border-b border-border-color">
-                            {panels.map(panel => (
-                                <button
-                                    key={panel.id}
-                                    onClick={() => setActivePanel(panel.id)}
-                                    className={`flex flex-col items-center justify-center py-3 transition-all ${activePanel === panel.id
-                                        ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                                        : 'text-text-secondary hover:text-white hover:bg-surface-highlight/50'
-                                        }`}
-                                    title={panel.label}
-                                >
-                                    <Icon name={panel.icon} size="sm" />
-                                    <span className="text-[10px] mt-1 font-medium">{panel.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                            {/* Panel Navigation - Sticky Header */}
+                            <div className="sticky top-0 z-10 bg-surface-dark/95 backdrop-blur-md border-b border-border-color grid grid-cols-4 shadow-md">
+                                {panels.map(panel => (
+                                    <button
+                                        key={panel.id}
+                                        onClick={() => setActivePanel(panel.id)}
+                                        className={`flex flex-col items-center justify-center py-3 transition-all ${activePanel === panel.id
+                                            ? 'bg-primary/10 text-primary border-b-2 border-primary'
+                                            : 'text-text-secondary hover:text-white hover:bg-surface-highlight/50'
+                                            }`}
+                                        title={panel.label}
+                                    >
+                                        <Icon name={panel.icon} size="sm" />
+                                        <span className="text-[10px] mt-1 font-medium">{panel.label}</span>
+                                    </button>
+                                ))}
+                            </div>
 
-                        {/* Panel Content */}
-                        <div className="max-h-[280px] overflow-y-auto" style={{ scrollbarWidth: 'none' }}>
+                            {/* Panel Content - No separate scrollbar anymore */}
+                            <div className="p-0">
 
                             {/* 📚 Dictionary Panel - Premium Multi-Pronunciation UI */}
                             {activePanel === 'dictionary' && (
@@ -474,15 +584,15 @@ export function WordPopover({
                                                     >
                                                         {/* Reading Header */}
                                                         <div className={`px-4 py-3 flex items-center gap-3 bg-${color}-500/10`}>
-                                                            <span className={`text-2xl font-chinese text-white`}>
+                                                            <span className={`text-2xl font-chinese text-white`} lang="zh-CN">
                                                                 {word}
                                                             </span>
                                                             <div className="flex-1">
-                                                                <span className={`text-${color}-400 font-medium`}>
+                                                                <span className={`text-${color}-400 font-medium font-pinyin tracking-tight`}>
                                                                     {entry.pinyinDisplay}
                                                                 </span>
                                                                 {entry.partOfSpeech && (
-                                                                    <span className="ml-2 px-2 py-0.5 bg-surface-highlight text-text-secondary text-xs rounded">
+                                                                    <span className="ml-2 px-2 py-0.5 bg-surface-highlight text-text-secondary text-xs rounded-full">
                                                                         {entry.partOfSpeech}
                                                                     </span>
                                                                 )}
@@ -490,7 +600,6 @@ export function WordPopover({
                                                             <SpeakerButton
                                                                 text={word}
                                                                 size="sm"
-                                                                className="p-1.5 hover:bg-surface-highlight rounded-full"
                                                             />
                                                         </div>
                                                         {/* Definitions */}
@@ -502,7 +611,9 @@ export function WordPopover({
                                                                         <span className={`size-5 rounded-full bg-${color}-500/20 text-${color}-400 text-xs flex items-center justify-center shrink-0 font-bold`}>
                                                                             {i + 1}
                                                                         </span>
-                                                                        <span className="text-white/90 text-sm leading-relaxed">{def}</span>
+                                                                        <span className="text-white/90 text-sm leading-relaxed">
+                                                                            {renderFormattedMeaning(def)}
+                                                                        </span>
                                                                     </div>
                                                                 ))}
                                                         </div>
@@ -531,135 +642,36 @@ export function WordPopover({
                                         )
                                     )}
 
-                                    {/* Example Sentences */}
+                                    {/* Example Sentences - Multi-section logic */}
                                     {examples.length > 0 && (
-                                        <div className="pt-3 border-t border-border-color">
-                                            <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-3 font-medium flex items-center gap-2">
-                                                <Icon name="format_quote" size="sm" className="text-cyan-400" />
-                                                Ví dụ câu
-                                            </h4>
-                                            <div className="space-y-3">
-                                                {examples.slice(0, 3).map((ex, i) => (
-                                                    <div key={i} className="bg-surface-highlight/30 rounded-xl p-3 group hover:bg-surface-highlight/50 transition-colors">
-                                                        <div className="flex items-center justify-between mb-1">
-                                                            <p className="text-white font-chinese">{ex.chinese}</p>
-                                                            <SpeakerButton
-                                                                text={ex.chinese}
-                                                                size="sm"
-                                                                className="opacity-0 group-hover:opacity-100 p-1 transition-opacity"
-                                                            />
-                                                        </div>
+                                        <div className="pt-3 border-t border-border-color space-y-4">
+                                            {examples.slice(0, 3).map((ex, i) => (
+                                                <div key={i} className="flex flex-col gap-2 p-4 bg-surface-highlight/20 border border-border-color/30 rounded-2xl group hover:bg-surface-highlight/40 transition-all">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest opacity-80">Ví dụ {i + 1}</span>
+                                                        <SpeakerButton
+                                                            text={ex.chinese}
+                                                            size="sm"
+                                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                        />
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        <p className="text-white font-chinese text-lg leading-snug" lang="zh-CN">{ex.chinese}</p>
                                                         {ex.pinyin && (
-                                                            <p className="text-primary/70 text-xs mb-1">{ex.pinyin}</p>
+                                                            <p className="text-primary/70 text-xs font-pinyin tracking-tight">{ex.pinyin}</p>
                                                         )}
-                                                        <p className="text-text-secondary text-sm italic">"{ex.translation}"</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* ✏️ Stroke Practice Panel */}
-                            {activePanel === 'stroke' && (
-                                <div className="p-4 flex flex-col items-center">
-                                    {word.length === 1 ? (
-                                        <>
-                                            {/* Stroke Canvas */}
-                                            <div
-                                                ref={strokeContainerRef}
-                                                className="bg-surface-highlight/30 rounded-2xl border-2 border-border-color mb-4 relative"
-                                                style={{ width: 200, height: 200 }}
-                                            />
-
-                                            {/* Quiz Result */}
-                                            {quizResult !== 'idle' && (
-                                                <div className={`mb-3 px-4 py-2 rounded-full text-sm font-bold ${quizResult === 'correct'
-                                                    ? 'bg-emerald-500/20 text-emerald-400'
-                                                    : 'bg-amber-500/20 text-amber-400'
-                                                    }`}>
-                                                    {quizResult === 'correct' ? '✓ Tuyệt vời! Bạn viết rất chuẩn!' : '⭐ Cố gắng tốt lắm! Luyện thêm nhé!'}
-                                                </div>
-                                            )}
-
-                                            {/* Action Buttons */}
-                                            <div className="flex gap-2">
-                                                <button
-                                                    onClick={animateStrokes}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-surface-highlight text-white rounded-xl hover:bg-surface-highlight/80 transition-colors text-sm font-medium"
-                                                >
-                                                    <Icon name="play_arrow" size="sm" />
-                                                    Xem nét
-                                                </button>
-                                                <button
-                                                    onClick={startQuiz}
-                                                    className="flex items-center gap-2 px-4 py-2 bg-primary text-black rounded-xl hover:bg-primary-hover transition-colors text-sm font-bold"
-                                                >
-                                                    <Icon name="edit" size="sm" />
-                                                    Tự viết
-                                                </button>
-                                            </div>
-
-                                            {enrichedData?.strokeData && (
-                                                <p className="text-text-secondary text-xs mt-3">
-                                                    {enrichedData.strokeData.strokes.length} nét · Viết từ trên xuống, trái sang phải
-                                                </p>
-                                            )}
-                                        </>
-                                    ) : (
-                                        <div className="text-center py-8 text-text-secondary">
-                                            <Icon name="gesture" className="text-4xl mb-2 opacity-50" />
-                                            <p className="text-sm">Chọn từng ký tự để luyện viết</p>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* 🤖 AI Tutor Panel */}
-                            {activePanel === 'tutor' && (
-                                <div className="p-4">
-                                    {isEnrichLoading ? (
-                                        <div className="flex items-center justify-center py-10">
-                                            <div className="size-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                        </div>
-                                    ) : enrichedData?.mnemonic ? (
-                                        <div className="space-y-4">
-                                            {/* Visual Story */}
-                                            <div className="bg-amber-500/10 rounded-xl p-4 border border-amber-500/20">
-                                                <div className="flex items-start gap-3">
-                                                    <div className="size-10 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-                                                        <Icon name="lightbulb" className="text-amber-400" />
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="text-amber-400 font-bold text-sm mb-1">Cách nhớ</h4>
-                                                        <p className="text-white/90 text-sm leading-relaxed">
-                                                            {enrichedData.mnemonic.visualStory}
+                                                        <p className="text-text-secondary text-sm italic leading-relaxed mt-1">
+                                                            {ex.translation}
                                                         </p>
                                                     </div>
                                                 </div>
-                                            </div>
-
-                                            {/* Character Breakdown */}
-                                            {enrichedData.mnemonic.characterBreakdown && (
-                                                <div className="bg-surface-highlight/50 rounded-xl p-4">
-                                                    <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-2 font-medium">
-                                                        Cấu tạo chữ
-                                                    </h4>
-                                                    <p className="text-white text-lg font-chinese">
-                                                        {enrichedData.mnemonic.characterBreakdown}
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="text-center py-10 text-text-secondary">
-                                            <Icon name="psychology" className="text-4xl mb-2 opacity-50" />
-                                            <p className="text-sm">Đang tạo gợi ý nhớ...</p>
+                                            ))}
                                         </div>
                                     )}
                                 </div>
                             )}
+
+
 
                             {/* 🔗 Related Words Panel */}
                             {activePanel === 'related' && (
@@ -677,7 +689,7 @@ export function WordPopover({
                                                         Bộ thủ
                                                     </h4>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-3xl font-chinese text-white">
+                                                        <span className="text-3xl font-chinese text-white" lang="zh-CN">
                                                             {enrichedData.decomposition.radical.char}
                                                         </span>
                                                         <div>
@@ -685,7 +697,7 @@ export function WordPopover({
                                                                 {enrichedData.decomposition.radical.meaning}
                                                             </p>
                                                             {enrichedData.decomposition.radical.pinyin && (
-                                                                <p className="text-primary text-sm">
+                                                                <p className="text-primary text-sm font-pinyin tracking-tight">
                                                                     {enrichedData.decomposition.radical.pinyin}
                                                                 </p>
                                                             )}
@@ -699,14 +711,16 @@ export function WordPopover({
                                                 <div className="grid grid-cols-2 gap-3">
                                                     {enrichedData.relatedWords.synonyms?.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-2 flex items-center gap-1">
-                                                                <span className="text-emerald-400">≈</span> Đồng nghĩa
+                                                            <h4 className="text-xs uppercase tracking-wider mb-2 flex items-center gap-1 text-emerald-400/80">
+                                                                <span>≈</span> Đồng nghĩa
                                                             </h4>
-                                                            <div className="space-y-1">
-                                                                {enrichedData.relatedWords.synonyms.slice(0, 3).map((w, i) => (
-                                                                    <div key={i} className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
-                                                                        <span className="text-white font-chinese text-sm">{w.hanzi}</span>
-                                                                        <span className="text-emerald-400/70 text-xs ml-2">{w.meaning}</span>
+                                                            <div className="flex flex-col gap-1.5">
+                                                                {enrichedData.relatedWords.synonyms.slice(0, 4).map((w, i) => (
+                                                                    <div key={i} className="px-3 py-2 bg-emerald-500/5 border border-emerald-500/20 rounded-xl group hover:bg-emerald-500/10 transition-colors">
+                                                                        <div className="flex items-baseline justify-between gap-2">
+                                                                            <span className="text-emerald-400 font-chinese text-sm font-bold whitespace-nowrap" lang="zh-CN">{w.hanzi}</span>
+                                                                            <span className="text-emerald-400/60 text-[10px] truncate uppercase font-bold tracking-tighter">{w.meaning}</span>
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -715,14 +729,16 @@ export function WordPopover({
 
                                                     {enrichedData.relatedWords.antonyms?.length > 0 && (
                                                         <div>
-                                                            <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-2 flex items-center gap-1">
-                                                                <span className="text-rose-400">≠</span> Trái nghĩa
+                                                            <h4 className="text-xs uppercase tracking-wider mb-2 flex items-center gap-1 text-rose-400/80">
+                                                                <span>≠</span> Trái nghĩa
                                                             </h4>
-                                                            <div className="space-y-1">
-                                                                {enrichedData.relatedWords.antonyms.slice(0, 3).map((w, i) => (
-                                                                    <div key={i} className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                                                                        <span className="text-white font-chinese text-sm">{w.hanzi}</span>
-                                                                        <span className="text-rose-400/70 text-xs ml-2">{w.meaning}</span>
+                                                            <div className="flex flex-col gap-1.5">
+                                                                {enrichedData.relatedWords.antonyms.slice(0, 4).map((w, i) => (
+                                                                    <div key={i} className="px-3 py-2 bg-rose-500/5 border border-rose-500/20 rounded-xl group hover:bg-rose-500/10 transition-colors">
+                                                                        <div className="flex items-baseline justify-between gap-2">
+                                                                            <span className="text-rose-400 font-chinese text-sm font-bold whitespace-nowrap" lang="zh-CN">{w.hanzi}</span>
+                                                                            <span className="text-rose-400/60 text-[10px] truncate uppercase font-bold tracking-tighter">{w.meaning}</span>
+                                                                        </div>
                                                                     </div>
                                                                 ))}
                                                             </div>
@@ -739,10 +755,10 @@ export function WordPopover({
                                                     </h4>
                                                     <div className="flex flex-wrap gap-2">
                                                         {enrichedData?.relatedWords?.collocations?.map((w, i) => (
-                                                            <span key={i} className="px-3 py-1.5 bg-surface-highlight rounded-full text-sm">
-                                                                <span className="text-white font-chinese">{w.hanzi}</span>
-                                                                <span className="text-text-secondary text-xs ml-1">({w.meaning})</span>
-                                                            </span>
+                                                            <div key={i} className="px-3 py-1.5 bg-surface-highlight border border-border-color/30 rounded-xl flex items-center gap-2">
+                                                                <span className="text-white font-chinese whitespace-nowrap" lang="zh-CN">{w.hanzi}</span>
+                                                                <span className="text-text-secondary text-[10px] font-medium leading-none">({w.meaning})</span>
+                                                            </div>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -752,87 +768,290 @@ export function WordPopover({
                                 </div>
                             )}
 
-                            {/* 📝 Flashcard Panel */}
+                            {/* 🎴 Flashcard Panel - Optimized for "Sentence Mining" */}
                             {activePanel === 'flashcard' && (
-                                <div className="p-4 space-y-4">
-                                    {/* Preview Card */}
-                                    <div className="bg-surface-highlight/50 rounded-xl p-4 text-center">
-                                        <p className="text-3xl font-chinese text-white mb-2">{word}</p>
-                                        <p className="text-primary text-sm">{lookupResult.pinyinDisplay}</p>
-                                        <hr className="my-3 border-border-color" />
-                                        <p className="text-white">{lookupResult.meaningVi || lookupResult.meaningEn}</p>
-                                    </div>
-
-                                    {/* Folder Selection */}
-                                    {folders.length > 0 && (
-                                        <div>
-                                            <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-2">
-                                                Chọn thư mục
-                                            </h4>
-                                            <div className="grid grid-cols-2 gap-2">
-                                                <button
-                                                    onClick={() => setSelectedFolderId(null)}
-                                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${!selectedFolderId
-                                                        ? 'bg-primary/20 text-primary border border-primary'
-                                                        : 'bg-surface-highlight text-text-secondary hover:text-white'
-                                                        }`}
-                                                >
-                                                    <Icon name="folder" size="sm" />
-                                                    Mặc định
-                                                </button>
-                                                {folders.slice(0, 3).map(folder => (
-                                                    <button
-                                                        key={folder.id}
-                                                        onClick={() => setSelectedFolderId(folder.id)}
-                                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${selectedFolderId === folder.id
-                                                            ? 'bg-primary/20 text-primary border border-primary'
-                                                            : 'bg-surface-highlight text-text-secondary hover:text-white'
-                                                            }`}
-                                                    >
-                                                        <Icon name={folder.icon || 'folder'} size="sm" />
-                                                        <span className="truncate">{folder.name}</span>
-                                                    </button>
-                                                ))}
+                                <div className="p-4 space-y-5">
+                                    {/* Sentence Mining Context Card */}
+                                    {sourceSentence ? (
+                                        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20 space-y-2 animate-in fade-in slide-in-from-top-2">
+                                            <div className="flex items-center gap-2 text-[10px] text-primary font-black uppercase tracking-widest">
+                                                
+                                                Học trong ngữ cảnh 
                                             </div>
+                                            <p className="text-white font-chinese text-base leading-relaxed" lang="zh-CN">
+                                                {sourceSentence.split(word).map((part, i, arr) => (
+                                                    <span key={i}>
+                                                        {part}
+                                                        {i < arr.length - 1 && <span className="text-primary font-bold underline underline-offset-4 Decoration-2">{word}</span>}
+                                                    </span>
+                                                ))}
+                                            </p>
+                                            {sourcePinyin && (
+                                                <p className="text-text-secondary text-xs font-pinyin tracking-tight opacity-70 italic line-clamp-1">{sourcePinyin}</p>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="bg-surface-highlight/30 rounded-2xl p-4 border border-border-color/30 text-center">
+                                            <p className="text-text-secondary text-xs italic">Không có câu mẫu từ video</p>
                                         </div>
                                     )}
 
-                                    {/* Save Button - Only for system words */}
-                                    {lookupResult?.isSystemWord ? (
-                                        <button
+                                    {/* Personal Note Field */}
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] text-text-secondary uppercase tracking-widest font-black flex items-center gap-2">
+                                            <Icon name="sticky_note_2" size="sm" /> Ghi chú cá nhân
+                                        </label>
+                                        <textarea
+                                            value={note}
+                                            onChange={e => setNote(e.target.value)}
+                                            placeholder="Ghi lại mẹo ghi nhớ hoặc ví dụ của bạn..."
+                                            rows={2}
+                                            className="w-full bg-surface-dark/50 border border-border-color/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary transition-colors resize-none"
+                                        />
+                                    </div>
+
+                                    {/* Folder Selection & Creation Section */}
+                                    <div className="space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <h4 className="text-[10px] text-text-secondary uppercase tracking-widest font-black">Chọn thư mục</h4>
+                                            <button 
+                                                onClick={() => setShowNewFolderInput(!showNewFolderInput)}
+                                                className={`text-[10px] font-bold px-2 py-1 rounded-lg transition-all ${showNewFolderInput ? 'text-rose-400 bg-rose-400/10' : 'text-primary bg-primary/10 hover:bg-primary/20'}`}
+                                            >
+                                                {showNewFolderInput ? 'Hủy' : '+ Tạo mới'}
+                                            </button>
+                                        </div>
+                                        
+                                        {showNewFolderInput && (
+                                            <div className="flex gap-2 animate-in slide-in-from-right-2 duration-300">
+                                                <input
+                                                    value={newFolderName}
+                                                    onChange={e => setNewFolderName(e.target.value)}
+                                                    placeholder="Tên thư mục mới..."
+                                                    className="flex-1 bg-surface-dark border border-primary/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                                                    autoFocus
+                                                    onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
+                                                />
+                                                <button
+                                                    onClick={handleCreateFolder}
+                                                    disabled={!newFolderName.trim() || isCreatingFolder}
+                                                    className="bg-primary text-black px-4 py-2 rounded-xl text-xs font-bold hover:bg-primary-light disabled:opacity-50 transition-all flex items-center"
+                                                >
+                                                    {isCreatingFolder ? <div className="size-3 border-2 border-black/30 border-t-black rounded-full animate-spin" /> : 'Tạo'}
+                                                </button>
+                                            </div>
+                                        )}
+
+                                        <div className="grid grid-cols-2 gap-2 max-h-[160px] overflow-y-auto custom-scrollbar-thin pr-1">
+                                            {folders.map(folder => (
+                                                <button
+                                                    key={folder.id}
+                                                    onClick={() => setSelectedFolderId(folder.id)}
+                                                    className={`flex items-center gap-2 px-3 py-2 rounded-xl border transition-all active:scale-95 text-left ${
+                                                        selectedFolderId === folder.id
+                                                            ? 'bg-primary/20 border-primary text-primary'
+                                                            : 'bg-surface-highlight/40 border-border-color/30 text-text-secondary hover:border-primary/50'
+                                                    }`}
+                                                >
+                                                    <Icon name="folder" size="sm" className={selectedFolderId === folder.id ? 'text-primary' : 'text-text-secondary/50'} />
+                                                    <span className="text-xs font-semibold truncate flex-1">{folder.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Action Button */}
+                                    <div className="pt-2">
+                                        <Button
+                                            variant="primary"
+                                            className={`w-full py-4 text-base rounded-2xl shadow-xl transition-all ${
+                                                saveSuccess 
+                                                    ? 'bg-emerald-500 hover:bg-emerald-600 shadow-emerald-500/20' 
+                                                    : 'shadow-primary/20'
+                                            }`}
                                             onClick={handleSave}
+                                            isLoading={isSaving}
                                             disabled={isSaving || saveSuccess}
-                                            className={`w-full py-3 rounded-xl font-bold transition-all flex items-center justify-center gap-2 ${saveSuccess
-                                                ? 'bg-emerald-500 text-white'
-                                                : 'bg-primary text-black hover:bg-primary-hover'
-                                                }`}
                                         >
-                                            {isSaving ? (
-                                                <div className="size-5 border-2 border-white/50 border-t-white rounded-full animate-spin" />
-                                            ) : saveSuccess ? (
-                                                <div className="flex flex-col items-center gap-0.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <Icon name="check_circle" size="sm" />
-                                                        Đã lưu!
-                                                    </div>
-                                                    {savedInFolder && (
-                                                        <span className="text-xs opacity-80 flex items-center gap-1">
-                                                            <Icon name="folder" size="sm" />
-                                                            {savedInFolder}
-                                                        </span>
-                                                    )}
+                                            {saveSuccess ? (
+                                                <div className="flex items-center justify-center gap-3">
+                                                    <Icon name="check_circle" className="animate-in zoom-in-50" />
+                                                    <span className="font-bold">Đã lưu flashcard</span>
                                                 </div>
                                             ) : (
-                                                <>
-                                                    <Icon name="add" size="sm" />
-                                                    Lưu flashcard (+10 XP)
-                                                </>
+                                                <div className="flex items-center justify-center gap-3">
+                                                    
+                                                    <span className="font-bold">Lưu vào bộ nhớ <span className="text-black/60 opacity-80">(+10 XP)</span></span>
+                                                </div>
                                             )}
+                                        </Button>
+                                    </div>
+
+                                    {saveSuccess && savedInFolder && (
+                                        <p className="text-center text-[10px] text-emerald-400 font-bold uppercase tracking-tighter animate-in fade-in slide-in-from-top-1">
+                                            Đã học thêm được 1 từ tại: {savedInFolder}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* 🛠️ Admin Edit Panel */}
+                            {activePanel === 'admin_edit' && isAdmin && (
+                                <div className="p-4 space-y-4">
+                                    {/* Sub-tabs */}
+                                    <div className="flex bg-surface-highlight/30 p-1 rounded-xl">
+                                        <button 
+                                            onClick={() => setAdminSubTab('word')}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'word' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                        >
+                                            Từ vựng (Global)
                                         </button>
+                                        <button 
+                                            onClick={() => setAdminSubTab('segment')}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'segment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                        >
+                                            Phân đoạn (Video)
+                                        </button>
+                                    </div>
+
+                                    {adminSubTab === 'word' ? (
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-1">
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Hanzi</label>
+                                                    <input 
+                                                        value={editHanzi} 
+                                                        onChange={e => setEditHanzi(e.target.value)}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary font-chinese"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Pinyin</label>
+                                                    <input 
+                                                        value={editPinyin} 
+                                                        onChange={e => setEditPinyin(e.target.value)}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Loại từ (POS)</label>
+                                                    <input 
+                                                        value={editPos} 
+                                                        onChange={e => setEditPos(e.target.value)}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
+                                                        placeholder="e.g. Danh từ, Động từ..."
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">Nghĩa tiếng Việt</label>
+                                                    <textarea 
+                                                        value={editMeaning} 
+                                                        onChange={e => setEditMeaning(e.target.value)}
+                                                        rows={3}
+                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full py-3" 
+                                                onClick={handleSaveGlobal}
+                                                isLoading={isSavingGlobal}
+                                            >
+                                                Lưu vào Từ điển Global
+                                            </Button>
+                                        </div>
                                     ) : (
-                                        <div className="w-full py-3 rounded-xl bg-surface-highlight/50 text-text-secondary text-sm text-center flex items-center justify-center gap-2">
-                                            <Icon name="info" size="sm" />
-                                            Từ này chưa có trong thư viện hệ thống
+                                        <div className="space-y-4 animate-in fade-in slide-in-from-bottom-1">
+                                            <div className="bg-surface-highlight/20 p-3 rounded-xl border border-border-color/30">
+                                                <h4 className="text-[10px] text-text-secondary uppercase tracking-wider mb-3">Kịch bản phân đoạn hiện tại</h4>
+                                                <div className="flex flex-wrap gap-2">
+                                                    {editingTokens.map((token, idx) => (
+                                                        <div key={idx} className="group relative flex flex-col items-center">
+                                                            <div 
+                                                                onClick={() => setSelectedTokenIndex(idx)}
+                                                                className={`flex items-center bg-primary/10 border ${selectedTokenIndex === idx ? 'border-primary ring-1 ring-primary' : 'border-primary/30'} rounded-lg px-3 py-2 hover:border-primary transition-all cursor-pointer`}
+                                                            >
+                                                                <span className="text-lg font-chinese text-primary">{token.hanzi}</span>
+                                                                <div className="ml-2 flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                    {token.hanzi.length > 1 && (
+                                                                        <button 
+                                                                            onClick={(e) => { e.stopPropagation(); handleSplitToken(idx); }}
+                                                                            className="p-0.5 hover:text-white text-text-secondary" title="Split"
+                                                                        >
+                                                                            <Icon name="content_cut" size="sm" />
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            {idx < editingTokens.length - 1 && (
+                                                                <button 
+                                                                    onClick={(e) => { e.stopPropagation(); handleMergeTokens(idx); }}
+                                                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 size-6 bg-surface-dark border border-border-color rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary shadow-lg group-hover:scale-110 transition-transform"
+                                                                    title="Merge with next"
+                                                                >
+                                                                    <Icon name="link" size="sm" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Token detail editor */}
+                                            {selectedTokenIndex !== null && editingTokens[selectedTokenIndex] && (
+                                                <div className="p-3 bg-surface-highlight/20 border border-border-color rounded-xl space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                                                    <div className="flex items-center justify-between">
+                                                        <h5 className="text-xs text-primary font-bold">Chỉnh sửa: {editingTokens[selectedTokenIndex].hanzi}</h5>
+                                                        <button onClick={() => setSelectedTokenIndex(null)} className="text-text-secondary hover:text-white">
+                                                            <Icon name="close" size="sm" />
+                                                        </button>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label className="text-[10px] text-text-secondary uppercase mb-1 block">Pinyin Override</label>
+                                                            <input 
+                                                                value={editingTokens[selectedTokenIndex].pinyin || ''} 
+                                                                onChange={e => {
+                                                                    const newTokens = [...editingTokens];
+                                                                    newTokens[selectedTokenIndex].pinyin = e.target.value;
+                                                                    setEditingTokens(newTokens);
+                                                                }}
+                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-primary focus:outline-none font-pinyin"
+                                                                placeholder="e.g. nǐ hǎo"
+                                                            />
+                                                        </div>
+                                                        <div>
+                                                            <label className="text-[10px] text-text-secondary uppercase mb-1 block">Quick Meaning</label>
+                                                            <input 
+                                                                value={editingTokens[selectedTokenIndex].meaning || ''} 
+                                                                onChange={e => {
+                                                                    const newTokens = [...editingTokens];
+                                                                    newTokens[selectedTokenIndex].meaning = e.target.value;
+                                                                    setEditingTokens(newTokens);
+                                                                }}
+                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                                                                placeholder="Nghĩa nhanh..."
+                                                            />
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            
+                                            <div className="p-3 bg-amber-500/5 border border-amber-500/20 rounded-xl">
+                                                <p className="text-[10px] text-amber-300 leading-relaxed italic">
+                                                    Thay đổi ở tab này chỉ áp dụng cho video này. Hệ thống sẽ bỏ qua bộ phân đoạn tự động.
+                                                </p>
+                                            </div>
+
+                                            <Button 
+                                                variant="primary" 
+                                                className="w-full py-3" 
+                                                onClick={handleSaveSubtitle}
+                                                isLoading={isUpdatingSubtitle}
+                                            >
+                                                Lưu kịch bản cho Video
+                                            </Button>
                                         </div>
                                     )}
                                 </div>
@@ -858,9 +1077,9 @@ export function WordPopover({
                                                     }}
                                                     className="w-full flex items-center gap-3 p-3 bg-surface-highlight/40 hover:bg-surface-highlight rounded-xl transition-colors text-left group"
                                                 >
-                                                    <span className="text-2xl font-chinese text-white">{item.word}</span>
+                                                    <span className="text-2xl font-chinese text-white" lang="zh-CN">{item.word}</span>
                                                     <div className="flex-1 min-w-0">
-                                                        <p className="text-primary text-sm">{item.pinyin}</p>
+                                                        <p className="text-primary text-sm font-pinyin tracking-tight">{item.pinyin}</p>
                                                         <p className="text-text-secondary text-xs truncate">{item.meaning}</p>
                                                     </div>
                                                     <span className="text-xs text-text-secondary opacity-0 group-hover:opacity-100 transition-opacity">
@@ -879,14 +1098,15 @@ export function WordPopover({
                                 </div>
                             )}
                         </div>
-                    </>
-                ) : (
-                    <div className="text-center py-12 px-4">
-                        <Icon name="search_off" className="text-4xl text-text-secondary mb-3" />
-                        <p className="text-text-secondary">Không tìm thấy từ trong từ điển</p>
                     </div>
-                )}
-            </div>
+                </>
+            ) : (
+                <div className="text-center py-12 px-4 flex-1 flex flex-col justify-center">
+                    <Icon name="search_off" className="text-4xl text-text-secondary mb-3" />
+                    <p className="text-text-secondary">Không tìm thấy từ trong từ điển</p>
+                </div>
+            )}
+        </div>
 
             {/* Arrow pointing down */}
             <div

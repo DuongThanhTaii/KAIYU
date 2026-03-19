@@ -24,6 +24,7 @@ export interface UserVocabulary {
     // Media fields for rich flashcards
     sourceImageUrl?: string;
     sourceAudioUrl?: string;
+    sourceTokens?: any[];
 }
 
 export interface UserVocabularyListResponse {
@@ -72,6 +73,7 @@ export interface SaveWordData {
     // Media fields for rich flashcards
     sourceImageUrl?: string;
     sourceAudioUrl?: string;
+    sourceTokens?: any[];
 }
 
 // User Vocabulary API (requires authentication)

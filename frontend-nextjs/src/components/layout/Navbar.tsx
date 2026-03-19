@@ -76,7 +76,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
                 <nav className="bg-white/4 dark:bg-surface-dark/80 backdrop-blur-md border border-white/10 dark:border-border-color rounded-full px-6 py-3 flex items-center justify-between w-full max-w-[960px] shadow-lg">
                     <Link href="/" className="flex items-center gap-3">
                         <div className="size-9 flex items-center justify-center shrink-0">
-                            <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                            <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                         </div>
                         <div className="hidden sm:flex flex-col leading-none">
                             <span className="font-extrabold text-lg tracking-widest text-white uppercase">KAIYU</span>
@@ -119,7 +119,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
                 </button>
                 {/* Mobile logo shown in app header */}
                 <div className="size-8 flex items-center justify-center">
-                    <Image src="/logo.png" alt="KAIYU" width={32} height={32} className="object-contain" />
+                    <Image src="/images/logo_nentrang.png" alt="KAIYU" width={32} height={32} className="object-contain" />
                 </div>
             </div>
 

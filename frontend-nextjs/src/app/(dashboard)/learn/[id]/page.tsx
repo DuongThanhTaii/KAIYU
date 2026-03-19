@@ -15,6 +15,7 @@ import { progressApi } from "@/services/progressApi";
 import { watchTimeTracker } from "@/services/watchTimeTracker";
 import YouTubePlayer, { type YouTubePlayerHandle } from "@/components/video/YouTubePlayer";
 import ShadowModeOverlay from "@/components/common/ShadowModeOverlay";
+import { renderGroupedPinyin } from "@/utils/chinese";
 
 // Helper function to extract YouTube video ID
 const getYouTubeId = (url: string): string | null => {
@@ -40,10 +41,6 @@ const formatTime = (seconds: number): string => {
 
 type SidebarTab = 'subtitles' | 'vocabulary' | 'notes';
 
-// Initialize native Chinese word segmenter
-const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter
-    ? new Intl.Segmenter('zh-CN', { granularity: 'word' })
-    : null;
 
 const playbackSpeeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
@@ -63,6 +60,11 @@ export default function VideoPlayerPage() {
     const nativeVideoRef = useRef<HTMLVideoElement>(null);
     const subtitleListRef = useRef<HTMLDivElement>(null);
     const subtitleItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    // Intl Segmenter for Chinese word segmentation
+    const segmenter = typeof Intl !== 'undefined' && (Intl as any).Segmenter 
+        ? new (Intl as any).Segmenter('zh-CN', { granularity: 'word' }) 
+        : null;
 
     // Sidebar tab state
     const [activeTab, setActiveTab] = useState<SidebarTab>('subtitles');
@@ -165,6 +167,39 @@ export default function VideoPlayerPage() {
         } else if (nativeVideoRef.current) {
             nativeVideoRef.current.currentTime = seconds;
         }
+    }, []);
+
+    // Keyboard shortcuts for video control
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Don't trigger if user is typing in an input or textarea
+            const focusedElement = document.activeElement;
+            const isTyping = focusedElement instanceof HTMLInputElement || 
+                             focusedElement instanceof HTMLTextAreaElement ||
+                             (focusedElement as HTMLElement)?.isContentEditable;
+            
+            if (isTyping) return;
+
+            if (e.key === ' ') {
+                e.preventDefault(); // Prevent page scrolling
+                if (youtubePlayerRef.current) {
+                    if (youtubePlayerRef.current.isPlaying()) {
+                        youtubePlayerRef.current.pause();
+                    } else {
+                        youtubePlayerRef.current.play();
+                    }
+                } else if (nativeVideoRef.current) {
+                    if (nativeVideoRef.current.paused) {
+                        nativeVideoRef.current.play();
+                    } else {
+                        nativeVideoRef.current.pause();
+                    }
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
     }, []);
 
     // Speed slider popup state
@@ -536,14 +571,17 @@ export default function VideoPlayerPage() {
                             <>
                                 {/* Pinyin Tier */}
                                 {currentSubtitle.pinyin && (
-                                    <p className="text-text-secondary text-sm md:text-base font-medium tracking-wide">
-                                        {currentSubtitle.pinyin}
+                                    <p className="text-text-secondary text-sm md:text-base font-medium tracking-tight font-pinyin">
+                                        {renderGroupedPinyin(currentSubtitle.hanzi || '', currentSubtitle.pinyin, currentSubtitle.tokens)}
                                     </p>
                                 )}
 
-                                {/* Chinese Hanzi Tier - Interactive via Intl Segmenter */}
-                                <p className="text-white text-2xl md:text-3xl font-bold tracking-wide leading-normal flex flex-wrap justify-center gap-x-1 gap-y-2 font-chinese select-none">
-                                    {(segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c }))).map((seg: { segment: string }, i: number) => {
+                                 {/* Chinese Hanzi Tier - Interactive via Tokens or Intl Segmenter */}
+                                <p className="text-white text-2xl md:text-3xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
+                                    {(currentSubtitle.tokens && currentSubtitle.tokens.length > 0 
+                                        ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
+                                        : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))
+                                    ).map((seg: { segment: string }, i: number) => {
                                         const word = seg.segment;
                                         // Render pure whitespace/punctuation without interaction
                                         if (!word.trim()) {
@@ -774,7 +812,7 @@ export default function VideoPlayerPage() {
                                 : 'text-text-secondary hover:bg-surface-dark hover:text-white'
                                 }`}
                         >
-                            Transcript
+                            Phụ đề
                         </button>
                         <button
                             onClick={() => setActiveTab('vocabulary')}
@@ -783,7 +821,7 @@ export default function VideoPlayerPage() {
                                 : 'text-text-secondary hover:bg-surface-dark hover:text-white'
                                 }`}
                         >
-                            Vocab
+                            Từ vựng
                         </button>
                         <button
                             onClick={() => setActiveTab('notes')}
@@ -792,7 +830,7 @@ export default function VideoPlayerPage() {
                                 : 'text-text-secondary hover:bg-surface-dark hover:text-white'
                                 }`}
                         >
-                            Notes
+                            Ghi chú
                         </button>
                     </div>
 
@@ -827,7 +865,7 @@ export default function VideoPlayerPage() {
                                         <p className={`font-chinese ${currentSubtitleIndex === index
                                             ? 'text-white text-lg font-bold'
                                             : 'text-white text-base font-medium'
-                                            }`}>
+                                            }`} lang="zh-CN">
                                             {sub.hanzi || ''}
                                         </p>
 
@@ -866,8 +904,8 @@ export default function VideoPlayerPage() {
                                         >
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white/60 text-sm mb-1">{vocab.vocabulary.pinyin}</p>
-                                                    <p className="text-white text-lg font-bold font-chinese">{vocab.vocabulary.hanzi}</p>
+                                                    <p className="text-white/60 text-sm mb-1 font-pinyin tracking-tight">{vocab.vocabulary.pinyin}</p>
+                                                    <p className="text-white text-lg font-bold font-chinese" lang="zh-CN">{vocab.vocabulary.hanzi}</p>
                                                     <p className="text-white/50 text-sm mt-1">
                                                         {vocab.vocabulary.meaningVi || vocab.vocabulary.meaningEn}
                                                     </p>
@@ -876,7 +914,6 @@ export default function VideoPlayerPage() {
                                                     <SpeakerButton
                                                         text={vocab.vocabulary.hanzi}
                                                         size="sm"
-                                                        className="size-8 rounded-full bg-background-dark hover:bg-surface-highlight flex items-center justify-center"
                                                     />
                                                     <button
                                                         onClick={() => handleRemoveVocabulary(vocab.id)}

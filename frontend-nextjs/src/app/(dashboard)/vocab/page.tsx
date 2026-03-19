@@ -11,6 +11,35 @@ import SpeakerButton from '@/components/common/SpeakerButton';
 import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { userVocabularyApi, type UserVocabulary, type UserVocabularyStats } from '@/services/userVocabularyApi';
 import { vocabularyFoldersApi, type VocabularyFolder } from '@/services/vocabularyFoldersApi';
+import { vocabularyApi, type ExampleSentence as ExampleSentenceType } from '@/services/vocabularyApi';
+import { POS_COLORS } from '@/constants/vocabulary';
+
+/**
+ * Format a Vietnamese meaning line by removing numbering and colorizing the part of speech
+ */
+const renderFormattedMeaning = (text: string) => {
+    if (!text) return null;
+    
+    // 1. Strip leading number (e.g., "1. ", " 2. ")
+    const cleanText = text.replace(/^\s*\d+\.\s*/, '').trim();
+
+    // 2. Look for part of speech at the beginning before a colon
+    const match = cleanText.match(/^([^:]+):/);
+    if (match) {
+        const pos = match[1].trim();
+        const meaning = cleanText.substring(match[0].length).trim();
+        const colorClass = POS_COLORS[pos] || 'text-text-secondary';
+
+        return (
+            <>
+                <span className={`${colorClass} font-bold mr-2 whitespace-nowrap`}>{pos}:</span>
+                <span className="text-white">{meaning}</span>
+            </>
+        );
+    }
+
+    return <span className="text-white">{cleanText}</span>;
+}
 
 export default function VocabNotebookPage() {
     const router = useRouter();
@@ -273,6 +302,41 @@ export default function VocabNotebookPage() {
         return () => clearTimeout(timer);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchQuery, proficiencyFilter]);
+    
+    // Fetch full examples when a word is selected
+    useEffect(() => {
+        if (selectedWord && (!selectedWord.vocabulary.examples || selectedWord.vocabulary.examples.length === 0 || selectedWord.vocabulary.examples.some(ex => !ex.hanzi))) {
+            const fetchWordExamples = async () => {
+                try {
+                    const examples = await vocabularyApi.getExamples(selectedWord.vocabularyId);
+                    if (examples && examples.length > 0) {
+                        setSelectedWord(prev => {
+                            if (prev && prev.id === selectedWord.id) {
+                                return {
+                                    ...prev,
+                                    vocabulary: {
+                                        ...prev.vocabulary,
+                                        examples: examples
+                                    }
+                                };
+                            }
+                            return prev;
+                        });
+                        
+                        // Also update in the main list so we don't refetch
+                        setVocabulary(prev => prev.map(item => 
+                            item.id === selectedWord.id 
+                                ? { ...item, vocabulary: { ...item.vocabulary, examples } }
+                                : item
+                        ));
+                    }
+                } catch (err) {
+                    console.error('Failed to fetch examples:', err);
+                }
+            };
+            fetchWordExamples();
+        }
+    }, [selectedWord?.id]);
 
     const getProficiencyColor = (proficiency: string) => {
         switch (proficiency) {
@@ -285,7 +349,7 @@ export default function VocabNotebookPage() {
 
     const getProficiencyLabel = (proficiency: string) => {
         switch (proficiency) {
-            case 'mastered': return 'Thành thạo';
+            case 'mastered': return 'Đã học';
             case 'learning': return 'Đang học';
             case 'review': return 'Cần ôn';
             default: return 'Mới';
@@ -348,7 +412,7 @@ export default function VocabNotebookPage() {
                                 <Icon name="verified" />
                             </div>
                         </div>
-                        <p className="text-text-secondary text-sm font-medium">Thành thạo</p>
+                        <p className="text-text-secondary text-sm font-medium">Đã học</p>
                         <p className="text-white text-3xl font-bold mt-1">{stats?.mastered || 0}</p>
                     </Card>
                 </div>
@@ -530,17 +594,16 @@ export default function VocabNotebookPage() {
 
                         <div className="h-6 w-px bg-border-color" />
 
-                        {/* Proficiency Filter */}
                         <select
                             value={proficiencyFilter}
                             onChange={(e) => setProficiencyFilter(e.target.value)}
                             className="bg-background-dark border border-border-color rounded-full px-4 py-1.5 text-text-secondary text-sm focus:outline-none focus:border-primary"
                         >
-                            <option value="">Tất cả trình độ</option>
+                            <option value="">Tất cả trạng thái</option>
                             <option value="new">Mới</option>
                             <option value="learning">Đang học</option>
                             <option value="review">Cần ôn</option>
-                            <option value="mastered">Thành thạo</option>
+                            <option value="mastered">Đã học</option>
                         </select>
                     </div>
 
@@ -618,45 +681,77 @@ export default function VocabNotebookPage() {
                                             Bỏ chọn
                                         </button>
                                     </div>
-                                    <div className="relative">
+                                    <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => setShowMoveDropdown(!showMoveDropdown)}
-                                            disabled={isMoving}
-                                            className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50"
+                                            onClick={() => {
+                                                setConfirmDialog({
+                                                    isOpen: true,
+                                                    title: 'Xóa nhiều từ vựng?',
+                                                    message: `Bạn có chắc muốn xóa ${selectedIds.length} từ đã chọn khỏi sổ từ vựng?`,
+                                                    variant: 'danger',
+                                                    onConfirm: async () => {
+                                                        const idsToDelete = [...selectedIds];
+                                                        setSelectedIds([]);
+                                                        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                                        setIsLoading(true);
+                                                        try {
+                                                            await Promise.all(idsToDelete.map(id => userVocabularyApi.remove(id)));
+                                                            fetchVocabulary();
+                                                            fetchStats();
+                                                        } catch (err) {
+                                                            console.error('Failed to batch delete:', err);
+                                                            alert('Có lỗi xảy ra khi xóa một số từ.');
+                                                        } finally {
+                                                            setIsLoading(false);
+                                                        }
+                                                    }
+                                                });
+                                            }}
+                                            className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-sm font-medium transition-all"
                                         >
-                                            {isMoving ? (
-                                                <Icon name="sync" className="animate-spin" size="sm" />
-                                            ) : (
-                                                <Icon name="drive_file_move" size="sm" />
-                                            )}
-                                            Di chuyển vào thư mục
+                                            <Icon name="delete" size="sm" />
+                                            Xóa tất cả
                                         </button>
-                                        {showMoveDropdown && (
-                                            <>
-                                                <div className="fixed inset-0 z-40" onClick={() => setShowMoveDropdown(false)} />
-                                                <div className="absolute right-0 top-full mt-2 w-56 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
-                                                    <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
-                                                        <button
-                                                            onClick={() => handleBatchMove(null)}
-                                                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-highlight hover:text-white rounded-lg"
-                                                        >
-                                                            <Icon name="folder_off" size="sm" />
-                                                            Bỏ khỏi thư mục
-                                                        </button>
-                                                        {folders.map(folder => (
+                                        <div className="relative">
+                                            <button
+                                                onClick={() => setShowMoveDropdown(!showMoveDropdown)}
+                                                disabled={isMoving}
+                                                className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50"
+                                            >
+                                                {isMoving ? (
+                                                    <Icon name="sync" className="animate-spin" size="sm" />
+                                                ) : (
+                                                    <Icon name="drive_file_move" size="sm" />
+                                                )}
+                                                Di chuyển vào thư mục
+                                            </button>
+                                            {showMoveDropdown && (
+                                                <>
+                                                    <div className="fixed inset-0 z-40" onClick={() => setShowMoveDropdown(false)} />
+                                                    <div className="absolute right-0 top-full mt-2 w-56 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
+                                                        <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
                                                             <button
-                                                                key={folder.id}
-                                                                onClick={() => handleBatchMove(folder.id)}
+                                                                onClick={() => handleBatchMove(null)}
                                                                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-highlight hover:text-white rounded-lg"
                                                             >
-                                                                <Icon name={folder.icon || 'folder'} size="sm" />
-                                                                {folder.name}
+                                                                <Icon name="folder_off" size="sm" />
+                                                                Bỏ khỏi thư mục
                                                             </button>
-                                                        ))}
+                                                            {folders.map(folder => (
+                                                                <button
+                                                                    key={folder.id}
+                                                                    onClick={() => handleBatchMove(folder.id)}
+                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-highlight hover:text-white rounded-lg"
+                                                                >
+                                                                    <Icon name={folder.icon || 'folder'} size="sm" />
+                                                                    {folder.name}
+                                                                </button>
+                                                            ))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </>
-                                        )}
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -673,10 +768,10 @@ export default function VocabNotebookPage() {
                                                 : 'border-border-color bg-surface-dark/50'
                                                 }`}
                                         >
-                                            <div className="text-2xl font-chinese font-bold text-white text-center mb-1">
+                                            <div className="text-2xl font-chinese font-bold text-white text-center mb-1" lang="zh-CN">
                                                 {item.vocabulary.hanzi}
                                             </div>
-                                            <div className="text-xs text-primary/80 text-center mb-2">
+                                            <div className="text-xs text-primary/80 text-center mb-2 font-pinyin font-bold tracking-tight">
                                                 {item.vocabulary.pinyin}
                                             </div>
                                             <div className="text-xs text-text-secondary text-center line-clamp-2">
@@ -706,7 +801,7 @@ export default function VocabNotebookPage() {
                                                 <th className="px-4 py-4 font-semibold">Từ</th>
                                                 <th className="px-4 py-4 font-semibold">Nghĩa</th>
                                                 <th className="px-4 py-4 font-semibold hidden md:table-cell whitespace-nowrap">HSK</th>
-                                                <th className="px-4 py-4 font-semibold hidden lg:table-cell whitespace-nowrap">Trình độ</th>
+                                                <th className="px-4 py-4 font-semibold hidden lg:table-cell whitespace-nowrap">Trạng thái</th>
                                                 <th className="px-4 py-4 font-semibold text-center whitespace-nowrap w-20">Thao tác</th>
                                             </tr>
                                         </thead>
@@ -732,14 +827,26 @@ export default function VocabNotebookPage() {
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex flex-col items-center justify-center">
-                                                            <div className={`text-xl font-chinese font-bold group-hover:text-primary transition-colors ${selectedWord?.id === item.id ? 'text-primary' : 'text-white'}`}>
+                                                            <div className={`text-xl font-chinese font-bold group-hover:text-primary transition-colors ${selectedWord?.id === item.id ? 'text-primary' : 'text-white'}`} lang="zh-CN">
                                                                 {item.vocabulary.hanzi}
                                                             </div>
-                                                            <div className="text-xs text-primary/80">{item.vocabulary.pinyin}</div>
+                                                            <div className="text-xs text-primary shadow-sm font-pinyin font-bold tracking-tight">{item.vocabulary.pinyin}</div>
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4">
-                                                        <p className="text-white text-sm">{item.vocabulary.meaningVi || item.vocabulary.meaningEn}</p>
+                                                        <div className="space-y-1">
+                                                            {(item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').includes('1.') ? (
+                                                                (item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').split(/(?=\d+\.)/).map((part, i) => (
+                                                                    <p key={i} className="text-sm">
+                                                                        {renderFormattedMeaning(part)}
+                                                                    </p>
+                                                                ))
+                                                            ) : (
+                                                                <p className="text-white text-sm">
+                                                                    {item.vocabulary.meaningVi || item.vocabulary.meaningEn}
+                                                                </p>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="px-6 py-4 hidden md:table-cell">
                                                         <Badge variant="hsk" hskLevel={item.vocabulary.hskLevel} className="whitespace-nowrap">HSK {item.vocabulary.hskLevel}</Badge>
@@ -754,7 +861,6 @@ export default function VocabNotebookPage() {
                                                             <SpeakerButton
                                                                 text={item.vocabulary.hanzi}
                                                                 size="sm"
-                                                                className="p-2"
                                                             />
                                                             <button
                                                                 className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors inline-flex items-center justify-center"
@@ -851,32 +957,70 @@ export default function VocabNotebookPage() {
                                 <div className="flex flex-col items-center justify-center py-4">
                                     <div className="text-5xl font-chinese font-bold text-white mb-1">{selectedWord.vocabulary.hanzi}</div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-xl text-primary font-medium">{selectedWord.vocabulary.pinyin}</span>
+                                        <span className="text-xl text-primary font-pinyin font-bold tracking-tight">{selectedWord.vocabulary.pinyin}</span>
                                         <SpeakerButton text={selectedWord.vocabulary.hanzi} size="sm" />
                                     </div>
                                 </div>
 
                                 {/* Definition Card */}
-                                <div className="bg-surface-highlight/30 rounded-xl p-4 border border-border-color/50">
-                                    <h3 className="text-text-secondary text-xs uppercase font-bold tracking-wider mb-2">Định nghĩa</h3>
-                                    <p className="text-white text-base font-medium mb-1">
-                                        {selectedWord.vocabulary.partOfSpeech && `(${selectedWord.vocabulary.partOfSpeech}) `}
-                                        {selectedWord.vocabulary.meaningEn}
-                                    </p>
-                                    {selectedWord.vocabulary.meaningVi && (
-                                        <p className="text-text-secondary text-sm">{selectedWord.vocabulary.meaningVi}</p>
-                                    )}
+                                <div className="bg-surface-highlight/30 rounded-xl p-4 border border-border-color/50 space-y-2">
+                                    <h3 className="text-text-secondary text-xs uppercase font-bold tracking-wider mb-1">Định nghĩa</h3>
+                                    <div className="space-y-1.5">
+                                        {(selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn || '').includes('1.') ? (
+                                            (selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn || '').split(/(?=\d+\.)/).map((part, i) => (
+                                                <p key={i} className="text-base font-medium leading-snug">
+                                                    {renderFormattedMeaning(part)}
+                                                </p>
+                                            ))
+                                        ) : (
+                                            <p className="text-white text-lg font-medium">
+                                                {selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn}
+                                            </p>
+                                        )}
+                                    </div>
                                 </div>
 
-                                {/* Example Sentence */}
-                                {selectedWord.vocabulary.examples && selectedWord.vocabulary.examples[0] && (
-                                    <div className="bg-surface-highlight/30 rounded-xl p-4 border border-border-color/50">
-                                        <h3 className="text-text-secondary text-xs uppercase font-bold tracking-wider mb-2">Ví dụ</h3>
-                                        <p className="text-white font-chinese text-base leading-relaxed mb-1">
-                                            {selectedWord.vocabulary.examples[0].hanzi}
-                                        </p>
-                                        <p className="text-text-secondary text-xs italic mb-1">{selectedWord.vocabulary.examples[0].pinyin}</p>
-                                        <p className="text-white/80 text-sm">{selectedWord.vocabulary.examples[0].meaningVi}</p>
+                                {/* Example Sentences - Multi-section logic */}
+                                {selectedWord.vocabulary.examples && selectedWord.vocabulary.examples.length > 0 && (
+                                    <div className="space-y-4 pt-2">
+                                        <h4 className="text-text-secondary text-[10px] uppercase font-black tracking-[0.2em] px-1 flex items-center gap-2">
+                                            <div className="h-px flex-1 bg-border-color/30" />
+                                            VÍ DỤ CÂU
+                                            <div className="h-px flex-1 bg-border-color/30" />
+                                        </h4>
+                                        <div className="space-y-4">
+                                            {selectedWord.vocabulary.examples.slice(0, 3).map((ex: any, i) => {
+                                                // Handle inconsistent field names from different APIs (hanzi vs chinese, meaningVi vs translation)
+                                                const sentence = ex.hanzi || ex.chinese;
+                                                const meaning = ex.meaningVi || ex.translation || ex.vietnamese;
+                                                const pinyin = ex.pinyin;
+
+                                                if (!sentence && !pinyin) return null;
+
+                                                return (
+                                                    <div key={i} className="space-y-2 animate-in fade-in slide-in-from-bottom-2">
+                                                        <div className="bg-surface-highlight/30 rounded-2xl p-4 border border-border-color/50 group hover:border-primary/30 hover:bg-surface-highlight/40 transition-all duration-300">
+                                                            <div className="flex items-start justify-between gap-3 mb-2">
+                                                                <p className="text-white font-chinese text-lg leading-relaxed flex-1" lang="zh-CN">
+                                                                    {sentence || <span className="text-text-secondary font-sans text-sm italic">Chưa có hán tự</span>}
+                                                                </p>
+                                                                <SpeakerButton text={sentence || ''} size="sm" className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                                                            </div>
+                                                            {pinyin && (
+                                                                <p className="text-primary font-pinyin font-bold text-sm tracking-tight mb-2">{pinyin}</p>
+                                                            )}
+                                                            {meaning && (
+                                                                <div className="relative pl-3 border-l-2 border-primary/20 group-hover:border-primary/40 transition-colors">
+                                                                    <p className="text-text-secondary text-sm leading-relaxed italic">
+                                                                        {meaning}
+                                                                    </p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 )}
 

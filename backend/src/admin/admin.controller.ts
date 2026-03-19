@@ -86,6 +86,12 @@ export class AdminController {
         return this.adminService.addSubtitles(id, body.subtitles);
     }
 
+    @Put('subtitles/:id')
+    @ApiOperation({ summary: 'Update specific subtitle and its tokens' })
+    async updateSubtitle(@Param('id') id: string, @Body() body: any) {
+        return this.adminService.updateSubtitle(id, body);
+    }
+
     // ============ Vocabulary ============
     @Get('vocabulary')
     @ApiOperation({ summary: 'Get all vocabulary (admin)' })

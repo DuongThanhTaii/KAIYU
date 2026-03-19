@@ -19,7 +19,6 @@ const navItems: NavItem[] = [
     { label: 'Học video', path: '/learn', icon: 'school' },
     { label: 'Từ vựng', path: '/vocab', icon: 'menu_book' },
     { label: 'Ôn tập', path: '/review', icon: 'history_edu' },
-    { label: 'Tình huống', path: '/scenes', icon: 'theater_comedy' },
     { label: 'Thành tựu', path: '/achievements', icon: 'emoji_events' },
     { label: 'Tiến độ', path: '/profile', icon: 'insights' },
 ];
@@ -89,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {!isCollapsed && (
                             <div className="flex items-center gap-2">
                                 <div className="size-9 flex items-center justify-center shrink-0">
-                                    <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                    <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                                 </div>
                                 <div className="flex flex-col leading-none">
                                     <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
@@ -193,7 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         </button>
                         <div className="flex items-center gap-2">
                             <div className="size-9 flex items-center justify-center shrink-0">
-                                <Image src="/logo.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                             </div>
                             <div className="flex flex-col leading-none">
                                 <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>

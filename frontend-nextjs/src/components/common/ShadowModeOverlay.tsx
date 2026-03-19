@@ -147,9 +147,9 @@ const ShadowModeOverlay: React.FC<ShadowModeOverlayProps> = ({
                     {/* Current sentence to practice */}
                     <div className="text-center py-8 px-4 bg-background-dark rounded-2xl mb-6">
                         {currentPinyin && (
-                            <p className="text-primary text-lg mb-2">{currentPinyin}</p>
+                            <p className="text-primary text-lg mb-2 font-pinyin tracking-tight">{currentPinyin}</p>
                         )}
-                        <p className="text-white text-3xl font-bold font-chinese mb-3">
+                        <p className="text-white text-3xl font-bold font-chinese mb-3 tracking-tight" lang="zh-CN">
                             {currentText}
                         </p>
                         {meaningVi && (
@@ -224,7 +224,7 @@ const ShadowModeOverlay: React.FC<ShadowModeOverlayProps> = ({
                             {result.transcription && (
                                 <div className="mt-4 pt-4 border-t border-border-color">
                                     <p className="text-text-secondary text-xs mb-1">Bạn đã nói:</p>
-                                    <p className="text-white font-chinese">{result.transcription}</p>
+                                    <p className="text-white font-chinese" lang="zh-CN">{result.transcription}</p>
                                 </div>
                             )}
                         </div>
