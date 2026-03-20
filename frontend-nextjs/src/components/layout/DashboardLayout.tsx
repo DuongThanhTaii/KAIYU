@@ -13,7 +13,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
     const [isMobileOpen, setIsMobileOpen] = useState(false);
 
     return (
-        <div className="flex h-screen w-full bg-background-dark">
+        <div className="flex h-screen w-full bg-[var(--color-background-dark)] transition-colors duration-300">
             {/* Sidebar */}
             <Sidebar
                 isCollapsed={isCollapsed}

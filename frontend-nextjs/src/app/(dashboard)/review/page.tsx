@@ -12,7 +12,7 @@ import SwipeCard from '@/components/common/SwipeCard';
 import MatchingGame from './components/MatchingGame';
 import { useAuth } from '@/contexts/AuthContext';
 import { flashcardApi, type FlashcardReview as FlashcardType, type FlashcardStats, type SRSRating } from '@/services/flashcardApi';
-import { renderGroupedPinyin, renderFormattedMeaning } from '@/utils/chinese';
+import { renderGroupedPinyin, renderFormattedMeaning, highlightWord } from '@/utils/chinese';
 import { videoApi, type Subtitle } from '@/services/videoApi';
 import { dictionaryApi, type ExampleSentence as DictExample } from '@/services/dictionaryApi';
 
@@ -307,8 +307,8 @@ export default function FlashcardReviewPage() {
             <div className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d ${flipped ? 'rotate-y-180' : ''}`} style={{ transformStyle: 'preserve-3d' }}>
                 {/* FRONT SIDE */}
                 <div className="absolute inset-0 w-full h-full flashcard-glass flashcard-border-glow card-lift rounded-2xl shadow-2xl flex flex-col items-center justify-center overflow-hidden" style={{ backfaceVisibility: 'hidden' }}>
-                    <h1 className="text-8xl md:text-9xl font-bold text-white tracking-tight font-chinese mb-6 text-glow" lang="zh-CN">{vocab.hanzi}</h1>
-                    <div className="level-badge px-5 py-2 rounded-xl flex items-center gap-3 mb-6">
+                    <h1 className="text-8xl md:text-9xl font-bold text-text-base tracking-tight font-chinese mb-6 text-glow" lang="zh-CN">{vocab.hanzi}</h1>
+                    <div className="level-badge px-3 py-1 rounded-full flex items-center gap-3 mb-6">
                         <span className="text-lg font-bold text-primary">HSK {vocab.hskLevel || card?.level || 1}</span>
                     </div>
                     <div className="flex items-center gap-2 text-text-secondary animate-pulse-glow">
@@ -323,7 +323,7 @@ export default function FlashcardReviewPage() {
                     <div className="flex-1 flex flex-col items-center p-6 md:p-8 pt-6 overflow-y-auto">
                         {/* Hanzi + Pinyin */}
                         <div className="text-center mb-4">
-                            <h2 className="text-5xl md:text-6xl font-bold text-white font-chinese mb-2" lang="zh-CN">{vocab.hanzi}</h2>
+                            <h2 className="text-5xl md:text-6xl font-bold text-text-base font-chinese mb-2" lang="zh-CN">{vocab.hanzi}</h2>
                             <div className="flex flex-col items-center justify-center gap-1">
                                 <span className="text-2xl md:text-3xl text-primary font-semibold font-pinyin tracking-tight">{vocab.pinyin || card?.sourcePinyin}</span>
                                 <SpeakerButton text={vocab.hanzi || ''} size="md" />
@@ -335,13 +335,13 @@ export default function FlashcardReviewPage() {
                             {(vocab.meaningVi && vocab.meaningVi.trim()) ? (
                                 vocab.meaningVi.includes('1.') ? (
                                     vocab.meaningVi.split(/(?=\d+\.)/).map((part: string, i: number) => (
-                                        <div key={i} className="text-xl font-medium leading-relaxed">{renderFormattedMeaning(part)}</div>
+                                        <div key={i} className="text-xl font-bold text-text-base leading-relaxed">{renderFormattedMeaning(part)}</div>
                                     ))
                                 ) : (
-                                    <p className="text-xl md:text-2xl text-white font-medium">{vocab.meaningVi}</p>
+                                    <p className="text-xl md:text-2xl text-text-base font-bold">{vocab.meaningVi}</p>
                                 )
                             ) : (
-                                <p className="text-xl md:text-2xl text-white font-medium">{vocab.meaningEn}</p>
+                                <p className="text-xl md:text-2xl text-text-base font-bold">{vocab.meaningEn}</p>
                             )}
                         </div>
                         {/* Example */}
@@ -356,7 +356,7 @@ export default function FlashcardReviewPage() {
                             if (!exHanzi && !exPinyin) return null;
                             return (
                                 <div 
-                                    className="w-full max-w-md p-4 bg-surface-highlight/20 border border-border-color/30 rounded-2xl group hover:bg-surface-highlight/40 transition-all text-left mb-4"
+                                    className="w-full max-w-md p-4 bg-indigo-500/5 dark:bg-surface-highlight/20 border border-indigo-500/20 dark:border-border-color/30 rounded-2xl group hover:bg-indigo-500/10 transition-all text-left mb-4"
                                     onPointerDown={(e) => e.stopPropagation()}
                                     onPointerUp={(e) => e.stopPropagation()}
                                 >
@@ -365,8 +365,14 @@ export default function FlashcardReviewPage() {
                                         <SpeakerButton text={exHanzi || ''} size="sm" className="opacity-40 group-hover:opacity-100 transition-opacity shrink-0" />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-white font-chinese text-lg leading-snug" lang="zh-CN">{exHanzi}</p>
-                                        {exPinyin && <p className="text-primary/70 text-xs font-pinyin tracking-tight">{exPinyin}</p>}
+                                        <p className="text-text-base font-chinese text-lg leading-snug" lang="zh-CN">
+                                            {highlightWord(exHanzi || "", vocab.hanzi)}
+                                        </p>
+                                        {exPinyin && (
+                                            <p className="text-primary/70 text-xs font-pinyin tracking-tight">
+                                                {highlightWord(exPinyin, vocab.pinyin || card?.sourcePinyin || "")}
+                                            </p>
+                                        )}
                                         <p className="text-text-secondary text-sm italic leading-relaxed mt-1">{exMeaning}</p>
                                     </div>
                                 </div>
@@ -379,7 +385,7 @@ export default function FlashcardReviewPage() {
                             const word = vocab.hanzi || '';
                             return (
                                 <div 
-                                    className="w-full max-w-md bg-primary/5 rounded-2xl p-5 border border-primary/20 space-y-4 shadow-lg shadow-primary/5"
+                                    className="w-full max-w-md bg-blue-500/5 dark:bg-primary/10 rounded-2xl p-5 border border-blue-500/20 dark:border-primary/20 space-y-4 shadow-lg shadow-blue-500/5"
                                     onPointerDown={(e) => e.stopPropagation()}
                                     onPointerUp={(e) => e.stopPropagation()}
                                 >
@@ -401,10 +407,8 @@ export default function FlashcardReviewPage() {
                                     )}
                                     <div className="space-y-2">
                                         {card?.sourceSentence && (
-                                            <p className="text-white font-chinese text-lg leading-relaxed" lang="zh-CN">
-                                                {card.sourceSentence.split(word).map((part: string, i: number, arr: string[]) => (
-                                                    <span key={i}>{part}{i < arr.length - 1 && <span className="text-primary font-bold underline underline-offset-4 decoration-2">{word}</span>}</span>
-                                                ))}
+                                            <p className="text-text-base font-chinese text-lg leading-relaxed" lang="zh-CN">
+                                                {highlightWord(card.sourceSentence, word)}
                                             </p>
                                         )}
                                         {(() => {
@@ -461,12 +465,12 @@ export default function FlashcardReviewPage() {
             {/* Navigation Arrows */}
             <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 flex justify-between w-full px-4 pointer-events-none z-10">
                 <button onClick={(e) => { e.stopPropagation(); onNavigate('prev'); }} disabled={!canPrev}
-                    className={`size-12 rounded-full flex items-center justify-center bg-background-dark/80 border border-border-color pointer-events-auto transition-all ${!canPrev ? 'opacity-0 scale-90' : 'opacity-100 hover:bg-surface-highlight hover:border-primary'}`}>
-                    <Icon name="arrow_back" className="text-white" />
+                    className={`size-12 rounded-full flex items-center justify-center bg-surface-dark/80 border border-border-color pointer-events-auto transition-all ${!canPrev ? 'opacity-0 scale-90' : 'opacity-100 hover:bg-surface-highlight hover:border-primary'}`}>
+                    <Icon name="arrow_back" className="text-text-base" />
                 </button>
                 <button onClick={(e) => { e.stopPropagation(); onNavigate('next'); }} disabled={!canNext}
-                    className={`size-12 rounded-full flex items-center justify-center bg-background-dark/80 border border-border-color pointer-events-auto transition-all ${!canNext ? 'opacity-0 scale-90' : 'opacity-100 hover:bg-surface-highlight hover:border-primary'}`}>
-                    <Icon name="arrow_forward" className="text-white" />
+                    className={`size-12 rounded-full flex items-center justify-center bg-surface-dark/80 border border-border-color pointer-events-auto transition-all ${!canNext ? 'opacity-0 scale-90' : 'opacity-100 hover:bg-surface-highlight hover:border-primary'}`}>
+                    <Icon name="arrow_forward" className="text-text-base" />
                 </button>
             </div>
 
@@ -526,7 +530,7 @@ export default function FlashcardReviewPage() {
     // === Loading/Error/Empty States ===
     if (isLoading) {
         return (
-            <div className="bg-background-dark text-white font-display min-h-screen flex items-center justify-center">
+            <div className="bg-[var(--color-background-dark)] text-text-base font-display min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <div className="size-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
                     <p className="text-text-secondary">Đang tải flashcards...</p>
@@ -536,7 +540,7 @@ export default function FlashcardReviewPage() {
     }
     if (error) {
         return (
-            <div className="bg-background-dark text-white font-display min-h-screen flex items-center justify-center">
+            <div className="bg-[var(--color-background-dark)] text-text-base font-display min-h-screen flex items-center justify-center">
                 <div className="text-center">
                     <Icon name="error" className="text-6xl text-red-400 mb-4" />
                     <h2 className="text-xl font-bold mb-2">Có lỗi xảy ra</h2>
@@ -557,34 +561,34 @@ export default function FlashcardReviewPage() {
     const reviewPoolSize = correctWords.length + wrongWords.length + Math.min(5, masteredCards.length);
 
     return (
-        <div className="bg-background-dark text-white font-display min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-on-primary">
+        <div className="bg-[var(--color-background-dark)] text-text-base font-display min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-on-primary transition-colors duration-300">
             {/* Header */}
-            <header className="sticky top-0 z-50 bg-background-dark/80 backdrop-blur-md border-b border-border-color px-4 md:px-8 py-3">
+            <header className="sticky top-0 z-50 bg-[var(--color-background-dark)]/80 backdrop-blur-md border-b border-border-color px-4 md:px-8 py-3">
                 <div className="max-w-[1400px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <Link href="/dashboard" className="size-10 flex items-center justify-center rounded-full hover:bg-white/5 transition-colors text-white"><Icon name="arrow_back" /></Link>
+                        <Link href="/dashboard" className="size-10 flex items-center justify-center rounded-full hover:bg-surface-highlight transition-colors text-text-base"><Icon name="arrow_back" /></Link>
                         <div className="flex flex-col">
                             <div className="flex items-center gap-2 text-xs font-bold text-text-secondary uppercase tracking-wider"><span>Ôn tập hàng ngày</span></div>
-                            <h1 className="text-white text-lg font-bold leading-tight">Flashcards</h1>
+                            <h1 className="text-text-base text-lg font-bold leading-tight">Flashcards</h1>
                         </div>
                     </div>
                     <div className="hidden md:flex flex-col w-1/3 max-w-sm gap-2">
                         <div className="flex justify-between text-xs font-bold text-text-secondary">
                             <span>Tiến độ</span>
-                            <span className="text-white">{reviewedCount} / {totalCards}</span>
+                            <span className="text-text-base">{reviewedCount} / {totalCards}</span>
                         </div>
                         <div className="h-2 w-full bg-surface-highlight rounded-full overflow-hidden">
                             <div className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(76,223,32,0.5)] transition-all" style={{ width: `${totalCards > 0 ? (reviewedCount / totalCards) * 100 : 0}%` }} />
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color">
-                            <Icon name="local_fire_department" className="text-orange-500" size="md" />
-                            <span className="text-sm font-bold text-white">{user?.streak || 0}</span>
+                        <div className="hidden md:flex items-center gap-2 bg-orange-500/10 px-4 py-2 rounded-full border border-orange-500/20 shadow-sm transition-all hover:scale-105">
+                            <Icon name="local_fire_department" className="text-orange-600 dark:text-orange-500" size="md" />
+                            <span className="text-sm font-black text-text-base">{user?.streak || 0}</span>
                         </div>
-                        <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color">
-                            <Icon name="sailing" className="text-cyan-400" size="md" />
-                            <span className="text-sm font-bold text-white">{user?.xp || 0}</span>
+                        <div className="hidden md:flex items-center gap-2 bg-cyan-500/10 px-4 py-2 rounded-full border border-cyan-500/20 shadow-sm transition-all hover:scale-105">
+                            <Icon name="sailing" className="text-cyan-600 dark:text-cyan-400" size="md" />
+                            <span className="text-sm font-black text-text-base">{user?.xp || 0}</span>
                         </div>
                         <NotificationDropdown />
                         <button onClick={() => router.push('/profile')} className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
@@ -609,7 +613,7 @@ export default function FlashcardReviewPage() {
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-white/5 to-transparent rounded-full -mr-10 -mt-10 pointer-events-none" />
                             <div className="flex items-center gap-3 relative z-10">
                                 <div className="size-10 rounded-xl bg-surface-highlight flex items-center justify-center text-primary"><Icon name="navigation" /></div>
-                                <h2 className="text-white text-lg font-bold">Chế độ học</h2>
+                                <h2 className="text-text-base text-lg font-bold">Chế độ học</h2>
                             </div>
                             <div className="flex flex-col gap-3 relative z-10">
                                 {/* Cần Học */}
@@ -620,10 +624,10 @@ export default function FlashcardReviewPage() {
                                             <Icon name="psychology" size="sm" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-white text-sm font-bold">Cần học</span>
+                                            <span className="text-text-base text-sm font-bold">Cần học</span>
                                         </div>
                                     </div>
-                                    <span className="text-white text-xl font-bold">{totalCards - reviewedCount}</span>
+                                    <span className="text-text-base text-xl font-bold">{totalCards - reviewedCount}</span>
                                 </button>
                                 {/* Đã Học */}
                                 <button onClick={() => { setViewMode('mastered'); setShowMatchingGame(false); setMasteredSlideshow(null); }}
@@ -633,10 +637,10 @@ export default function FlashcardReviewPage() {
                                             <Icon name="verified" size="sm" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-white text-sm font-bold">Đã học</span>
+                                            <span className="text-text-base text-sm font-bold">Đã học</span>
                                         </div>
                                     </div>
-                                    <span className="text-white text-xl font-bold">{masteredCards.length}</span>
+                                    <span className="text-text-base text-xl font-bold">{masteredCards.length}</span>
                                 </button>
                                 {/* Ôn Tập */}
                                 <button onClick={enterReviewMode}
@@ -646,10 +650,10 @@ export default function FlashcardReviewPage() {
                                             <Icon name="replay" size="sm" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-white text-sm font-bold">Ôn tập</span>
+                                            <span className="text-text-base text-sm font-bold">Ôn tập</span>
                                         </div>
                                     </div>
-                                    <span className="text-white text-xl font-bold">{reviewPoolSize}</span>
+                                    <span className="text-text-base text-xl font-bold">{reviewPoolSize}</span>
                                 </button>
                                 {/* Ghép Đôi (Matching) */}
                                 <button onClick={() => { setViewMode('matching'); setShowMatchingGame(true); }}
@@ -659,7 +663,7 @@ export default function FlashcardReviewPage() {
                                             <Icon name="grid_view" size="sm" />
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-white text-sm font-bold">Ghép đôi</span>
+                                            <span className="text-text-base text-sm font-bold">Ghép đôi</span>
                                         </div>
                                     </div>
                                     <Icon name="play_arrow" className="text-purple-400" />
@@ -670,8 +674,8 @@ export default function FlashcardReviewPage() {
                         <div className="bg-surface-dark/50 rounded-2xl p-4 border border-border-color flex justify-between items-center">
                             <span className="text-text-secondary text-xs uppercase font-bold tracking-widest">Hôm nay</span>
                             <div className="flex items-center gap-3">
-                                <div className="flex items-center gap-1"><Icon name="check_circle" size="sm" className="text-emerald-400" /><span className="text-white text-sm font-bold">{sessionCorrectCount}</span></div>
-                                <div className="flex items-center gap-1"><Icon name="cancel" size="sm" className="text-rose-400" /><span className="text-white text-sm font-bold">{sessionWrongCount}</span></div>
+                                <div className="flex items-center gap-1"><Icon name="check_circle" size="sm" className="text-emerald-400" /><span className="text-text-base text-sm font-bold">{sessionCorrectCount}</span></div>
+                                <div className="flex items-center gap-1"><Icon name="cancel" size="sm" className="text-rose-400" /><span className="text-text-base text-sm font-bold">{sessionWrongCount}</span></div>
                             </div>
                         </div>
                     </aside>
@@ -747,7 +751,7 @@ export default function FlashcardReviewPage() {
                                         <div className="flex items-center gap-4">
                                             <div className="size-12 rounded-2xl bg-emerald-500/20 flex items-center justify-center text-emerald-400 border border-emerald-500/30"><Icon name="verified" size="lg" /></div>
                                             <div>
-                                                <h2 className="text-2xl font-bold text-white">Thư viện Từ vựng</h2>
+                                                <h2 className="text-2xl font-bold text-text-base">Thư viện Từ vựng</h2>
                                                 <p className="text-text-secondary text-sm">Tổng cộng {masteredCards.length} từ đã học</p>
                                             </div>
                                         </div>
@@ -787,7 +791,7 @@ export default function FlashcardReviewPage() {
                                                                 <div key={card.id} className="bg-surface-dark border border-border-color p-4 rounded-2xl hover:border-primary/50 transition-all group flex flex-col gap-2 cursor-pointer"
                                                                     onClick={() => enterMasteredSlideshow([card])}>
                                                                     <div className="flex justify-between items-start">
-                                                                        <span className="text-2xl font-chinese text-white group-hover:text-primary transition-colors">{getVocab(card)?.hanzi}</span>
+                                                                        <span className="text-2xl font-chinese text-text-base group-hover:text-primary transition-colors">{getVocab(card)?.hanzi}</span>
                                                                         <SpeakerButton text={getVocab(card)?.hanzi || ''} size="sm" />
                                                                     </div>
                                                                     <span className="text-primary/70 text-xs font-pinyin">{getVocab(card)?.pinyin || card.sourcePinyin}</span>
@@ -812,10 +816,10 @@ export default function FlashcardReviewPage() {
                                                     </div>
                                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                                                         {otherCards.map(card => (
-                                                                <div key={card.id} className="bg-surface-dark border border-border-color p-4 rounded-2xl hover:border-primary/50 transition-all group flex flex-col gap-2 cursor-pointer"
+                                                            <div key={card.id} className="bg-white/50 dark:bg-surface-dark border border-border-color p-4 rounded-2xl hover:border-primary/50 transition-all group flex flex-col gap-2 cursor-pointer"
                                                                 onClick={() => enterMasteredSlideshow([card])}>
                                                                 <div className="flex justify-between items-start">
-                                                                    <span className="text-2xl font-chinese text-white group-hover:text-primary transition-colors">{getVocab(card)?.hanzi}</span>
+                                                                    <span className="text-2xl font-chinese text-text-base group-hover:text-primary transition-colors">{getVocab(card)?.hanzi}</span>
                                                                     <SpeakerButton text={getVocab(card)?.hanzi || ''} size="sm" />
                                                                 </div>
                                                                 <span className="text-primary/70 text-xs font-pinyin">{getVocab(card)?.pinyin || card.sourcePinyin}</span>
@@ -835,7 +839,7 @@ export default function FlashcardReviewPage() {
                             reviewCompleted ? (
                                 <div className="text-center max-w-md animate-fade-in">
                                     <div className="size-24 mx-auto mb-6 rounded-full bg-orange-500/20 flex items-center justify-center"><Icon name="emoji_events" className="text-5xl text-orange-400" /></div>
-                                    <h2 className="text-2xl font-bold text-white mb-2">Ôn tập hoàn tất!</h2>
+                                    <h2 className="text-2xl font-bold text-text-base mb-2">Ôn tập hoàn tất!</h2>
                                     <p className="text-text-secondary mb-6">Bạn đã ôn xong {reviewHistory.length} từ vựng.</p>
                                     <div className="flex flex-col gap-3">
                                         <Button variant="primary" onClick={() => { setViewMode('srs'); setReviewCompleted(false); }}>Quay lại Cần học</Button>
@@ -845,7 +849,7 @@ export default function FlashcardReviewPage() {
                             ) : reviewPool.length === 0 ? (
                                 <div className="text-center max-w-md animate-fade-in">
                                     <div className="size-24 mx-auto mb-6 rounded-full bg-orange-500/20 flex items-center justify-center"><Icon name="inbox" className="text-5xl text-orange-400" /></div>
-                                    <h2 className="text-2xl font-bold text-white mb-2">Chưa có từ để ôn tập</h2>
+                                    <h2 className="text-2xl font-bold text-text-base mb-2">Chưa có từ để ôn tập</h2>
                                     <p className="text-text-secondary mb-6">Hãy học trong &quot;Cần học&quot; trước để có từ vựng ôn tập.</p>
                                     <Button variant="primary" onClick={() => setViewMode('srs')}>Về Cần học</Button>
                                 </div>
@@ -883,7 +887,7 @@ export default function FlashcardReviewPage() {
                                 <div className="size-24 mx-auto mb-6 rounded-full bg-primary/20 flex items-center justify-center">
                                     <Icon name={reviewedCount > 0 ? 'celebration' : 'inbox'} className="text-5xl text-primary" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-white mb-2">
+                                <h2 className="text-2xl font-bold text-text-base mb-2">
                                     {reviewedCount > 0 ? 'Hoàn thành!' : 'Không có từ cần ôn'}
                                 </h2>
                                 <p className="text-text-secondary mb-6">

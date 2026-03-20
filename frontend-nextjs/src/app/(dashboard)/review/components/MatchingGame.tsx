@@ -105,10 +105,10 @@ export default function MatchingGame({ wrongWords, correctWords, onComplete, onS
     return (
         <div className="w-full max-w-2xl mx-auto p-6 animate-in fade-in zoom-in duration-500">
             <div className="text-center mb-8 flex flex-col items-center">
-                <div className="size-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 mb-4 shadow-lg shadow-primary/10">
+                <div className="size-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 mb-4 shadow-lg shadow-primary/10 text-glow">
                     <Icon name="extension" size="lg" />
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-1">
+                <h2 className="text-2xl font-bold text-text-base mb-1">
                     Giai đoạn Củng cố
                 </h2>
                 <p className="text-text-secondary text-sm italic">
@@ -130,14 +130,14 @@ export default function MatchingGame({ wrongWords, correctWords, onComplete, onS
                             className={`
                                 relative p-4 rounded-2xl border-2 transition-all duration-300 min-h-[100px] flex items-center justify-center text-center
                                 ${isMatched ? 'opacity-0 scale-90 pointer-events-none' : 'opacity-100'}
-                                ${isSelected ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20 scale-105 z-10' : 'border-border-color/30 bg-surface-highlight/20 hover:border-primary/50'}
+                                ${isSelected ? 'border-primary bg-primary/20 shadow-lg shadow-primary/30 scale-105 z-10' : 'bg-surface-dark/50 border-border-color/40 hover:border-primary/50'}
                                 ${isError ? 'border-rose-500 bg-rose-500/10 animate-shake shadow-lg shadow-rose-500/20 z-20' : ''}
                             `}
                         >
                              <div className={`
-                                ${item.type === 'hanzi' ? 'text-3xl font-chinese text-white' : 'text-sm font-medium text-text-secondary w-full'}
+                                ${item.type === 'hanzi' ? 'text-4xl font-chinese text-text-base' : 'text-sm font-bold text-text-secondary w-full'}
                                 ${isSelected ? 'text-primary' : ''}
-                                ${isError ? 'text-rose-400' : ''}
+                                ${isError ? 'text-rose-500' : ''}
                             `}>
                                 {item.type === 'meaning' && typeof item.text === 'string' && item.text.includes('1.') ? (
                                     <div className="flex flex-col gap-1 items-center justify-center">
@@ -164,7 +164,7 @@ export default function MatchingGame({ wrongWords, correctWords, onComplete, onS
 
             {/* Progress indicator */}
             <div className="mt-10 flex flex-col items-center gap-4">
-                <div className="w-full h-1.5 bg-surface-highlight rounded-full overflow-hidden max-w-md">
+                <div className="w-full h-1.5 bg-surface-dark rounded-full overflow-hidden max-w-md shadow-inner">
                     <div 
                         className="h-full bg-primary transition-all duration-500 shadow-[0_0_10px_rgba(var(--primary-rgb),0.5)]"
                         style={{ width: `${(matchedIds.size / items.length) * 100}%` }}

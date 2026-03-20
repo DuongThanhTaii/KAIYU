@@ -115,7 +115,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
     };
 
     return (
-        <div className="flex h-screen w-full bg-background-dark">
+        <div className="flex h-screen w-full bg-background-dark transition-colors duration-300">
             {/* Sidebar with state */}
             <AdminSidebar
                 isCollapsed={isCollapsed}
@@ -126,7 +126,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
 
             <main className="flex-1 flex flex-col h-full overflow-hidden relative">
                 {/* Admin Header - z-index below mobile sidebar overlay */}
-                <header className="h-16 border-b border-border-color bg-surface-dark/50 backdrop-blur-md flex items-center justify-between px-4 md:px-6 shrink-0 sticky top-0 z-30">
+                <header className="h-16 border-b border-border-color bg-surface-dark/80 backdrop-blur-md flex items-center justify-between px-4 md:px-6 shrink-0 sticky top-0 z-30 transition-colors">
                     <div className="flex items-center gap-3">
                         {/* Mobile Hamburger */}
                         <button
@@ -134,11 +134,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                             className="lg:hidden p-2 rounded-xl hover:bg-surface-highlight transition-colors inline-flex items-center justify-center cursor-pointer"
                             aria-label="Mở menu"
                         >
-                            <Icon name="menu" size="md" className="text-white" />
+                            <Icon name="menu" size="md" className="text-text-base" />
                         </button>
 
                         {title && (
-                            <h1 className="text-lg md:text-xl font-bold text-white">{title}</h1>
+                            <h1 className="text-lg md:text-xl font-bold text-text-base">{title}</h1>
                         )}
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
@@ -148,11 +148,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                         <div className="relative" ref={dropdownRef}>
                             <button
                                 onClick={() => setShowNotifications(!showNotifications)}
-                                className="relative p-2 text-text-secondary hover:text-white transition-colors rounded-full hover:bg-surface-highlight inline-flex items-center justify-center cursor-pointer"
+                                className="relative p-2 text-text-secondary hover:text-text-base transition-colors rounded-full hover:bg-surface-highlight inline-flex items-center justify-center cursor-pointer"
                             >
                                 <Icon name="notifications" />
                                 {visibleNotifications.length > 0 && (
-                                    <span className="absolute top-0.5 right-0.5 size-5 bg-red-500 rounded-full border-2 border-surface-dark flex items-center justify-center text-[10px] font-bold text-white">
+                                    <span className="absolute top-0.5 right-0.5 size-5 bg-red-500 rounded-full border-2 border-surface-dark flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
                                         {visibleNotifications.length > 9 ? '9+' : visibleNotifications.length}
                                     </span>
                                 )}
@@ -162,10 +162,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                             {showNotifications && (
                                 <div className="fixed top-16 right-4 md:absolute md:top-auto md:right-0 md:mt-2 w-[calc(100vw-2rem)] md:w-96 bg-surface-dark rounded-2xl border border-border-color shadow-2xl overflow-hidden z-[9999] animate-in fade-in slide-in-from-top-2 duration-200">
                                     {/* Header */}
-                                    <div className="flex items-center justify-between px-4 py-3 border-b border-border-color bg-background-dark/50">
+                                    <div className="flex items-center justify-between px-4 py-3 border-b border-border-color bg-surface-highlight">
                                         <div className="flex items-center gap-2">
                                             <Icon name="notifications" className="text-amber-400" size="sm" />
-                                            <h3 className="font-bold text-white">Thông báo</h3>
+                                            <h3 className="font-bold text-text-base">Thông báo</h3>
                                             {visibleNotifications.length > 0 && (
                                                 <span className="px-2 py-0.5 text-xs font-bold bg-amber-500/20 text-amber-400 rounded-full">
                                                     {visibleNotifications.length}
@@ -199,7 +199,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                                             <div className="flex gap-2">
                                                 <button
                                                     onClick={() => setShowClearConfirm(false)}
-                                                    className="px-3 py-1 text-xs font-medium text-text-secondary hover:text-white rounded-lg hover:bg-surface-highlight transition-colors"
+                                                    className="px-3 py-1 text-xs font-medium text-text-secondary hover:text-text-base rounded-lg hover:bg-surface-highlight transition-colors"
                                                 >
                                                     Hủy
                                                 </button>
@@ -237,7 +237,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                                                         </div>
                                                         <div className="flex-1 min-w-0 pr-8">
                                                             <div className="flex items-start justify-between gap-2">
-                                                                <p className="text-sm font-medium text-white">
+                                                                <p className="text-sm font-medium text-text-base">
                                                                     {getNotificationTitle(notif.type)}
                                                                 </p>
                                                                 <span className="text-[10px] text-text-secondary whitespace-nowrap">
@@ -269,7 +269,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                         {/* Settings Link */}
                         <Link
                             href="/settings"
-                            className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-white inline-flex items-center justify-center cursor-pointer"
+                            className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-text-base inline-flex items-center justify-center cursor-pointer"
                         >
                             <Icon name="settings" />
                         </Link>

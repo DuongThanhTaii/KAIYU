@@ -466,9 +466,9 @@ export default function VideoPlayerPage() {
     if (!video) {
         return (
             <div className="min-h-screen bg-background-dark flex items-center justify-center">
-                <Card variant="default" className="text-center p-8">
+                <Card variant="default" className="text-center p-8 bg-surface-dark">
                     <Icon name="error" className="text-5xl text-red-400 mb-4" />
-                    <h2 className="text-xl font-bold text-white mb-2">Video không tồn tại</h2>
+                    <h2 className="text-xl font-bold text-text-base mb-2">Video không tồn tại</h2>
                     <Button variant="primary" onClick={() => router.push("/learn")}>Quay lại thư viện</Button>
                 </Card>
             </div>
@@ -477,27 +477,27 @@ export default function VideoPlayerPage() {
 
 
     return (
-        <div className="h-screen flex flex-col bg-background-dark overflow-hidden">
+        <div className="h-screen flex flex-col bg-background-dark overflow-hidden transition-colors duration-300">
             {/* Header */}
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-border-color bg-surface-dark px-6 py-3 shrink-0">
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-border-color bg-surface-dark px-6 py-3 shrink-0 transition-colors">
                 <div className="flex items-center gap-4">
-                    <Link href="/learn" className="flex items-center gap-2 text-text-secondary hover:text-white transition-colors">
+                    <Link href="/learn" className="flex items-center gap-2 text-text-secondary hover:text-text-base transition-colors">
                         <Icon name="arrow_back" />
                         <span>Quay lại</span>
                     </Link>
                 </div>
-                <h1 className="text-white font-bold truncate max-w-xl leading-tight tracking-tight">{video.title}</h1>
+                <h1 className="text-text-base font-bold truncate max-w-xl leading-tight tracking-tight">{video.title}</h1>
                 <div className="flex items-center gap-3">
                     {/* Streak Display */}
-                    <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color">
+                    <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color shadow-sm">
                         <Icon name="local_fire_department" className="text-orange-500" size="md" />
-                        <span className="text-sm font-bold text-white">{user?.streak || 0}</span>
+                        <span className="text-sm font-bold text-text-base">{user?.streak || 0}</span>
                     </div>
 
                     {/* XP Display */}
-                    <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color">
+                    <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color shadow-sm">
                         <Icon name="sailing" className="text-cyan-400" size="md" />
-                        <span className="text-sm font-bold text-white">{user?.xp || 0}</span>
+                        <span className="text-sm font-bold text-text-base">{user?.xp || 0}</span>
                     </div>
 
                     {/* Notifications */}
@@ -587,7 +587,7 @@ export default function VideoPlayerPage() {
                                 )}
 
                                  {/* Chinese Hanzi Tier - Interactive via Tokens or Intl Segmenter */}
-                                <p className="text-white text-2xl md:text-3xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
+                                <p className="text-text-base text-2xl md:text-3xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
                                     {((currentSubtitle.tokens && currentSubtitle.tokens.length > 0
                                         ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
                                         : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))) as any[]
@@ -620,7 +620,7 @@ export default function VideoPlayerPage() {
 
                                 {/* Vietnamese Tier */}
                                 {currentSubtitle.meaningVi && (
-                                    <p className="text-white/70 text-base md:text-lg font-medium mt-1">
+                                    <p className="text-text-base/80 text-base md:text-lg font-medium mt-1">
                                         {currentSubtitle.meaningVi}
                                     </p>
                                 )}
@@ -651,9 +651,9 @@ export default function VideoPlayerPage() {
                                     setIsLoopMode(false);
                                 }
                             }}
-                            className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all ${isLoopMode
+                             className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all ${isLoopMode
                                 ? 'bg-primary text-black'
-                                : 'bg-surface-highlight hover:bg-surface-highlight/80 text-white'
+                                : 'bg-surface-highlight hover:bg-surface-highlight/80 text-text-base border border-border-color shadow-sm'
                                 }`}
                             title={isLoopMode && loopedSubtitle ? `Đang loop: ${Number(loopedSubtitle.startTime).toFixed(1)}s - ${Number(loopedSubtitle.endTime).toFixed(1)}s` : "Loop câu hiện tại"}
                         >
@@ -665,7 +665,7 @@ export default function VideoPlayerPage() {
                         <div className="relative">
                             <button
                                 onClick={() => setShowSpeedPopup(!showSpeedPopup)}
-                                className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-surface-highlight hover:bg-surface-highlight/80 text-white text-xs font-bold transition-all"
+                             className="flex items-center gap-1.5 px-3 py-2 rounded-full bg-surface-highlight hover:bg-surface-highlight/80 text-text-base text-xs font-bold border border-border-color shadow-sm transition-all"
                                 title="Thay đổi tốc độ"
                             >
                                 <Icon name="slow_motion_video" size="sm" />
@@ -675,11 +675,11 @@ export default function VideoPlayerPage() {
                             {showSpeedPopup && (
                                 <div
                                     ref={speedPopupRef}
-                                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-4 bg-gradient-to-b from-surface-dark to-background-dark border border-border-color rounded-2xl shadow-2xl z-50 min-w-[220px]"
+                                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 p-4 bg-surface-dark border border-border-color rounded-2xl shadow-2xl z-50 min-w-[220px]"
                                 >
                                     {/* Header */}
                                     <div className="text-center mb-4">
-                                        <div className="text-3xl font-bold text-white mb-1">{playbackSpeed.toFixed(1)}x</div>
+                                        <div className="text-3xl font-bold text-text-base mb-1">{playbackSpeed.toFixed(1)}x</div>
                                         <div className="text-xs text-text-secondary">Tốc độ phát</div>
                                     </div>
 
@@ -725,8 +725,8 @@ export default function VideoPlayerPage() {
                                                 key={speed}
                                                 onClick={() => { setSpeed(speed); setShowSpeedPopup(false); }}
                                                 className={`py-2 text-sm font-medium rounded-lg transition-all ${playbackSpeed === speed
-                                                    ? 'bg-primary text-black shadow-md'
-                                                    : 'bg-surface-highlight/50 text-white hover:bg-surface-highlight'
+                                                    ? 'bg-primary text-on-primary shadow-md'
+                                                    : 'bg-surface-highlight/50 text-text-base hover:bg-surface-highlight'
                                                     }`}
                                             >
                                                 {speed}x
@@ -774,7 +774,7 @@ export default function VideoPlayerPage() {
                             }}
                             className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold transition-all ${isShadowingMode
                                 ? 'bg-primary text-black'
-                                : 'bg-surface-highlight hover:bg-surface-highlight/80 text-white'
+                                : 'bg-surface-highlight hover:bg-surface-highlight/80 text-text-base border border-border-color shadow-sm'
                                 }`}
                             title="Chế độ Shadowing"
                         >
@@ -788,7 +788,7 @@ export default function VideoPlayerPage() {
                         {/* Secondary Icon Actions */}
                         <button
                             onClick={saveSentenceToNotes}
-                            className="flex items-center justify-center size-8 rounded-full bg-background-dark hover:bg-surface-highlight text-text-secondary hover:text-white transition-all"
+                            className="flex items-center justify-center size-8 rounded-full bg-surface-highlight hover:bg-surface-highlight/80 text-text-secondary hover:text-text-base transition-all border border-border-color shadow-sm"
                             title="Lưu câu"
                         >
                             <Icon name="bookmark_add" size="sm" />
@@ -798,7 +798,7 @@ export default function VideoPlayerPage() {
                                 setActiveTab('notes');
                                 setNewNoteContent(currentSubtitle?.hanzi || '');
                             }}
-                            className="flex items-center justify-center size-8 rounded-full bg-background-dark hover:bg-surface-highlight text-text-secondary hover:text-white transition-all"
+                            className="flex items-center justify-center size-8 rounded-full bg-surface-highlight hover:bg-surface-highlight/80 text-text-secondary hover:text-text-base transition-all border border-border-color shadow-sm"
                             title="Thêm ghi chú"
                         >
                             <Icon name="edit_note" size="sm" />
@@ -808,18 +808,17 @@ export default function VideoPlayerPage() {
 
 
 
-                {/* Right Column: Study Panel - LingoStream style */}
                 <div
                     ref={subtitleListRef}
                     className="hidden lg:flex lg:flex-col w-80 xl:w-96 bg-surface-dark rounded-2xl border border-border-color overflow-hidden shadow-lg"
                 >
                     {/* Tabs */}
-                    <div className="flex items-center p-2 gap-1 bg-background-dark m-2 rounded-2xl">
+                    <div className="flex items-center p-2 gap-1 bg-surface-highlight m-2 rounded-2xl">
                         <button
                             onClick={() => setActiveTab('subtitles')}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-bold text-center transition-all ${activeTab === 'subtitles'
-                                ? 'bg-surface-highlight text-white shadow-sm'
-                                : 'text-text-secondary hover:bg-surface-dark hover:text-white'
+                                ? 'bg-surface-dark text-primary shadow-sm'
+                                : 'text-text-secondary hover:bg-surface-dark/50 hover:text-text-base'
                                 }`}
                         >
                             Phụ đề
@@ -827,8 +826,8 @@ export default function VideoPlayerPage() {
                         <button
                             onClick={() => setActiveTab('vocabulary')}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-medium text-center transition-all ${activeTab === 'vocabulary'
-                                ? 'bg-surface-highlight text-white shadow-sm'
-                                : 'text-text-secondary hover:bg-surface-dark hover:text-white'
+                                ? 'bg-surface-dark text-primary shadow-sm'
+                                : 'text-text-secondary hover:bg-surface-dark/50 hover:text-text-base'
                                 }`}
                         >
                             Từ vựng
@@ -836,8 +835,8 @@ export default function VideoPlayerPage() {
                         <button
                             onClick={() => setActiveTab('notes')}
                             className={`flex-1 py-2.5 rounded-xl text-sm font-medium text-center transition-all ${activeTab === 'notes'
-                                ? 'bg-surface-highlight text-white shadow-sm'
-                                : 'text-text-secondary hover:bg-surface-dark hover:text-white'
+                                ? 'bg-surface-dark text-primary shadow-sm'
+                                : 'text-text-secondary hover:bg-surface-dark/50 hover:text-text-base'
                                 }`}
                         >
                             Ghi chú
@@ -854,8 +853,8 @@ export default function VideoPlayerPage() {
                                         ref={el => { subtitleItemRefs.current[index] = el; }}
                                         onClick={() => handleSeekTo(sub.startTime)}
                                         className={`w-full text-left p-4 rounded-xl transition-all group cursor-pointer shrink-0 ${currentSubtitleIndex === index
-                                            ? "bg-surface-highlight/50 border-l-3 border-l-primary pl-3"
-                                            : "hover:bg-surface-highlight/30 border-l-3 border-l-transparent"
+                                            ? "bg-primary/10 border-l-3 border-l-primary pl-3"
+                                            : "hover:bg-surface-highlight border-l-3 border-l-transparent"
                                             }`}
                                     >
                                         {/* Header with timestamp and indicator */}
@@ -873,8 +872,8 @@ export default function VideoPlayerPage() {
 
                                         {/* Hanzi */}
                                         <p className={`font-chinese ${currentSubtitleIndex === index
-                                            ? 'text-white text-lg font-bold'
-                                            : 'text-white text-base font-medium'
+                                            ? 'text-text-base text-lg font-bold'
+                                            : 'text-text-base text-base font-medium'
                                             }`} lang="zh-CN">
                                             {sub.hanzi || ''}
                                         </p>
@@ -914,9 +913,9 @@ export default function VideoPlayerPage() {
                                         >
                                             <div className="flex items-start justify-between gap-2">
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-white/60 text-sm mb-1 font-pinyin tracking-tight">{vocab.vocabulary.pinyin}</p>
-                                                    <p className="text-white text-lg font-bold font-chinese" lang="zh-CN">{vocab.vocabulary.hanzi}</p>
-                                                    <p className="text-white/50 text-sm mt-1">
+                                                    <p className="text-text-secondary text-sm mb-1 font-pinyin tracking-tight">{vocab.vocabulary.pinyin}</p>
+                                                    <p className="text-text-base text-lg font-bold font-chinese" lang="zh-CN">{vocab.vocabulary.hanzi}</p>
+                                                    <p className="text-text-secondary/70 text-sm mt-1">
                                                         {vocab.vocabulary.meaningVi || vocab.vocabulary.meaningEn}
                                                     </p>
                                                 </div>
@@ -927,7 +926,7 @@ export default function VideoPlayerPage() {
                                                     />
                                                     <button
                                                         onClick={() => handleRemoveVocabulary(vocab.id)}
-                                                        className="size-8 rounded-full bg-background-dark hover:bg-red-500/20 flex items-center justify-center text-text-secondary hover:text-red-400 transition-colors"
+                                                        className="size-8 rounded-full bg-surface-highlight hover:bg-red-500/20 flex items-center justify-center text-text-secondary hover:text-red-400 transition-colors"
                                                         title="Xóa"
                                                     >
                                                         <Icon name="delete" size="sm" />
@@ -944,7 +943,7 @@ export default function VideoPlayerPage() {
                         {activeTab === 'notes' && (
                             <>
                                 {/* Add Note Input */}
-                                <div className="p-4 rounded-xl bg-background-dark mx-0 mb-2">
+                                <div className="p-4 rounded-xl bg-surface-dark mx-0 mb-2 border border-border-color">
                                     <div className="flex items-center gap-2 text-xs text-text-secondary/60 mb-2">
                                         <Icon name="schedule" size="sm" />
                                         <span className="font-mono">{formatTime(currentTime)}</span>
@@ -956,7 +955,7 @@ export default function VideoPlayerPage() {
                                             onChange={(e) => setNewNoteContent(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleAddNote()}
                                             placeholder="Add a note..."
-                                            className="flex-1 bg-surface-dark border border-border-color/30 rounded-xl px-4 py-2.5 text-sm text-white placeholder-text-secondary/50 focus:outline-none focus:border-primary transition-colors"
+                                            className="flex-1 bg-background-dark border border-border-color/30 rounded-xl px-4 py-2.5 text-sm text-text-base placeholder-text-secondary/50 focus:outline-none focus:border-primary transition-colors"
                                         />
                                         <button
                                             onClick={handleAddNote}
@@ -998,13 +997,13 @@ export default function VideoPlayerPage() {
                                                             setEditingNoteId(note.id);
                                                             setEditingContent(note.content);
                                                         }}
-                                                        className="size-7 rounded-full bg-background-dark hover:bg-surface-highlight flex items-center justify-center text-text-secondary hover:text-white transition-colors"
+                                                        className="size-7 rounded-full bg-surface-highlight hover:bg-surface-highlight/80 flex items-center justify-center text-text-secondary hover:text-text-base transition-colors border border-border-color shadow-sm"
                                                     >
                                                         <Icon name="edit" size="sm" />
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteNote(note.id)}
-                                                        className="size-7 rounded-full bg-background-dark hover:bg-red-500/20 flex items-center justify-center text-text-secondary hover:text-red-400 transition-colors"
+                                                        className="size-7 rounded-full bg-surface-highlight hover:bg-red-500/20 flex items-center justify-center text-text-secondary hover:text-red-400 transition-colors border border-border-color shadow-sm"
                                                     >
                                                         <Icon name="delete" size="sm" />
                                                     </button>
@@ -1017,7 +1016,7 @@ export default function VideoPlayerPage() {
                                                         value={editingContent}
                                                         onChange={(e) => setEditingContent(e.target.value)}
                                                         onKeyDown={(e) => e.key === 'Enter' && handleUpdateNote(note.id)}
-                                                        className="flex-1 bg-background-dark border border-border-color/30 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                                                        className="flex-1 bg-background-dark border border-border-color/30 rounded-lg px-3 py-2 text-sm text-text-base focus:outline-none focus:border-primary"
                                                         autoFocus
                                                     />
                                                     <button
@@ -1028,13 +1027,13 @@ export default function VideoPlayerPage() {
                                                     </button>
                                                     <button
                                                         onClick={() => setEditingNoteId(null)}
-                                                        className="size-8 rounded-lg bg-surface-highlight text-text-secondary hover:text-white transition-colors flex items-center justify-center"
+                                                        className="size-8 rounded-lg bg-surface-dark text-text-secondary hover:text-text-base transition-colors flex items-center justify-center border border-border-color"
                                                     >
                                                         <Icon name="close" size="sm" />
                                                     </button>
                                                 </div>
                                             ) : (
-                                                <p className="text-sm text-white/80">{note.content}</p>
+                                                <p className="text-sm text-text-base/90">{note.content}</p>
                                             )}
                                         </div>
                                     ))

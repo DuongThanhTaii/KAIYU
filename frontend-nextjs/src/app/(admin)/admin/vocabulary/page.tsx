@@ -23,6 +23,7 @@ import {
     type ImportVocabularyItem
 } from '@/services/adminApi';
 import { HSK_COLORS, POS_COLORS } from '@/constants/vocabulary';
+import { highlightWord, getPosColor } from '@/utils/chinese';
 
 const POS_OPTIONS = [
     'Danh từ', 'Danh từ riêng', 'Động từ', 'Tính từ', 'Trạng từ', 
@@ -33,14 +34,6 @@ const POS_OPTIONS = [
 /**
  * Format a Vietnamese meaning line by removing numbering and colorizing the part of speech
  */
-// Helper for case-insensitive POS_COLORS lookup
-const getPosColor = (pos: string) => {
-    if (!pos) return 'text-text-secondary';
-    // Find key case-insensitively
-    const key = Object.keys(POS_COLORS).find(k => k.toLowerCase() === pos.toLowerCase());
-    return key ? POS_COLORS[key] : 'text-text-secondary';
-};
-
 const renderFormattedMeaning = (text: string) => {
     if (!text) return null;
     
@@ -65,7 +58,7 @@ const renderFormattedMeaning = (text: string) => {
                             <div key={idx} className="flex items-start gap-1 leading-tight">
                                 <div className="text-sm">
                                     <span className={`${colorClass} font-bold mr-1.5 uppercase tracking-tighter text-[10px]`}>{pos}:</span>
-                                    <span className="text-white/90">{meaning}</span>
+                                    <span className="text-text-base">{meaning}</span>
                                 </div>
                             </div>
                         );
@@ -73,7 +66,7 @@ const renderFormattedMeaning = (text: string) => {
                     
                     return (
                         <div key={idx} className="flex items-start gap-1 leading-tight">
-                            <span className="text-sm text-white/90">{cleanPart}</span>
+                            <span className="text-sm text-text-base">{cleanPart}</span>
                         </div>
                     );
                 })}
@@ -91,12 +84,12 @@ const renderFormattedMeaning = (text: string) => {
         return (
             <div className="text-sm py-0.5">
                 <span className={`${colorClass} font-bold mr-2 uppercase tracking-tighter text-[10px]`}>{pos}:</span>
-                <span className="text-white">{meaning}</span>
+                <span className="text-text-base">{meaning}</span>
             </div>
         );
     }
 
-    return <span className="text-white text-sm">{text}</span>;
+    return <span className="text-text-base text-sm">{text}</span>;
 }
 
 export default function AdminVocabularyPage() {
@@ -874,7 +867,7 @@ export default function AdminVocabularyPage() {
             sortable: true,
             render: (vocab: Vocabulary) => (
                 <div className="flex flex-col min-w-0">
-                    <span className="text-xl font-bold text-white font-chinese whitespace-nowrap overflow-hidden text-ellipsis" lang="zh-CN">
+                    <span className="text-xl font-bold text-text-base font-chinese whitespace-nowrap overflow-hidden text-ellipsis" lang="zh-CN">
                         {searchQuery ? highlightText(vocab.hanzi, searchQuery) : vocab.hanzi}
                     </span>
                     <span className="text-xs text-primary/80 mt-0.5 font-pinyin tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
@@ -938,8 +931,8 @@ export default function AdminVocabularyPage() {
                 const first = examples[0];
                 return (
                     <div className="text-sm">
-                        <p className="text-white font-chinese">{first.chinese}</p>
-                        <p className="text-primary/70 text-xs font-pinyin">{first.pinyin}</p>
+                        <p className="text-text-base font-chinese">{highlightWord(first.chinese || "", vocab.hanzi)}</p>
+                        <p className="text-primary/70 text-xs font-pinyin">{highlightWord(first.pinyin || "", vocab.pinyin)}</p>
                         <p className="text-text-secondary text-xs">{first.vietnamese}</p>
                     </div>
                 );
@@ -1030,7 +1023,7 @@ export default function AdminVocabularyPage() {
                 <div className="flex items-center gap-2">
                     <div className="relative group">
                         <button
-                            className="flex items-center gap-2 px-4 py-2 bg-surface-dark border border-border-color text-white font-medium rounded-lg hover:bg-surface-highlight transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-surface-dark border border-border-color text-text-base font-medium rounded-lg hover:bg-surface-highlight transition-colors"
                         >
                             <Icon name="download" />
                             Export
@@ -1039,13 +1032,13 @@ export default function AdminVocabularyPage() {
                         <div className="absolute right-0 mt-2 w-40 py-2 bg-surface-dark border border-border-color rounded-lg shadow-xl hidden group-hover:block z-10">
                             <button
                                 onClick={handleExportCSV}
-                                className="w-full px-4 py-2 text-left text-sm text-white hover:bg-surface-highlight"
+                                className="w-full px-4 py-2 text-left text-sm text-text-base hover:bg-surface-highlight"
                             >
                                 Export CSV
                             </button>
                             <button
                                 onClick={handleExportJSON}
-                                className="w-full px-4 py-2 text-left text-sm text-white hover:bg-surface-highlight"
+                                className="w-full px-4 py-2 text-left text-sm text-text-base hover:bg-surface-highlight"
                             >
                                 Export JSON
                             </button>
@@ -1128,7 +1121,7 @@ export default function AdminVocabularyPage() {
                                 : 'bg-surface-dark border-border-color hover:border-primary/30'
                                 }`}
                         >
-                            <p className="text-xl font-bold text-white">{count}</p>
+                            <p className="text-xl font-bold text-text-base">{count}</p>
                             <p className="text-[10px] text-text-secondary leading-tight">{label}</p>
                         </button>
                     );
@@ -1137,7 +1130,7 @@ export default function AdminVocabularyPage() {
             {/* Total + Delete All */}
             <div className="flex items-center justify-between mb-6">
                 <p className="text-sm text-text-secondary">
-                    Tổng: <span className="text-white font-bold">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng
+                    Tổng: <span className="text-text-base font-bold">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng
                 </p>
                 <button
                     onClick={() => setShowDeleteAllConfirm(true)}
@@ -1160,7 +1153,7 @@ export default function AdminVocabularyPage() {
                         value={searchQuery}
                         onChange={(e) => handleSearchChange(e.target.value)}
                         placeholder="Tìm kiếm từ vựng (Hanzi, Pinyin, nghĩa)..."
-                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                     />
                 </div>
                 {filterHsk && (
@@ -1215,12 +1208,12 @@ export default function AdminVocabularyPage() {
                         <div className="bg-surface-highlight/10 border border-border-color/30 rounded-3xl p-8 text-center relative overflow-hidden backdrop-blur-sm">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                             
-                            <h2 className="text-7xl font-chinese text-white mb-2 leading-none drop-shadow-lg">{selectedVocab.hanzi}</h2>
+                            <h2 className="text-7xl font-chinese text-text-base mb-2 leading-none drop-shadow-lg">{selectedVocab.hanzi}</h2>
                             <p className="text-3xl font-pinyin text-primary mb-6 tracking-wide drop-shadow-md">{selectedVocab.pinyin}</p>
                             
                             <div className="flex flex-wrap justify-center gap-3">
                                 {selectedVocab.hskLevel > 0 && (
-                                    <div className={`px-4 py-1.5 ${HSK_COLORS[selectedVocab.hskLevel] || 'bg-gray-500'} bg-opacity-20 border-none text-white text-xs font-black rounded-full uppercase tracking-widest shadow-sm flex items-center gap-2`}>
+                                    <div className={`px-4 py-1.5 ${HSK_COLORS[selectedVocab.hskLevel] || 'bg-gray-500'} bg-opacity-20 border-none text-text-base text-xs font-black rounded-full uppercase tracking-widest shadow-sm flex items-center gap-2`}>
                                         <span className="opacity-60 text-[10px]">LEVEL</span>
                                         HSK {selectedVocab.hskLevel}
                                     </div>
@@ -1243,7 +1236,7 @@ export default function AdminVocabularyPage() {
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-2xl text-white font-semibold tracking-tight text-center">
+                                            <p className="text-2xl text-text-base font-semibold tracking-tight text-center">
                                                 {selectedVocab.meaningVi}
                                             </p>
                                         )}
@@ -1261,7 +1254,7 @@ export default function AdminVocabularyPage() {
                                         Bộ thủ
                                     </h4>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-2xl font-chinese text-white">{selectedVocab.radical || '-'}</span>
+                                        <span className="text-2xl font-chinese text-text-base">{selectedVocab.radical || '-'}</span>
                                         <span className="text-sm text-text-secondary">{selectedVocab.radicalMeaning}</span>
                                     </div>
                                 </div>
@@ -1275,7 +1268,7 @@ export default function AdminVocabularyPage() {
                                     <Icon name="lightbulb" size="sm" />
                                     Gợi ý nhớ
                                 </h4>
-                                <p className="text-sm text-white italic whitespace-pre-wrap">{selectedVocab.mnemonic}</p>
+                                <p className="text-sm text-text-base italic whitespace-pre-wrap">{selectedVocab.mnemonic}</p>
                             </div>
                         )}
 
@@ -1295,9 +1288,13 @@ export default function AdminVocabularyPage() {
                                             </div>
                                             <div className="flex items-start justify-between gap-6">
                                                 <div className="flex-1 space-y-3">
-                                                    <p className="text-2xl font-chinese text-white leading-snug" lang="zh-CN">{ex.chinese}</p>
+                                                    <p className="text-2xl font-chinese text-text-base leading-snug" lang="zh-CN">
+                                                        {highlightWord(ex.chinese || "", selectedVocab.hanzi)}
+                                                    </p>
                                                     <div className="space-y-1">
-                                                        <p className="text-primary font-pinyin text-lg tracking-tight opacity-80">{ex.pinyin}</p>
+                                                        <p className="text-primary font-pinyin text-lg tracking-tight opacity-80">
+                                                            {highlightWord(ex.pinyin || "", selectedVocab.pinyin)}
+                                                        </p>
                                                         <p className="text-text-secondary text-base italic border-l-2 border-primary/20 pl-4 py-1">{ex.vietnamese}</p>
                                                     </div>
                                                 </div>
@@ -1375,7 +1372,7 @@ export default function AdminVocabularyPage() {
                                 setShowModal(false);
                                 resetForm();
                             }}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -1404,7 +1401,7 @@ export default function AdminVocabularyPage() {
                                     type="text"
                                     value={formData.hanzi}
                                     onChange={(e) => setFormData({ ...formData, hanzi: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-2xl font-chinese font-bold"
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-text-base text-2xl font-chinese font-bold"
                                     placeholder="好"
                                     required
                                 />
@@ -1417,7 +1414,7 @@ export default function AdminVocabularyPage() {
                                     type="text"
                                     value={formData.pinyin}
                                     onChange={(e) => setFormData({ ...formData, pinyin: e.target.value })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white font-pinyin"
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-text-base"
                                     placeholder="hǎo"
                                     required
                                 />
@@ -1431,7 +1428,7 @@ export default function AdminVocabularyPage() {
                                 <select
                                     value={formData.hskLevel}
                                     onChange={(e) => setFormData({ ...formData, hskLevel: Number(e.target.value) })}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white"
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-text-base"
                                 >
                                     {[1, 2, 3, 4, 5, 6].map((level) => (
                                         <option key={level} value={level}>HSK {level}</option>
@@ -1502,7 +1499,7 @@ export default function AdminVocabularyPage() {
                                                     newEntries[idx].pinyin = e.target.value;
                                                     setMeaningEntries(newEntries);
                                                 }}
-                                                className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-pinyin"
+                                                className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded-lg text-text-base text-sm font-pinyin"
                                                 placeholder={formData.pinyin || "hǎo"}
                                             />
                                         </div>
@@ -1516,7 +1513,7 @@ export default function AdminVocabularyPage() {
                                                 newEntries[idx].meanings = e.target.value;
                                                 setMeaningEntries(newEntries);
                                             }}
-                                            className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm min-h-[60px]"
+                                            className="w-full px-2 py-1.5 bg-background-dark border border-border-color rounded-lg text-text-base text-sm min-h-[60px]"
                                             placeholder="tốt; đẹp; khỏe"
                                             required={idx === 0}
                                         />
@@ -1565,7 +1562,7 @@ export default function AdminVocabularyPage() {
                                                     newExamples[idx].chinese = e.target.value;
                                                     setExampleEntries(newExamples);
                                                 }}
-                                                className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-chinese"
+                                                className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded-lg text-text-base text-sm font-chinese"
                                                 placeholder="我很好"
                                             />
                                         </div>
@@ -1580,7 +1577,7 @@ export default function AdminVocabularyPage() {
                                                         newExamples[idx].pinyin = e.target.value;
                                                         setExampleEntries(newExamples);
                                                     }}
-                                                    className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm font-pinyin"
+                                                    className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded-lg text-text-base text-sm font-pinyin"
                                                     placeholder="wǒ hěn hǎo"
                                                 />
                                             </div>
@@ -1594,7 +1591,7 @@ export default function AdminVocabularyPage() {
                                                         newExamples[idx].vietnamese = e.target.value;
                                                         setExampleEntries(newExamples);
                                                     }}
-                                                    className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded text-white text-sm"
+                                                    className="w-full px-3 py-1.5 bg-background-dark border border-border-color rounded-lg text-text-base text-sm"
                                                     placeholder="Tôi rất khỏe"
                                                 />
                                             </div>
@@ -1632,7 +1629,7 @@ export default function AdminVocabularyPage() {
                                     type="text"
                                     value={antonyms}
                                     onChange={(e) => setAntonyms(e.target.value)}
-                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm"
+                                    className="w-full px-3 py-2 bg-background-dark border border-border-color rounded-lg text-text-base text-sm"
                                     placeholder="坏, 差"
                                 />
                             </div>
@@ -1651,7 +1648,7 @@ export default function AdminVocabularyPage() {
                     <>
                         <button
                             onClick={() => setShowDeleteConfirm(null)}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -1687,7 +1684,7 @@ export default function AdminVocabularyPage() {
                                 setImportData([]);
                                 setImportError(null);
                             }}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -1706,12 +1703,12 @@ export default function AdminVocabularyPage() {
                     {/* Mode Toggle */}
                     <div className="flex items-center gap-4 mb-4">
                         <span className="text-sm text-text-secondary">Định dạng:</span>
-                        <div className="flex items-center gap-1 bg-background-dark rounded-lg p-1">
+                        <div className="flex items-center gap-1 bg-background-dark rounded-lg p-1 border border-border-color">
                             <button
                                 onClick={() => setImportMode('xlsx')}
                                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${importMode === 'xlsx'
                                     ? 'bg-primary text-on-primary'
-                                    : 'text-text-secondary hover:text-white'
+                                    : 'text-text-secondary hover:text-text-base'
                                     }`}
                             >
                                 Excel/XLSX
@@ -1720,7 +1717,7 @@ export default function AdminVocabularyPage() {
                                 onClick={() => setImportMode('csv')}
                                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${importMode === 'csv'
                                     ? 'bg-primary text-on-primary'
-                                    : 'text-text-secondary hover:text-white'
+                                    : 'text-text-secondary hover:text-text-base'
                                     }`}
                             >
                                 CSV
@@ -1729,7 +1726,7 @@ export default function AdminVocabularyPage() {
                                 onClick={() => setImportMode('json')}
                                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${importMode === 'json'
                                     ? 'bg-primary text-on-primary'
-                                    : 'text-text-secondary hover:text-white'
+                                    : 'text-text-secondary hover:text-text-base'
                                     }`}
                             >
                                 JSON
@@ -1744,7 +1741,7 @@ export default function AdminVocabularyPage() {
                             <select
                                 value={importTargetSheet}
                                 onChange={(e) => setImportTargetSheet(e.target.value)}
-                                className="px-3 py-2 bg-background-dark border border-border-color rounded-lg text-white text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="px-3 py-2 bg-background-dark border border-border-color rounded-lg text-text-base text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                             >
                                 <option value="all">Tất cả các Sheet</option>
                                 <option value="HSK1">HSK1</option>
@@ -1781,9 +1778,9 @@ export default function AdminVocabularyPage() {
                     </div>
 
                     {/* Template Info */}
-                    <div className="p-4 bg-surface-highlight rounded-lg">
+                    <div className="p-4 bg-surface-highlight/10 border border-border-color rounded-lg">
                         <div className="flex items-center justify-between mb-2">
-                            <p className="text-sm font-medium text-white">
+                            <p className="text-sm font-medium text-text-base">
                                 {importMode === 'xlsx' ? 'Cấu trúc Excel (cột bắt buộc):' : importMode === 'csv' ? 'Cấu trúc CSV:' : 'Cấu trúc JSON:'}
                             </p>
                             {importMode === 'xlsx' && (
@@ -1796,7 +1793,7 @@ export default function AdminVocabularyPage() {
                                 </button>
                             )}
                         </div>
-                        <pre className="text-xs text-text-secondary bg-background-dark p-3 rounded overflow-x-auto whitespace-pre-wrap">
+                        <pre className="text-xs text-text-secondary bg-background-dark p-3 rounded border border-border-color/30 overflow-x-auto whitespace-pre-wrap">
                             {importMode === 'xlsx'
                                 ? 'File XLSX gồm nhiều sheet (HSK1-6, Ngoài HSK, Không chia cấp)\nCột bắt buộc: TỪ VỰNG, PINYIN, NGHĨA\nCột tùy chọn: TỪ LOẠI, VÍ DỤ (CHỮ HÁN), PHIÊN ÂM, DỊCH,\n              TỪ CẬN NGHĨA/TỪ ĐỒNG NGHĨA, TỪ TRÁI NGHĨA\n\n💡 HSK level tự động xác định từ tên sheet\n💡 Nhấn "Tải file mẫu" để tải template chuẩn'
                                 : importMode === 'csv'
@@ -1816,7 +1813,7 @@ export default function AdminVocabularyPage() {
                     {/* Preview */}
                     {importData.length > 0 && (
                         <div>
-                            <p className="text-sm font-medium text-white mb-2">
+                            <p className="text-sm font-medium text-text-base mb-2">
                                 Xem trước ({importData.length} từ):
                             </p>
                             <div className="max-h-48 overflow-y-auto border border-border-color rounded-lg">
@@ -1831,8 +1828,8 @@ export default function AdminVocabularyPage() {
                                     </thead>
                                     <tbody className="divide-y divide-border-color">
                                         {importData.slice(0, 10).map((item, index) => (
-                                            <tr key={index}>
-                                                <td className="px-3 py-2 text-white font-chinese">{item.hanzi}</td>
+                                            <tr key={index} className="border-b border-border-color/30 last:border-0">
+                                                <td className="px-3 py-2 text-text-base font-chinese">{item.hanzi}</td>
                                                 <td className="px-3 py-2 text-primary font-pinyin">{item.pinyin}</td>
                                                 <td className="px-3 py-2 text-text-secondary">{item.meaningVi}</td>
                                                 <td className="px-3 py-2 text-text-secondary">{item.hskLevel}</td>
@@ -1841,7 +1838,7 @@ export default function AdminVocabularyPage() {
                                     </tbody>
                                 </table>
                                 {importData.length > 10 && (
-                                    <p className="px-3 py-2 text-xs text-text-secondary text-center bg-background-dark">
+                                    <p className="px-3 py-2 text-xs text-text-secondary text-center bg-background-dark mt-auto">
                                         ...và {importData.length - 10} từ khác
                                     </p>
                                 )}
@@ -1862,7 +1859,7 @@ export default function AdminVocabularyPage() {
                         <button
                             onClick={() => executeImport('skip')}
                             disabled={isSaving}
-                            className="px-4 py-2 bg-surface-highlight text-white rounded-lg hover:bg-surface-highlight/80 transition-colors disabled:opacity-50"
+                            className="px-4 py-2 bg-surface-highlight/20 text-text-base border border-border-color rounded-lg hover:bg-surface-highlight/30 transition-colors disabled:opacity-50"
                         >
                             Chỉ thêm từ mới (Bỏ qua trùng)
                         </button>
@@ -1894,7 +1891,7 @@ export default function AdminVocabularyPage() {
                         </div>
 
                         <div>
-                            <p className="text-sm font-medium text-white mb-2">
+                            <p className="text-sm font-medium text-text-base mb-2">
                                 Xem trước một số từ trùng:
                             </p>
                             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-background-dark border border-border-color rounded-lg">
@@ -1938,7 +1935,7 @@ export default function AdminVocabularyPage() {
                             </div>
                         </div>
 
-                        <h3 className="text-center text-lg font-bold text-white">
+                        <h3 className="text-center text-lg font-bold text-text-base">
                             Import hoàn tất!
                         </h3>
 
@@ -2047,8 +2044,8 @@ export default function AdminVocabularyPage() {
 
                         {/* Message */}
                         <div className="text-center space-y-2">
-                            <p className="text-white">
-                                Từ vựng <span className="text-2xl font-bold text-amber-400 font-chinese">{duplicateConfirm.vocab.hanzi}</span> đã tồn tại trong hệ thống.
+                            <p className="text-text-base">
+                                Từ vựng <span className="text-2xl font-bold text-amber-500 font-chinese">{duplicateConfirm.vocab.hanzi}</span> đã tồn tại trong hệ thống.
                             </p>
                             <p className="text-sm text-text-secondary">
                                 Bạn có muốn chuyển sang chế độ <strong className="text-amber-400">Sửa</strong> để cập nhật từ này không?
@@ -2065,11 +2062,11 @@ export default function AdminVocabularyPage() {
                                 </div>
                                 <div>
                                     <span className="text-text-secondary">HSK: </span>
-                                    <span className="text-white">{duplicateConfirm.vocab.hskLevel}</span>
+                                    <span className="text-text-base font-bold">{duplicateConfirm.vocab.hskLevel}</span>
                                 </div>
                                 <div className="col-span-2">
                                     <span className="text-text-secondary">Nghĩa: </span>
-                                    <span className="text-white">{duplicateConfirm.vocab.meaningVi}</span>
+                                    <span className="text-text-base">{duplicateConfirm.vocab.meaningVi}</span>
                                 </div>
                             </div>
                         </div>
@@ -2115,8 +2112,8 @@ export default function AdminVocabularyPage() {
                         </div>
                     </div>
                     <div className="text-center space-y-2">
-                        <p className="text-white">
-                            Bạn có chắc muốn xóa <span className="text-red-400 font-bold">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng?
+                        <p className="text-text-base">
+                            Bạn có chắc muốn xóa <span className="text-red-500 font-black">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng?
                         </p>
                         <p className="text-sm text-text-secondary">
                             Hành động này không thể hoàn tác. Bạn sẽ cần import lại file XLSX sau khi xóa.
@@ -2124,13 +2121,13 @@ export default function AdminVocabularyPage() {
                     </div>
                     <div className="mt-4">
                         <label className="block text-sm text-text-secondary mb-2 text-center">
-                            Vui lòng nhập <strong className="text-white">xác nhận xóa</strong> để tiếp tục
+                            Vui lòng nhập <strong className="text-red-500">xác nhận xóa</strong> để tiếp tục
                         </label>
                         <input
                             type="text"
                             value={deleteAllConfirmText}
                             onChange={(e) => setDeleteAllConfirmText(e.target.value)}
-                            className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-white text-center focus:outline-none focus:border-red-500 transition-colors"
+                            className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-text-base text-center focus:outline-none focus:border-red-500 transition-colors"
                             placeholder="xác nhận xóa"
                         />
                     </div>
@@ -2155,7 +2152,7 @@ export default function AdminVocabularyPage() {
                                 setUpdateData([]);
                                 setImportError(null);
                             }}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -2233,11 +2230,11 @@ export default function AdminVocabularyPage() {
                                     </thead>
                                     <tbody className="divide-y divide-border-color">
                                         {updateData.slice(0, 10).map((item, index) => (
-                                            <tr key={index}>
-                                                <td className="px-3 py-2 text-white font-chinese">{item.hanzi}</td>
+                                            <tr key={index} className="border-b border-border-color/30 last:border-0 hover:bg-surface-highlight/5 transition-colors">
+                                                <td className="px-3 py-2 text-text-base font-chinese">{item.hanzi}</td>
                                                 <td className="px-3 py-2 text-primary font-pinyin">{item.pinyin}</td>
                                                 <td className="px-3 py-2 text-text-secondary">{item.meaningVi}</td>
-                                                <td className="px-3 py-2 text-white">{item.hskLevel}</td>
+                                                <td className="px-3 py-2 text-text-base font-bold">{item.hskLevel}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -2277,7 +2274,7 @@ export default function AdminVocabularyPage() {
                             </div>
                         </div>
 
-                        <h3 className="text-center text-lg font-bold text-white">
+                        <h3 className="text-center text-lg font-bold text-text-base">
                             Cập nhật hoàn tất!
                         </h3>
 

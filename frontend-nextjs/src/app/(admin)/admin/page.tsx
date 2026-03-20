@@ -128,17 +128,17 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Chart Section */}
-                <div className="lg:col-span-2 bg-surface-dark rounded-xl border border-border-color p-6">
+                <div className="lg:col-span-2 bg-surface-dark rounded-xl border border-border-color p-6 shadow-sm transition-colors">
                     <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-white">Thống kê hoạt động</h3>
+                        <h3 className="text-lg font-bold text-text-base">Thống kê hoạt động</h3>
                         <div className="flex items-center gap-2 bg-background-dark rounded-lg p-1">
                             {[7, 30, 90].map((days) => (
                                 <button
                                     key={days}
                                     onClick={() => handleDaysChange(days)}
                                     className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedDays === days
-                                        ? 'bg-amber-500 text-white'
-                                        : 'text-text-secondary hover:text-white'
+                                        ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105'
+                                        : 'text-text-secondary hover:text-text-base'
                                         }`}
                                 >
                                     {days} ngày
@@ -263,7 +263,7 @@ export default function AdminDashboard() {
                                 return Object.entries(groupedByMonth).map(([monthLabel, days]) => (
                                     <div key={monthLabel} className="mb-4 last:mb-0">
                                         {/* Month Header */}
-                                        <h4 className="text-sm font-bold text-white mb-2 px-1 flex items-center gap-2">
+                                        <h4 className="text-sm font-bold text-text-base mb-2 px-1 flex items-center gap-2">
                                             <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
                                             {monthLabel}
                                         </h4>
@@ -272,7 +272,7 @@ export default function AdminDashboard() {
                                             <thead>
                                                 <tr className="border-b border-border-color">
                                                     {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((d) => (
-                                                        <th key={d} className="p-1.5 text-center text-text-secondary font-medium w-[14.28%]">
+                                                        <th key={d} className="p-1.5 text-center text-text-base font-bold w-[14.28%]">
                                                             {d}
                                                         </th>
                                                     ))}
@@ -290,7 +290,7 @@ export default function AdminDashboard() {
                                                             {week.map((day, dayIndex) => (
                                                                 <td key={dayIndex} className="p-1.5 text-center">
                                                                     <div className="flex flex-col items-center gap-0.5">
-                                                                        <span className="text-white font-medium text-[11px]">
+                                                                        <span className="text-text-base font-bold text-[11px]">
                                                                             {parseInt(day.date.split('-')[2])}
                                                                         </span>
                                                                         <div className="flex gap-0.5 justify-center">
@@ -339,9 +339,9 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Recent Users */}
-                <div className="bg-surface-dark rounded-xl border border-border-color p-6">
+                <div className="bg-surface-dark rounded-xl border border-border-color p-6 shadow-sm transition-colors">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-white">Người dùng mới</h3>
+                        <h3 className="text-lg font-bold text-text-base">Người dùng mới</h3>
                         <Link
                             href="/admin/users"
                             className="text-sm text-amber-400 hover:text-amber-300 flex items-center gap-1"
@@ -361,7 +361,7 @@ export default function AdminDashboard() {
                                     {user.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-white truncate">{user.name}</p>
+                                    <p className="text-sm font-medium text-text-base truncate">{user.name}</p>
                                     <p className="text-xs text-text-secondary truncate">{user.email}</p>
                                 </div>
                                 <p className="text-xs text-text-secondary whitespace-nowrap">
@@ -377,52 +377,52 @@ export default function AdminDashboard() {
             <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Link
                     href="/admin/videos"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-amber-500/30 transition-colors flex items-center gap-4"
+                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-amber-500/30 transition-colors shadow-sm flex items-center gap-4"
                 >
                     <div className="p-3 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                        <Icon name="add_circle" className="text-2xl text-amber-400" />
+                        <Icon name="add_circle" className="text-2xl text-amber-500" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-white">Thêm Video</p>
+                        <p className="text-sm font-bold text-text-base">Thêm Video</p>
                         <p className="text-xs text-text-secondary">Upload video mới</p>
                     </div>
                 </Link>
 
                 <Link
                     href="/admin/vocabulary"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-primary/30 transition-colors flex items-center gap-4"
+                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-primary/30 transition-colors shadow-sm flex items-center gap-4"
                 >
                     <div className="p-3 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Icon name="library_add" className="text-2xl text-primary" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-white">Thêm Từ vựng</p>
+                        <p className="text-sm font-bold text-text-base">Thêm Từ vựng</p>
                         <p className="text-xs text-text-secondary">Thêm từ mới vào kho</p>
                     </div>
                 </Link>
 
                 <Link
                     href="/admin/vocabulary"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-blue-500/30 transition-colors flex items-center gap-4"
+                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-blue-500/30 transition-colors shadow-sm flex items-center gap-4"
                 >
                     <div className="p-3 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                        <Icon name="upload_file" className="text-2xl text-blue-400" />
+                        <Icon name="upload_file" className="text-2xl text-blue-500" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-white">Import Excel</p>
+                        <p className="text-sm font-bold text-text-base">Import Excel</p>
                         <p className="text-xs text-text-secondary">Import từ vựng hàng loạt</p>
                     </div>
                 </Link>
 
                 <Link
                     href="/admin/achievements"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-purple-500/30 transition-colors flex items-center gap-4"
+                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-purple-500/30 transition-colors shadow-sm flex items-center gap-4"
                 >
                     <div className="p-3 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                        <Icon name="emoji_events" className="text-2xl text-purple-400" />
+                        <Icon name="emoji_events" className="text-2xl text-purple-500" />
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-white">Thành tựu</p>
+                        <p className="text-sm font-bold text-text-base">Thành tựu</p>
                         <p className="text-xs text-text-secondary">Quản lý achievements</p>
                     </div>
                 </Link>

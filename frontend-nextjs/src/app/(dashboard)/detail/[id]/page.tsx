@@ -78,7 +78,7 @@ export default function VideoDetailPage() {
     }
 
     return (
-        <div className="min-h-screen bg-background-dark overflow-y-auto">
+        <div className="min-h-screen bg-[var(--color-background-dark)] overflow-y-auto">
             {/* Content Body */}
             <div className="p-6 md:p-8 lg:p-10 max-w-[1600px] mx-auto w-full">
                 {/* Back Button */}
@@ -118,17 +118,17 @@ export default function VideoDetailPage() {
                         </Link>
 
                         {/* Video overlay info */}
-                        <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex justify-between items-end">
+                        <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex justify-between items-end gap-4 pointer-events-none">
                             <div className="flex flex-wrap gap-3">
-                                <div className="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full flex items-center gap-2">
-                                    <span className="size-2 bg-red-500 rounded-full animate-pulse" />
-                                    <span className="text-white text-xs font-bold uppercase tracking-wider">HD Video</span>
+                                <div className="px-3 py-1.5 bg-black/60 backdrop-blur-md border border-white/20 rounded-full flex items-center gap-2 shadow-lg">
+                                    <span className="size-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
+                                    <span className="text-white text-[10px] font-black uppercase tracking-widest leading-none">HD Video</span>
                                 </div>
-                                <div className="px-3 py-1 bg-black/50 backdrop-blur-md border border-white/10 rounded-full">
-                                    <span className="text-white text-xs font-bold uppercase tracking-wider">Vietsub + Pinyin</span>
+                                <div className="px-4 py-1.5 bg-black/60 backdrop-blur-md border border-white/20 rounded-full shadow-lg flex items-center justify-center">
+                                    <span className="text-white text-[10px] font-black uppercase tracking-widest leading-none">Vietsub + Pinyin</span>
                                 </div>
                             </div>
-                            <span className="text-white/80 font-mono text-sm bg-black/60 px-2 py-1 rounded">
+                            <span className="text-white/90 font-mono text-xs bg-black/40 backdrop-blur-sm px-3 py-1 rounded-full border border-white/10">
                                 {formatDuration(video.durationSeconds)}
                             </span>
                         </div>
@@ -143,25 +143,25 @@ export default function VideoDetailPage() {
                             </div>
                             <div>
                                 <div className="flex gap-2 mb-4 flex-wrap">
-                                    <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider border border-primary/20">
+                                    <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-black uppercase tracking-wider border border-primary/20">
                                         Video học
                                     </span>
-                                    <span className="px-3 py-1 rounded-full bg-surface-highlight text-white text-xs font-bold uppercase tracking-wider">
+                                    <span className="px-3 py-1 rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs font-black uppercase tracking-wider border border-orange-500/20">
                                         HSK {video.hskLevel || '—'}
                                     </span>
                                     {video.category && (
-                                        <span className="px-3 py-1 rounded-full bg-surface-highlight/50 text-text-secondary text-xs font-bold uppercase tracking-wider">
+                                        <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-black uppercase tracking-wider border border-blue-500/20">
                                             {video.category}
                                         </span>
                                     )}
                                 </div>
-                                <h1 className="text-2xl md:text-3xl font-bold text-white leading-tight mb-2">{video.title}</h1>
+                                <h1 className="text-2xl md:text-3xl font-black text-text-base leading-tight mb-2">{video.title}</h1>
                                 <div className="flex items-center gap-4 text-sm text-text-secondary mt-3">
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 font-bold">
                                         <Icon name="visibility" size="sm" />
                                         <span>{video.viewCount ? `${(video.viewCount / 1000).toFixed(1)}k` : '—'}</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 font-bold">
                                         <Icon name="schedule" size="sm" />
                                         <span>{Math.round(video.durationSeconds / 60)} min</span>
                                     </div>
@@ -169,7 +169,7 @@ export default function VideoDetailPage() {
                             </div>
                             <Link
                                 href={`/learn/${video.id}`}
-                                className="w-full py-4 bg-primary hover:bg-primary/90 text-black text-lg font-bold rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(76,223,32,0.2)] hover:shadow-[0_4px_25px_rgba(76,223,32,0.4)] hover:-translate-y-0.5 active:translate-y-0"
+                                className="w-full py-4 bg-primary hover:bg-primary/90 text-on-primary text-lg font-black rounded-full transition-all flex items-center justify-center gap-2 shadow-[0_4px_25px_rgba(76,223,32,0.3)] hover:shadow-[0_4px_30px_rgba(76,223,32,0.5)] hover:-translate-y-0.5 active:translate-y-0"
                             >
                                 <span>Học video này</span>
                                 <Icon name="arrow_forward" size="sm" />
@@ -179,96 +179,106 @@ export default function VideoDetailPage() {
                         {/* Stats Grid */}
                         <div className="grid grid-cols-2 gap-4 flex-1">
                             {/* Stat 1 */}
-                            <div className="bg-surface-dark p-5 rounded-xl border border-border-color flex flex-col items-center justify-center gap-2 hover:bg-surface-highlight/30 transition-colors">
+                            <div className="bg-primary/5 p-5 rounded-2xl border border-primary/10 flex flex-col items-center justify-center gap-2 hover:bg-primary/10 transition-colors shadow-sm">
                                 <Icon name="translate" size="lg" className="text-primary" />
                                 <div className="text-center">
-                                    <p className="text-2xl font-bold text-white">{subtitles.length}</p>
-                                    <p className="text-text-secondary text-xs font-semibold uppercase">Câu phụ đề</p>
+                                    <p className="text-2xl font-black text-text-base">{subtitles.length}</p>
+                                    <p className="text-text-secondary text-[10px] font-black uppercase tracking-wider">Câu phụ đề</p>
                                 </div>
                             </div>
                             {/* Stat 2 */}
-                            <div className="bg-surface-dark p-5 rounded-xl border border-border-color flex flex-col items-center justify-center gap-2 hover:bg-surface-highlight/30 transition-colors">
-                                <Icon name="psychology" size="lg" className="text-blue-400" />
+                            <div className="bg-blue-500/5 p-5 rounded-2xl border border-blue-500/10 flex flex-col items-center justify-center gap-2 hover:bg-blue-500/10 transition-colors shadow-sm">
+                                <Icon name="psychology" size="lg" className="text-blue-500 dark:text-blue-400" />
                                 <div className="text-center">
-                                    <p className="text-2xl font-bold text-white">85%</p>
-                                    <p className="text-text-secondary text-xs font-semibold uppercase">Đánh giá</p>
+                                    <p className="text-2xl font-black text-text-base">85%</p>
+                                    <p className="text-text-secondary text-[10px] font-black uppercase tracking-wider">Đánh giá</p>
                                 </div>
                             </div>
                             {/* Stat 3 */}
-                            <div className="bg-surface-dark p-5 rounded-xl border border-border-color flex flex-col items-center justify-center gap-2 hover:bg-surface-highlight/30 transition-colors">
-                                <Icon name="local_fire_department" size="lg" className="text-yellow-400" />
+                            <div className="bg-orange-500/5 p-5 rounded-2xl border border-orange-500/10 flex flex-col items-center justify-center gap-2 hover:bg-orange-500/10 transition-colors shadow-sm">
+                                <Icon name="local_fire_department" size="lg" className="text-orange-500 dark:text-yellow-400" />
                                 <div className="text-center">
-                                    <p className="text-2xl font-bold text-white">{video.xpReward || 20}xp</p>
-                                    <p className="text-text-secondary text-xs font-semibold uppercase">Phần thưởng</p>
+                                    <p className="text-2xl font-black text-text-base">{video.xpReward || 20}xp</p>
+                                    <p className="text-text-secondary text-[10px] font-black uppercase tracking-wider">Phần thưởng</p>
                                 </div>
                             </div>
                             {/* Stat 4 */}
-                            <div className="bg-surface-dark p-5 rounded-xl border border-border-color flex flex-col items-center justify-center gap-2 hover:bg-surface-highlight/30 transition-colors">
-                                <Icon name="record_voice_over" size="lg" className="text-purple-400" />
+                            <div className="bg-purple-500/5 p-5 rounded-2xl border border-purple-500/10 flex flex-col items-center justify-center gap-2 hover:bg-purple-500/10 transition-colors shadow-sm">
+                                <Icon name="record_voice_over" size="lg" className="text-purple-600 dark:text-purple-400" />
                                 <div className="text-center">
-                                    <p className="text-2xl font-bold text-white">Native</p>
-                                    <p className="text-text-secondary text-xs font-semibold uppercase">Giọng đọc</p>
+                                    <p className="text-2xl font-black text-text-base">Native</p>
+                                    <p className="text-text-secondary text-[10px] font-black uppercase tracking-wider">Giọng đọc</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* 3. Description Block */}
-                    <div className="col-span-1 lg:col-span-7 bg-surface-dark rounded-2xl p-6 md:p-8 border border-border-color">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="p-2 bg-surface-highlight rounded-full text-primary">
-                                <Icon name="description" size="sm" />
+                    <div className="col-span-1 lg:col-span-7 bg-surface-dark rounded-2xl p-6 md:p-8 border border-border-color shadow-sm flex flex-col gap-8">
+                        <div>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                                    <Icon name="description" size="sm" />
+                                </div>
+                                <h3 className="text-xl font-black text-text-base">Về bài học này</h3>
                             </div>
-                            <h3 className="text-xl font-bold text-white">Về bài học này</h3>
-                        </div>
-                        <div className="prose prose-invert max-w-none">
-                            <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-6">
-                                {video.description || 'Học các cụm từ thiết yếu trong hội thoại hàng ngày. Bài học tập trung vào việc thành thạo thanh điệu và sử dụng các trợ từ lịch sự một cách chính xác.'}
-                            </p>
+                            <div className="bg-surface-highlight/30 p-5 rounded-2xl border border-border-color/50">
+                                <p className="text-text-secondary text-base leading-relaxed font-medium">
+                                    {video.description?.replace(/[📌📚]/g, '') || 'Bài học tập trung vào việc thành thạo thanh điệu và sử dụng các trợ từ lịch sự một cách chính xác trong hội thoại hàng ngày.'}
+                                </p>
+                            </div>
                         </div>
                         {/* Key Points List */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                            <div className="flex items-start gap-3 p-4 bg-background-dark rounded-xl">
-                                <Icon name="check_circle" size="sm" className="text-primary shrink-0 mt-0.5" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="flex items-center gap-5 p-6 bg-surface-highlight/20 rounded-2xl border border-border-color/30 group hover:bg-surface-highlight/40 transition-colors shadow-sm">
+                                <div className="size-12 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                    <Icon name="hearing" size="sm" />
+                                </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-sm">Luyện nghe</h4>
-                                    <p className="text-text-secondary text-sm mt-1">Nghe và hiểu người bản xứ nói</p>
+                                    <h4 className="text-text-base font-black text-sm uppercase tracking-wide">Luyện nghe</h4>
+                                    <p className="text-text-secondary text-xs font-bold mt-1 leading-relaxed">Nghe và hiểu người bản xứ nói</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 p-4 bg-background-dark rounded-xl">
-                                <Icon name="check_circle" size="sm" className="text-primary shrink-0 mt-0.5" />
+                            <div className="flex items-center gap-5 p-6 bg-surface-highlight/20 rounded-2xl border border-border-color/30 group hover:bg-surface-highlight/40 transition-colors shadow-sm">
+                                <div className="size-12 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                    <Icon name="menu_book" size="sm" />
+                                </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-sm">Học từ vựng</h4>
-                                    <p className="text-text-secondary text-sm mt-1">Từ vựng thực tế trong ngữ cảnh</p>
+                                    <h4 className="text-text-base font-black text-sm uppercase tracking-wide">Học từ vựng</h4>
+                                    <p className="text-text-secondary text-xs font-bold mt-1 leading-relaxed">Từ vựng thực tế trong ngữ cảnh</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 p-4 bg-background-dark rounded-xl">
-                                <Icon name="check_circle" size="sm" className="text-primary shrink-0 mt-0.5" />
+                            <div className="flex items-center gap-5 p-6 bg-surface-highlight/20 rounded-2xl border border-border-color/30 group hover:bg-surface-highlight/40 transition-colors shadow-sm">
+                                <div className="size-12 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                    <Icon name="subtitles" size="sm" />
+                                </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-sm">Phụ đề song ngữ</h4>
-                                    <p className="text-text-secondary text-sm mt-1">Tiếng Trung, Pinyin và Tiếng Việt</p>
+                                    <h4 className="text-text-base font-black text-sm uppercase tracking-wide">Phụ đề song ngữ</h4>
+                                    <p className="text-text-secondary text-xs font-bold mt-1 leading-relaxed">Tiếng Trung, Pinyin và Tiếng Việt</p>
                                 </div>
                             </div>
-                            <div className="flex items-start gap-3 p-4 bg-background-dark rounded-xl">
-                                <Icon name="check_circle" size="sm" className="text-primary shrink-0 mt-0.5" />
+                            <div className="flex items-center gap-5 p-6 bg-surface-highlight/20 rounded-2xl border border-border-color/30 group hover:bg-surface-highlight/40 transition-colors shadow-sm">
+                                <div className="size-12 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                    <Icon name="touch_app" size="sm" />
+                                </div>
                                 <div>
-                                    <h4 className="text-white font-bold text-sm">Interactive</h4>
-                                    <p className="text-text-secondary text-sm mt-1">Click từ để xem nghĩa và lưu</p>
+                                    <h4 className="text-text-base font-black text-sm uppercase tracking-wide">Phụ đề tương tác</h4>
+                                    <p className="text-text-secondary text-xs font-bold mt-1 leading-relaxed">Click từ để xem nghĩa và lưu</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
                     {/* 4. Vocabulary Cloud */}
-                    <div className="col-span-1 lg:col-span-5 bg-surface-dark rounded-2xl p-6 md:p-8 border border-border-color flex flex-col">
+                    <div className="col-span-1 lg:col-span-5 bg-surface-dark rounded-2xl p-6 md:p-8 border border-border-color flex flex-col shadow-sm">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center gap-3">
-                                <div className="p-2 bg-surface-highlight rounded-full text-primary">
+                                <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
                                     <Icon name="school" size="sm" />
                                 </div>
-                                <h3 className="text-xl font-bold text-white">Từ vựng chính</h3>
+                                <h3 className="text-xl font-black text-text-base">Từ vựng chính</h3>
                             </div>
-                            <Link href={`/learn/${video.id}`} className="text-primary text-sm font-bold hover:underline">
+                            <Link href={`/learn/${video.id}`} className="text-primary text-sm font-black hover:underline uppercase tracking-wider">
                                 Xem tất cả
                             </Link>
                         </div>
@@ -276,11 +286,11 @@ export default function VideoDetailPage() {
                             {vocabularyPreview.length > 0 ? vocabularyPreview.map((vocab, index) => (
                                 <div
                                     key={index}
-                                    className="group cursor-pointer flex items-center gap-2 pl-4 pr-2 py-2 bg-surface-highlight/50 hover:bg-surface-highlight border border-transparent hover:border-primary/50 rounded-full transition-all"
+                                    className="group cursor-pointer flex items-center gap-3 pl-4 pr-3 py-2 bg-surface-highlight/30 hover:bg-surface-highlight border border-border-color/50 hover:border-primary/50 rounded-full transition-all shadow-sm"
                                 >
-                                    <span className="text-white font-bold" lang="zh-CN">{vocab.hanzi}</span>
+                                    <span className="text-text-base font-black" lang="zh-CN">{vocab.hanzi}</span>
                                     {vocab.pinyin && (
-                                        <span className="text-text-secondary text-sm font-medium font-pinyin tracking-tight">{vocab.pinyin}</span>
+                                        <span className="text-primary text-xs font-black font-pinyin tracking-tight">{vocab.pinyin}</span>
                                     )}
                                     <button className="size-6 rounded-full bg-black/20 group-hover:bg-primary group-hover:text-black flex items-center justify-center transition-colors ml-1">
                                         <Icon name="volume_up" size="sm" />

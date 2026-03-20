@@ -47,11 +47,11 @@ export default function LandingPage() {
     return null;
   };
   return (
-    <div className="bg-background-dark text-white font-display overflow-x-hidden selection:bg-primary selection:text-background-dark">
+    <div className="bg-[var(--color-background-dark)] text-text-base font-display overflow-x-hidden selection:bg-primary selection:text-on-primary min-h-screen transition-colors duration-300">
       <LandingNavbar />
 
       {/* Main Content */}
-      <div className="flex flex-col items-center pt-28 pb-20 px-4 md:px-8 min-h-screen">
+      <div className="flex flex-col items-center pt-28 pb-20 px-4 md:px-8">
         <div className="max-w-[1024px] w-full flex flex-col gap-6">
 
           {/* Hero Section */}
@@ -67,13 +67,13 @@ export default function LandingPage() {
                 Học tiếng Trung qua video với <span className="text-primary">phụ đề tương tác</span>
               </h1>
 
-              <p className="text-gray-300 text-lg md:text-xl font-medium max-w-xl mx-auto md:mx-0">
+              <p className="text-text-secondary text-lg md:text-xl font-medium max-w-xl mx-auto md:mx-0">
                 Nắm vững kỹ năng nghe và đọc một cách tự nhiên. Click vào bất kỳ từ nào để tra từ điển ngay lập tức.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mt-2">
                 <Link href="/login">
-                  <Button variant="primary" size="lg" className="shadow-[0_0_20px_rgba(76,223,32,0.3)]">
+                  <Button variant="primary" size="lg" className="shadow-[0_0_20px_rgba(32,167,223,0.3)]">
                     Bắt đầu học miễn phí
                   </Button>
                 </Link>
@@ -92,14 +92,14 @@ export default function LandingPage() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="size-10 rounded-full border-2 border-background-dark bg-gradient-to-br from-primary/50 to-emerald-600/50"
+                      className="size-10 rounded-full border-2 border-[var(--color-background-dark)] bg-gradient-to-br from-primary/50 to-emerald-600/50"
                     ></div>
                   ))}
-                  <div className="size-10 rounded-full border-2 border-background-dark bg-surface-highlight flex items-center justify-center text-xs font-bold text-white">
+                  <div className="size-10 rounded-full border-2 border-[var(--color-background-dark)] bg-surface-highlight flex items-center justify-center text-xs font-bold text-text-base">
                     +5k
                   </div>
                 </div>
-                <p className="text-sm font-medium">Người học tin dùng</p>
+                <p className="text-sm font-medium text-text-secondary">Người học tin dùng</p>
               </div>
             </div>
 
@@ -108,13 +108,13 @@ export default function LandingPage() {
               <div className="absolute -inset-1 bg-gradient-to-r from-primary to-teal-400 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
               <div className="relative bg-surface-dark border border-border-color rounded-2xl overflow-hidden shadow-2xl aspect-[4/5] md:aspect-square flex flex-col">
                 {/* Mockup Header */}
-                <div className="h-14 border-b border-border-color flex items-center justify-between px-6 bg-background-dark">
+                <div className="h-14 border-b border-border-color flex items-center justify-between px-6 bg-[var(--color-background-dark)]">
                   <div className="flex gap-2">
                     <div className="size-3 rounded-full bg-red-500"></div>
                     <div className="size-3 rounded-full bg-yellow-500"></div>
                     <div className="size-3 rounded-full bg-green-500"></div>
                   </div>
-                  <div className="text-xs font-mono opacity-50">lesson_01.mp4</div>
+                  <div className="text-xs font-mono opacity-50 text-text-secondary">lesson_01.mp4</div>
                 </div>
 
                 {/* Mockup Content */}
@@ -149,8 +149,8 @@ export default function LandingPage() {
           {/* Features Section */}
           <div className="flex flex-col gap-6 scroll-mt-24" id="features">
             <div className="flex items-center justify-between px-2">
-              <h2 className="text-2xl md:text-3xl font-bold">Tính năng nổi bật</h2>
-              <a href="#" className="text-primary font-bold text-sm  flex items-center">
+              <h2 className="text-2xl md:text-3xl font-bold text-text-base">Tính năng nổi bật</h2>
+              <a href="#" className="text-primary font-bold text-sm flex items-center">
                 Xem tất cả <Icon name="arrow_forward" size="sm" className="ml-1" />
               </a>
             </div>
@@ -162,7 +162,7 @@ export default function LandingPage() {
                   <div className="size-12 rounded-full bg-primary/20 flex items-center justify-center text-primary mb-4">
                     <Icon name="touch_app" size="lg" />
                   </div>
-                  <h3 className="text-2xl font-bold mb-2">Tra từ điển 1 chạm</h3>
+                  <h3 className="text-2xl font-bold mb-2 text-text-base">Tra từ điển 1 chạm</h3>
                   <p className="text-text-secondary max-w-xs">
                     Chạm vào bất kỳ từ nào để xem nghĩa, phiên âm Pinyin và ví dụ thực tế.
                   </p>
@@ -177,8 +177,8 @@ export default function LandingPage() {
                 className="md:col-span-2 bg-surface-highlight flex items-center justify-between relative overflow-hidden group"
               >
                 <div className="z-10 max-w-[60%]">
-                  <h3 className="text-xl font-bold mb-1">Ôn tập thông minh</h3>
-                  <p className="text-sm text-gray-300">
+                  <h3 className="text-xl font-bold mb-1 text-text-base">Ôn tập thông minh</h3>
+                  <p className="text-sm text-text-secondary">
                     Hệ thống lặp lại ngắt quãng (SRS) giúp bạn nhớ từ vựng lâu hơn.
                   </p>
                 </div>
@@ -193,8 +193,8 @@ export default function LandingPage() {
                   <div className="size-12 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500 mb-4">
                     <Icon name="bookmark_add" size="lg" />
                   </div>
-                  <h3 className="text-xl font-bold mb-2">Lưu trữ từ vựng thông minh</h3>
-                  <p className="text-sm text-gray-300">
+                  <h3 className="text-xl font-bold mb-2 text-text-base">Lưu trữ từ vựng thông minh</h3>
+                  <p className="text-sm text-text-secondary">
                     Xây dựng kho báu ngôn ngữ của riêng bạn. Mọi từ vựng quan trọng được lưu giữ khoa học, giúp bạn cá nhân hóa lộ trình chinh phục tiếng Trung và biến kiến thức thành tài sản vĩnh cửu.
                   </p>
                 </div>
@@ -203,7 +203,7 @@ export default function LandingPage() {
 
               {/* Feature Card 3 */}
               <Card variant="default" padding="md" hover className="flex flex-col justify-center items-center text-center gap-4">
-                <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative">
+                <div className="w-full aspect-video bg-black rounded-lg overflow-hidden relative border border-border-color">
                   {getVideoThumbnail(featuredVideo) && (
                     <div
                       className="absolute inset-0 bg-cover bg-center"
@@ -215,7 +215,7 @@ export default function LandingPage() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg leading-tight">Video thực tế</h3>
+                  <h3 className="font-bold text-lg leading-tight text-text-base">Video thực tế</h3>
                   <p className="text-xs text-text-secondary mt-1">Học từ Vlogs, Phim & Tin tức</p>
                 </div>
               </Card>
@@ -224,7 +224,7 @@ export default function LandingPage() {
               <Card variant="default" padding="md" className="flex flex-col justify-between">
                 <div>
                   <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-bold text-lg">{guestProgress.hasProgress ? 'Tiến độ của bạn' : 'Bắt đầu hành trình'}</h3>
+                    <h3 className="font-bold text-lg text-text-base">{guestProgress.hasProgress ? 'Tiến độ của bạn' : 'Bắt đầu hành trình'}</h3>
                     <Icon name={guestProgress.hasProgress ? 'trending_up' : 'rocket_launch'} className="text-primary" />
                   </div>
                   <div className="text-3xl font-black text-primary">
@@ -254,7 +254,7 @@ export default function LandingPage() {
 
           {/* FAQ Section */}
           <div className="py-10 max-w-2xl mx-auto w-full scroll-mt-24" id="faq">
-            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">Câu hỏi thường gặp</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-8 text-text-base">Câu hỏi thường gặp</h2>
             <div className="space-y-4">
               {[
                 { q: 'Ứng dụng phù hợp với trình độ nào?', a: 'Chúng tôi có nội dung cho mọi trình độ từ HSK 1 đến HSK 6.' },
@@ -265,11 +265,11 @@ export default function LandingPage() {
                   key={i}
                   className="group bg-surface-dark rounded-2xl p-4 border border-border-color"
                 >
-                  <summary className="flex cursor-pointer items-center justify-between gap-1.5 font-bold text-lg outline-none">
+                  <summary className="flex cursor-pointer items-center justify-between gap-1.5 font-bold text-lg outline-none text-text-base">
                     <h3>{item.q}</h3>
                     <Icon name="expand_more" className="transition group-open:rotate-180" />
                   </summary>
-                  <p className="mt-4 leading-relaxed text-gray-300">
+                  <p className="mt-4 leading-relaxed text-text-secondary">
                     {item.a}
                   </p>
                 </details>

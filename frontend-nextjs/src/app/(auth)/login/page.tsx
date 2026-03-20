@@ -69,16 +69,16 @@ function LoginPageContent() {
     const hasProgress = savedProgress !== null;
 
     return (
-        <div className="bg-background-dark text-white font-display min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-background-dark">
+        <div className="bg-[var(--color-background-dark)] text-text-base font-display min-h-screen flex flex-col overflow-x-hidden selection:bg-primary selection:text-on-primary transition-colors duration-300">
             {/* Navigation */}
-            <header className="flex items-center justify-between px-6 lg:px-10 py-4 border-b border-border-color bg-background-dark/80 backdrop-blur-md sticky top-0 z-50">
+            <header className="flex items-center justify-between px-6 lg:px-10 py-4 border-b border-border-color bg-[var(--color-background-dark)]/80 backdrop-blur-md sticky top-0 z-50">
                 <Link href="/" className="flex items-center gap-3">
                     <div className="size-9 flex items-center justify-center shrink-0">
                         <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                     </div>
                     <div className="hidden sm:flex flex-col leading-none">
-                        <span className="font-extrabold text-lg tracking-widest text-white uppercase">KAIYU</span>
-                        <span className="text-[8px] font-semibold tracking-[0.18em] text-white/60 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                        <span className="font-extrabold text-lg tracking-widest text-text-base uppercase">KAIYU</span>
+                        <span className="text-[8px] font-semibold tracking-[0.18em] text-text-secondary uppercase">CHINESE LANGUAGE SYSTEM</span>
                     </div>
                 </Link>
                 <div className="flex items-center gap-4">
@@ -99,25 +99,28 @@ function LoginPageContent() {
                     <div className="hidden lg:flex lg:col-span-5 relative flex-col justify-between overflow-hidden rounded-2xl bg-surface-dark border border-border-color p-8 group">
                         {/* Background texture */}
                         <div
-                            className="absolute inset-0 z-0 opacity-30 mix-blend-soft-light"
+                            className="absolute inset-0 z-0 transition-all duration-300 pointer-events-none"
                             style={{
                                 backgroundImage: `url('/images/texture-pattern.png')`,
                                 backgroundSize: 'cover',
-                                backgroundPosition: 'center'
+                                backgroundPosition: 'center',
+                                filter: 'var(--texture-filter)',
+                                mixBlendMode: 'var(--texture-mix-blend)' as any,
+                                opacity: 'var(--texture-opacity)' as any
                             }}
                         />
 
                         {/* Content */}
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="space-y-6">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/10 w-fit">
+                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20 w-fit">
                                     <Icon name="local_fire_department" className="text-primary" size="sm" />
-                                    <span className="text-xs font-bold text-white uppercase tracking-wider">
+                                    <span className="text-xs font-bold text-text-base uppercase tracking-wider">
                                         {hasProgress ? `Day ${displayStreak} Streak` : 'Bắt đầu ngay'}
                                     </span>
                                 </div>
                                 <div>
-                                    <h1 className="text-4xl font-black text-white leading-tight tracking-tight mb-2">
+                                    <h1 className="text-4xl font-black text-text-base leading-tight tracking-tight mb-2">
                                         Học tiếng Trung <br /> <span className="text-primary">Tự nhiên.</span>
                                     </h1>
                                     <p className="text-text-secondary text-lg">
@@ -137,13 +140,13 @@ function LoginPageContent() {
                                     </span>
                                     <span className="text-xs font-bold text-primary">HSK {displayHsk}</span>
                                 </div>
-                                <div className="h-2 w-full bg-background-dark rounded-full overflow-hidden">
+                                <div className="h-2 w-full bg-[var(--color-background-dark)] rounded-full overflow-hidden">
                                     <div
-                                        className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(76,223,32,0.5)] transition-all duration-500"
+                                        className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(32,167,223,0.5)] transition-all duration-500"
                                         style={{ width: `${displayVocabPercent}%` }}
                                     ></div>
                                 </div>
-                                <div className="flex justify-between mt-2 text-xs text-white">
+                                <div className="flex justify-between mt-2 text-xs text-text-base">
                                     <span>Từ vựng</span>
                                     <span>{displayVocabPercent}%</span>
                                 </div>
@@ -152,14 +155,14 @@ function LoginPageContent() {
                     </div>
 
                     {/* Right Panel: Login Form */}
-                    <div className="col-span-1 lg:col-span-7 bg-background-dark rounded-2xl border border-border-color p-6 md:p-10 lg:p-12 shadow-2xl relative overflow-hidden">
+                    <div className="col-span-1 lg:col-span-7 bg-[var(--color-background-dark)] rounded-2xl border border-border-color p-6 md:p-10 lg:p-12 shadow-2xl relative overflow-hidden">
                         {/* Gradient Glow */}
                         <div className="absolute top-[-50%] right-[-10%] w-[300px] h-[300px] bg-primary/5 rounded-full blur-[100px] pointer-events-none"></div>
 
                         <div className="relative z-10 max-w-md mx-auto flex flex-col h-full justify-center">
                             {/* Header */}
                             <div className="mb-10">
-                                <p className="text-3xl md:text-4xl font-black text-white leading-tight tracking-[-0.02em] mb-2">
+                                <p className="text-3xl md:text-4xl font-black text-text-base leading-tight tracking-[-0.02em] mb-2">
                                     Chào mừng trở lại
                                 </p>
                                 <p className="text-text-secondary text-base">Đăng nhập để tiếp tục hành trình.</p>
@@ -176,14 +179,14 @@ function LoginPageContent() {
                             <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
                                 {/* Email Field */}
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-bold text-white ml-2" htmlFor="email">
+                                    <label className="block text-sm font-bold text-text-base ml-2" htmlFor="email">
                                         Email
                                     </label>
                                     <div className="relative group/input">
                                         <input
                                             type="email"
                                             id="email"
-                                            className="w-full h-14 pl-5 pr-12 bg-surface-dark border border-border-color rounded-xl text-white placeholder-text-secondary/50 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                                            className="w-full h-14 pl-5 pr-12 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
                                             placeholder="name@example.com"
                                             value={email}
                                             onChange={(e) => {
@@ -201,7 +204,7 @@ function LoginPageContent() {
                                 {/* Password Field */}
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center ml-2">
-                                        <label className="block text-sm font-bold text-white" htmlFor="password">
+                                        <label className="block text-sm font-bold text-text-base" htmlFor="password">
                                             Mật khẩu
                                         </label>
                                         <Link href="/forgot-password" className="text-sm font-bold text-primary hover:underline transition-colors">
@@ -212,7 +215,7 @@ function LoginPageContent() {
                                         <input
                                             type={showPassword ? 'text' : 'password'}
                                             id="password"
-                                            className="w-full h-14 pl-5 pr-12 bg-surface-dark border border-border-color rounded-xl text-white placeholder-text-secondary/50 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
+                                            className="w-full h-14 pl-5 pr-12 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all"
                                             placeholder="Nhập mật khẩu"
                                             value={password}
                                             onChange={(e) => {
@@ -223,7 +226,7 @@ function LoginPageContent() {
                                         />
                                         <button
                                             type="button"
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white transition-colors flex items-center justify-center"
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-base transition-colors flex items-center justify-center"
                                             onClick={() => setShowPassword(!showPassword)}
                                         >
                                             <Icon name={showPassword ? 'visibility_off' : 'visibility'} size="md" />
@@ -261,7 +264,7 @@ function LoginPageContent() {
                             {/* Social Login */}
                             <button
                                 onClick={handleGoogleLogin}
-                                className="flex items-center justify-center gap-3 h-12 rounded-full border border-border-color bg-surface-dark hover:bg-surface-highlight text-white transition-all w-full"
+                                className="flex items-center justify-center gap-3 h-12 rounded-full border border-border-color bg-surface-dark hover:bg-surface-highlight text-text-base transition-all w-full"
                             >
                                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
                                     <path d="M23.766 12.2764C23.766 11.4607 23.6999 10.6406 23.5588 9.83807H12.24V14.4591H18.7217C18.4528 15.9494 17.5885 17.2678 16.323 18.1056V21.1039H20.19C22.4608 19.0139 23.766 15.9274 23.766 12.2764Z" fill="#4285F4" />
@@ -297,7 +300,7 @@ function LoginPageContent() {
 // Loading fallback for Suspense
 function LoginPageLoading() {
     return (
-        <div className="bg-background-dark text-white font-display min-h-screen flex items-center justify-center">
+        <div className="bg-[var(--color-background-dark)] text-text-base font-display min-h-screen flex items-center justify-center">
             <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
     );

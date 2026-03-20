@@ -107,7 +107,7 @@ function DataTable<T extends { id: string | number }>({
                                     {columns.map((col) => (
                                         <td
                                             key={String(col.key)}
-                                            className="px-4 py-4 text-sm text-white"
+                                            className="px-4 py-4 text-sm text-text-base"
                                         >
                                             {col.render
                                                 ? col.render(item)

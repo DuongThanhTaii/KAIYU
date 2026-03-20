@@ -132,7 +132,7 @@ export default function QuizPage() {
             <DashboardLayout>
                 <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
                     <Icon name="quiz" className="text-6xl text-text-secondary mb-4" />
-                    <h2 className="text-xl font-bold text-white mb-2">
+                    <h2 className="text-xl font-bold text-text-base mb-2">
                         {error || 'Không có bài tập'}
                     </h2>
                     <p className="text-text-secondary mb-6">
@@ -154,17 +154,17 @@ export default function QuizPage() {
         return (
             <DashboardLayout>
                 <div className="max-w-2xl mx-auto py-8 px-4">
-                    <div className="bg-surface-dark rounded-2xl border border-border-color p-8 text-center">
-                        <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${percentage >= 70 ? 'bg-green-500/20' : percentage >= 50 ? 'bg-yellow-500/20' : 'bg-red-500/20'
+                    <div className="bg-surface-dark rounded-2xl border border-border-color p-8 text-center shadow-lg">
+                        <div className={`w-24 h-24 mx-auto mb-6 rounded-full flex items-center justify-center ${percentage >= 70 ? 'bg-green-500/10' : percentage >= 50 ? 'bg-yellow-500/10' : 'bg-red-500/10'
                             }`}>
                             <Icon
                                 name={percentage >= 70 ? 'celebration' : percentage >= 50 ? 'sentiment_neutral' : 'sentiment_dissatisfied'}
-                                className={`text-5xl ${percentage >= 70 ? 'text-green-400' : percentage >= 50 ? 'text-yellow-400' : 'text-red-400'
+                                className={`text-5xl ${percentage >= 70 ? 'text-green-600' : percentage >= 50 ? 'text-yellow-600' : 'text-red-600'
                                     }`}
                             />
                         </div>
 
-                        <h2 className="text-2xl font-bold text-white mb-2">
+                        <h2 className="text-2xl font-bold text-text-base mb-2">
                             {percentage >= 70 ? 'Xuất sắc!' : percentage >= 50 ? 'Khá tốt!' : 'Cần cố gắng thêm!'}
                         </h2>
 
@@ -204,31 +204,31 @@ export default function QuizPage() {
                     >
                         <Icon name="close" className="text-text-secondary text-xl" />
                     </button>
-                    <h1 className="text-lg font-bold text-white">Bài tập</h1>
+                    <h1 className="text-lg font-bold text-text-base">Bài tập</h1>
                     <span className="text-sm text-text-secondary">
                         {currentIndex + 1} / {quiz.questions.length}
                     </span>
                 </div>
 
                 {/* Progress bar */}
-                <div className="h-2 bg-surface-dark rounded-full mb-8 overflow-hidden">
+                <div className="h-2 bg-surface-highlight rounded-full mb-8 overflow-hidden">
                     <div
-                        className="h-full bg-primary transition-all duration-300"
+                        className="h-full bg-primary transition-all duration-300 shadow-sm"
                         style={{ width: `${((currentIndex + 1) / quiz.questions.length) * 100}%` }}
                     />
                 </div>
 
                 {/* Question Card */}
                 {currentQuestion && (
-                    <div className="bg-surface-dark rounded-2xl border border-border-color p-6">
+                    <div className="bg-surface-dark rounded-2xl border border-border-color p-8 shadow-xl">
                         {/* Question */}
-                        <p className="text-sm text-primary font-medium mb-2">Điền vào chỗ trống</p>
-                        <p className="text-2xl text-white font-chinese leading-relaxed mb-4 tracking-tight" lang="zh-CN">
+                        <p className="text-sm text-primary font-bold mb-3">Điền vào chỗ trống</p>
+                        <p className="text-3xl text-text-base font-chinese leading-relaxed mb-4 tracking-tight" lang="zh-CN">
                             {renderSentenceWithBlank(currentQuestion.sentenceHanzi, currentQuestion.blankWord)}
                         </p>
                         {currentQuestion.meaningVi && (
-                            <p className="text-text-secondary text-sm mb-6">
-                                {currentQuestion.meaningVi}
+                            <p className="text-text-secondary text-base mb-8 italic">
+                                "{currentQuestion.meaningVi}"
                             </p>
                         )}
 
@@ -242,16 +242,16 @@ export default function QuizPage() {
 
                                 if (showResult) {
                                     if (isCorrect) {
-                                        buttonClass += 'border-green-500 bg-green-500/20 text-green-400';
+                                        buttonClass += 'border-green-600 bg-green-500/10 text-green-700';
                                     } else if (isSelected && !isCorrect) {
-                                        buttonClass += 'border-red-500 bg-red-500/20 text-red-400';
+                                        buttonClass += 'border-red-600 bg-red-500/10 text-red-700';
                                     } else {
-                                        buttonClass += 'border-border-color text-text-secondary';
+                                        buttonClass += 'border-border-color text-text-secondary opacity-50';
                                     }
                                 } else {
                                     buttonClass += isSelected
-                                        ? 'border-primary bg-primary/20 text-white'
-                                        : 'border-border-color hover:border-primary/50 text-white';
+                                        ? 'border-primary bg-primary/10 text-primary'
+                                        : 'border-border-color hover:border-primary/50 text-text-base bg-surface-dark shadow-sm hover:shadow-md hover:bg-surface-highlight/20';
                                 }
 
                                 return (
@@ -268,19 +268,18 @@ export default function QuizPage() {
                             })}
                         </div>
 
-                        {/* Result feedback */}
                         {showResult && (
-                            <div className={`p-4 rounded-xl mb-6 ${selectedAnswer === currentQuestion.blankWord
-                                    ? 'bg-green-500/10 border border-green-500/30'
-                                    : 'bg-red-500/10 border border-red-500/30'
+                            <div className={`p-5 rounded-xl mb-8 ${selectedAnswer === currentQuestion.blankWord
+                                    ? 'bg-green-500/10 border border-green-500/20'
+                                    : 'bg-red-500/10 border border-red-500/20'
                                 }`}>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                     <Icon
                                         name={selectedAnswer === currentQuestion.blankWord ? 'check_circle' : 'cancel'}
-                                        className={`text-xl ${selectedAnswer === currentQuestion.blankWord ? 'text-green-400' : 'text-red-400'
+                                        className={`text-2xl ${selectedAnswer === currentQuestion.blankWord ? 'text-green-700' : 'text-red-700'
                                             }`}
                                     />
-                                    <span className={selectedAnswer === currentQuestion.blankWord ? 'text-green-400' : 'text-red-400'}>
+                                    <span className={`font-bold ${selectedAnswer === currentQuestion.blankWord ? 'text-green-700' : 'text-red-700'}`}>
                                         {selectedAnswer === currentQuestion.blankWord ? 'Chính xác!' : `Đáp án đúng: ${currentQuestion.blankWord}`}
                                     </span>
                                 </div>

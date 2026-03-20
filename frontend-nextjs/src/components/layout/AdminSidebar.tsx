@@ -65,7 +65,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             className="p-2 rounded-lg hover:bg-surface-highlight transition-colors shrink-0 inline-flex items-center justify-center cursor-pointer"
                             title={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
                         >
-                            <Icon name="menu" size="md" className="text-text-secondary hover:text-white" />
+                            <Icon name="menu" size="md" className="text-text-secondary hover:text-text-base" />
                         </button>
 
                         {/* Brand - Hidden entirely when collapsed */}
@@ -75,8 +75,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                     <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                                 </div>
                                 <div className="flex flex-col leading-none">
-                                    <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
-                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">ADMIN PANEL</span>
+                                    <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
+                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-text-secondary uppercase">ADMIN PANEL</span>
                                 </div>
                             </div>
                         )}
@@ -90,8 +90,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                 href={item.path}
                                 className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all ${isCollapsed ? 'justify-center' : ''
                                     } ${isActive(item.path)
-                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
-                                        : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                        ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-on-primary shadow-md shadow-amber-500/20'
+                                        : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                     }`}
                                 title={isCollapsed ? item.label : undefined}
                             >
@@ -110,7 +110,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <div className="flex flex-col gap-2">
                     <Link
                         href="/dashboard"
-                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-white transition-colors ${isCollapsed ? 'justify-center' : ''
+                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-colors ${isCollapsed ? 'justify-center' : ''
                             }`}
                         title={isCollapsed ? "Về User Dashboard" : undefined}
                     >
@@ -120,14 +120,14 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
                     {/* Admin Info - Only show when expanded */}
                     {!isCollapsed && (
-                        <div className="px-4 py-4 mt-2 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20">
+                        <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
                             <div className="flex items-center gap-3">
-                                <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold">
+                                <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-on-primary font-bold shadow-md shadow-amber-500/20">
                                     A
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-white">Admin User</p>
-                                    <p className="text-xs text-amber-400/70">Super Admin</p>
+                                    <p className="text-sm font-bold text-text-base">Admin User</p>
+                                    <p className="text-xs text-amber-500 font-medium">Super Admin</p>
                                 </div>
                             </div>
                         </div>
@@ -146,7 +146,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
             {/* Mobile/Tablet Sidebar */}
             <aside
-                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-30 transition-transform duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-30 transition-all duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <div className="flex flex-col gap-8">
@@ -163,8 +163,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                 <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                             </div>
                             <div className="flex flex-col leading-none">
-                                <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
-                                <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">ADMIN PANEL</span>
+                                <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
+                                <span className="text-[7px] font-semibold tracking-[0.15em] text-text-secondary uppercase">ADMIN PANEL</span>
                             </div>
                         </div>
                     </div>
@@ -176,8 +176,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                 key={item.path}
                                 href={item.path}
                                 className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all ${isActive(item.path)
-                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md shadow-amber-500/20'
-                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                    ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-on-primary shadow-md shadow-amber-500/20'
+                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                     }`}
                             >
                                 <Icon name={item.icon} filled={isActive(item.path)} />
@@ -193,19 +193,19 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                 <div className="flex flex-col gap-2">
                     <Link
                         href="/dashboard"
-                        className="flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-white transition-colors"
+                        className="flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-colors"
                     >
                         <Icon name="arrow_back" />
                         <p className="text-sm font-medium">Về User Dashboard</p>
                     </Link>
-                    <div className="px-4 py-4 mt-2 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-500/5 border border-amber-500/20">
+                    <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
                         <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold">
+                            <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-on-primary font-bold shadow-md shadow-amber-500/20">
                                 A
                             </div>
                             <div>
-                                <p className="text-sm font-bold text-white">Admin User</p>
-                                <p className="text-xs text-amber-400/70">Super Admin</p>
+                                <p className="text-sm font-bold text-text-base">Admin User</p>
+                                <p className="text-xs text-amber-500 dark:text-amber-400/70 font-medium">Super Admin</p>
                             </div>
                         </div>
                     </div>

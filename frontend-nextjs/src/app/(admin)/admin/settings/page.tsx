@@ -75,8 +75,8 @@ export default function AdminSettingsPage() {
         <AdminLayout title="Cài đặt Website">
             <div className="space-y-6">
                 {/* More Settings Coming Soon */}
-                <div className="bg-surface-dark rounded-xl border border-border-color p-6 opacity-60">
-                    <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <div className="bg-surface-dark rounded-xl border border-border-color p-6 opacity-60 shadow-sm">
+                    <h2 className="text-lg font-bold text-text-base mb-2 flex items-center gap-2">
                         <Icon name="tune" className="text-text-secondary" />
                         Cài đặt khác
                     </h2>
@@ -86,8 +86,8 @@ export default function AdminSettingsPage() {
                 </div>
 
                 {/* More Settings Coming Soon */}
-                <div className="bg-surface-dark rounded-xl border border-border-color p-6 opacity-60">
-                    <h2 className="text-lg font-bold text-white mb-2 flex items-center gap-2">
+                <div className="bg-surface-dark rounded-xl border border-border-color p-6 opacity-60 shadow-sm">
+                    <h2 className="text-lg font-bold text-text-base mb-2 flex items-center gap-2">
                         <Icon name="tune" className="text-text-secondary" />
                         Cài đặt khác
                     </h2>

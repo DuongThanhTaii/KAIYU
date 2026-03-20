@@ -22,11 +22,11 @@ const StatsCard: React.FC<StatsCardProps> = ({
     subtitle,
 }) => {
     return (
-        <div className="bg-surface-dark rounded-xl border border-border-color p-6 hover:border-primary/30 transition-colors">
+        <div className="bg-surface-dark rounded-xl border border-border-color p-6 hover:border-primary/50 transition-colors shadow-sm">
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <p className="text-sm font-medium text-text-secondary mb-1">{title}</p>
-                    <p className="text-3xl font-bold text-white mb-1">
+                    <p className="text-3xl font-bold text-text-base mb-1">
                         {typeof value === 'number' ? value.toLocaleString() : value}
                     </p>
                     {trend && (

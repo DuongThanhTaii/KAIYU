@@ -52,11 +52,11 @@ export const addNotification = (
     link?: string
 ): Notification => {
     const iconMap: Record<NotificationType, { icon: string; color: string }> = {
-        achievement: { icon: 'emoji_events', color: 'text-yellow-400' },
-        streak: { icon: 'local_fire_department', color: 'text-orange-400' },
-        review: { icon: 'style', color: 'text-purple-400' },
+        achievement: { icon: 'emoji_events', color: 'text-[var(--color-hsk3)]' },
+        streak: { icon: 'local_fire_department', color: 'text-[var(--color-hsk4)]' },
+        review: { icon: 'style', color: 'text-[var(--color-hsk5)]' },
         welcome: { icon: 'waving_hand', color: 'text-primary' },
-        daily_goal: { icon: 'flag', color: 'text-blue-400' },
+        daily_goal: { icon: 'flag', color: 'text-[var(--color-hsk1)]' },
     };
 
     const notification: Notification = {

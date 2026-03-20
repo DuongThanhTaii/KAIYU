@@ -70,7 +70,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <>
             {/* Desktop Sidebar */}
             <aside
-                className={`hidden lg:flex flex-col border-r border-border-color bg-background-dark p-4 justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-72'}`}
+                className={`hidden lg:flex flex-col border-r border-border-color bg-[var(--color-background-dark)] p-4 justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? 'w-20' : 'w-72'}`}
             >
                 <div className="flex flex-col gap-8">
                     {/* Header: Hamburger + Brand */}
@@ -81,7 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             className="p-2 rounded-lg hover:bg-surface-highlight transition-colors shrink-0 inline-flex items-center justify-center cursor-pointer"
                             title={isCollapsed ? "Mở rộng menu" : "Thu gọn menu"}
                         >
-                            <Icon name="menu" size="md" className="text-text-secondary hover:text-white" />
+                            <Icon name="menu" size="md" className="text-text-secondary hover:text-text-base" />
                         </button>
 
                         {/* Brand - Hidden entirely when collapsed */}
@@ -91,8 +91,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                     <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                                 </div>
                                 <div className="flex flex-col leading-none">
-                                    <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
-                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                                    <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
+                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-text-secondary uppercase">CHINESE LANGUAGE SYSTEM</span>
                                 </div>
                             </div>
                         )}
@@ -106,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 href={item.path}
                                 className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''} ${isActive(item.path)
                                     ? 'bg-primary text-on-primary shadow-md shadow-primary/10'
-                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                     }`}
                                 title={isCollapsed ? item.label : undefined}
                             >
@@ -125,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex flex-col gap-2">
                     <Link
                         href="/settings"
-                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-white transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? "Cài đặt" : undefined}
                     >
                         <Icon name="settings" />
@@ -134,12 +134,12 @@ const Sidebar: React.FC<SidebarProps> = ({
 
                     {/* Daily Goal Progress - Show different versions */}
                     {!isCollapsed ? (
-                        <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color">
+                        <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-xs font-bold text-text-secondary uppercase">Mục tiêu hôm nay</span>
-                                <span className="text-xs font-bold text-white">{dailyProgress}%</span>
+                                <span className="text-xs font-bold text-text-base">{dailyProgress}%</span>
                             </div>
-                            <div className="h-2 w-full bg-background-dark rounded-full overflow-hidden">
+                            <div className="h-2 w-full bg-surface-highlight rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-primary rounded-full transition-all duration-500"
                                     style={{ width: `${dailyProgress}%` }}
@@ -154,11 +154,11 @@ const Sidebar: React.FC<SidebarProps> = ({
                         <div className="flex justify-center mt-2">
                             <div className="relative w-12 h-12" title={`Mục tiêu: ${dailyProgress}%`}>
                                 <svg className="w-12 h-12 transform -rotate-90">
-                                    <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3" className="text-surface-dark" />
-                                    <circle cx="24" cy="24" r="20" fill="none" stroke="#20A7DF" strokeWidth="3" strokeLinecap="round"
+                                    <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3" className="text-border-color" />
+                                    <circle cx="24" cy="24" r="20" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" className="text-primary"
                                         strokeDasharray={`${dailyProgress * 1.26} 126`} />
                                 </svg>
-                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white">
+                                <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-text-base">
                                     {dailyProgress}%
                                 </span>
                             </div>
@@ -178,7 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Mobile/Tablet Sidebar */}
             <aside
-                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-50 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-[var(--color-background-dark)] p-4 justify-between z-50 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <div className="flex flex-col gap-8">
@@ -195,8 +195,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                             </div>
                             <div className="flex flex-col leading-none">
-                                <span className="font-extrabold text-base tracking-widest text-white uppercase">KAIYU</span>
-                                <span className="text-[7px] font-semibold tracking-[0.15em] text-white/50 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                                <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
+                                <span className="text-[7px] font-semibold tracking-[0.15em] text-text-secondary uppercase">CHINESE LANGUAGE SYSTEM</span>
                             </div>
                         </div>
                     </div>
@@ -209,7 +209,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 href={item.path}
                                 className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all ${isActive(item.path)
                                     ? 'bg-primary text-on-primary shadow-md shadow-primary/10'
-                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                     }`}
                             >
                                 <Icon name={item.icon} filled={isActive(item.path)} />
@@ -225,17 +225,17 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex flex-col gap-2">
                     <Link
                         href="/settings"
-                        className="flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-white transition-colors"
+                        className="flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-colors"
                     >
                         <Icon name="settings" />
                         <p className="text-sm font-medium">Cài đặt</p>
                     </Link>
-                    <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color">
+                    <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold text-text-secondary uppercase">Mục tiêu hôm nay</span>
-                            <span className="text-xs font-bold text-white">{dailyProgress}%</span>
+                            <span className="text-xs font-bold text-text-base">{dailyProgress}%</span>
                         </div>
-                        <div className="h-2 w-full bg-background-dark rounded-full overflow-hidden">
+                        <div className="h-2 w-full bg-surface-highlight rounded-full overflow-hidden">
                             <div className="h-full bg-primary rounded-full transition-all duration-500" style={{ width: `${dailyProgress}%` }}></div>
                         </div>
                         <div className="mt-2 text-xs text-text-secondary text-center">

@@ -89,11 +89,11 @@ const NotificationDropdown: React.FC = () => {
             {/* Bell Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="relative p-2 text-text-secondary hover:text-white transition-colors rounded-full hover:bg-surface-highlight inline-flex items-center justify-center cursor-pointer"
+                className="relative p-2 text-text-secondary hover:text-text-base transition-colors rounded-full hover:bg-surface-highlight inline-flex items-center justify-center cursor-pointer"
             >
                 <Icon name="notifications" />
                 {unreadCount > 0 && (
-                    <span className="absolute top-0.5 right-0.5 size-5 bg-red-500 rounded-full border-2 border-background-dark flex items-center justify-center text-[10px] font-bold text-white">
+                    <span className="absolute top-0.5 right-0.5 size-5 bg-red-500 rounded-full border-2 border-surface-dark flex items-center justify-center text-[10px] font-bold text-white">
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
@@ -103,12 +103,12 @@ const NotificationDropdown: React.FC = () => {
             {isOpen && (
                 <div className="fixed top-16 right-4 md:absolute md:top-auto md:right-0 md:mt-2 w-[calc(100vw-2rem)] md:w-96 bg-surface-dark rounded-2xl border border-border-color shadow-2xl overflow-hidden z-[100] animate-in fade-in slide-in-from-top-2 duration-200">
                     {/* Header */}
-                    <div className="flex items-center justify-between px-4 py-3 border-b border-border-color bg-background-dark/50">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-border-color bg-surface-highlight/30">
                         <div className="flex items-center gap-2">
                             <Icon name="notifications" className="text-primary" size="sm" />
-                            <h3 className="font-bold text-white">Thông báo</h3>
+                            <h3 className="font-black text-text-base">Thông báo</h3>
                             {unreadCount > 0 && (
-                                <span className="px-2 py-0.5 text-xs font-bold bg-red-500/20 text-red-400 rounded-full">
+                                <span className="px-2 py-0.5 text-[10px] font-black bg-red-500/10 text-red-500 rounded-full border border-red-500/20">
                                     {unreadCount} mới
                                 </span>
                             )}
@@ -142,13 +142,13 @@ const NotificationDropdown: React.FC = () => {
                             <div className="flex gap-2">
                                 <button
                                     onClick={() => setShowDeleteConfirm(false)}
-                                    className="px-3 py-1 text-xs font-medium text-text-secondary hover:text-white rounded-lg hover:bg-surface-highlight transition-colors"
+                                    className="px-3 py-1 text-xs font-bold text-text-secondary hover:text-text-base rounded-lg hover:bg-surface-highlight transition-colors"
                                 >
                                     Hủy
                                 </button>
                                 <button
                                     onClick={handleClearAll}
-                                    className="px-3 py-1 text-xs font-bold text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
+                                    className="px-3 py-1 text-xs font-black text-on-primary bg-red-500 rounded-lg hover:bg-red-600 transition-colors"
                                 >
                                     Xóa hết
                                 </button>
@@ -179,14 +179,14 @@ const NotificationDropdown: React.FC = () => {
                                     {/* Content */}
                                     <div className="flex-1 min-w-0 pr-8">
                                         <div className="flex items-start justify-between gap-2">
-                                            <p className={`text-sm ${!notification.read ? 'font-bold text-white' : 'text-text-secondary'}`}>
+                                            <p className={`text-sm ${!notification.read ? 'font-black text-text-base' : 'text-text-secondary font-bold'}`}>
                                                 {notification.title}
                                             </p>
-                                            <span className="text-[10px] text-text-secondary whitespace-nowrap">
+                                            <span className="text-[10px] text-text-secondary font-bold whitespace-nowrap">
                                                 {formatRelativeTime(notification.createdAt)}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">
+                                        <p className="text-xs text-text-secondary mt-0.5 font-bold line-clamp-2">
                                             {notification.message}
                                         </p>
                                     </div>

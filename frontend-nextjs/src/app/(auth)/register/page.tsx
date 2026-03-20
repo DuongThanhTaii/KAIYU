@@ -81,7 +81,7 @@ export default function RegisterPage() {
     const displayError = formError || error;
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background-dark via-surface-dark to-background-dark flex items-center justify-center p-4">
+        <div className="min-h-screen bg-[var(--color-background-dark)] flex items-center justify-center p-4 transition-colors duration-300">
             {/* Background decorations */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-10 text-[200px] text-primary/5 font-bold select-none">学</div>
@@ -96,8 +96,8 @@ export default function RegisterPage() {
                             <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={48} height={48} className="object-contain rounded-full" />
                         </div>
                         <div className="flex flex-col leading-none">
-                            <span className="font-extrabold text-2xl tracking-widest text-white uppercase">KAIYU</span>
-                            <span className="text-[9px] font-semibold tracking-[0.18em] text-white/60 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                            <span className="font-extrabold text-2xl tracking-widest text-text-base uppercase">KAIYU</span>
+                            <span className="text-[9px] font-semibold tracking-[0.18em] text-text-secondary uppercase">CHINESE LANGUAGE SYSTEM</span>
                         </div>
                     </Link>
                 </div>
@@ -105,7 +105,7 @@ export default function RegisterPage() {
                 {/* Register Card */}
                 <div className="bg-surface-dark/80 backdrop-blur-xl rounded-2xl border border-border-color p-8 shadow-2xl">
                     <div className="text-center mb-6">
-                        <h1 className="text-2xl font-bold text-white mb-2">Tạo tài khoản</h1>
+                        <h1 className="text-2xl font-bold text-text-base mb-2">Tạo tài khoản</h1>
                         <p className="text-text-secondary">Bắt đầu hành trình học tiếng Trung</p>
                     </div>
 
@@ -133,7 +133,7 @@ export default function RegisterPage() {
                                     value={formData.name}
                                     onChange={handleChange}
                                     placeholder="Nguyễn Văn A"
-                                    className="w-full pl-12 pr-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
+                                    className="w-full pl-12 pr-4 py-3 bg-[var(--color-background-dark)] border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
                                     required
                                 />
                             </div>
@@ -154,7 +154,7 @@ export default function RegisterPage() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="email@example.com"
-                                    className="w-full pl-12 pr-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
+                                    className="w-full pl-12 pr-4 py-3 bg-[var(--color-background-dark)] border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
                                     required
                                 />
                             </div>
@@ -175,13 +175,13 @@ export default function RegisterPage() {
                                     value={formData.password}
                                     onChange={handleChange}
                                     placeholder="Ít nhất 6 ký tự"
-                                    className="w-full pl-12 pr-12 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
+                                    className="w-full pl-12 pr-12 py-3 bg-[var(--color-background-dark)] border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-white transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-base transition-colors"
                                 >
                                     <Icon name={showPassword ? 'visibility_off' : 'visibility'} />
                                 </button>
@@ -203,7 +203,7 @@ export default function RegisterPage() {
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     placeholder="Nhập lại mật khẩu"
-                                    className="w-full pl-12 pr-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
+                                    className="w-full pl-12 pr-4 py-3 bg-[var(--color-background-dark)] border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-primary transition-colors"
                                     required
                                 />
                             </div>
@@ -217,7 +217,7 @@ export default function RegisterPage() {
                                 name="hskLevel"
                                 value={formData.hskLevel}
                                 onChange={handleChange}
-                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-primary transition-colors"
+                                className="w-full px-4 py-3 bg-[var(--color-background-dark)] border border-border-color rounded-xl text-text-base focus:outline-none focus:border-primary transition-colors"
                             >
                                 <option value="1">HSK 1 - Người mới bắt đầu</option>
                                 <option value="2">HSK 2 - Sơ cấp</option>

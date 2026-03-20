@@ -299,46 +299,46 @@ export default function AdminEmailsPage() {
                 {/* Statistics Cards */}
                 {statistics && (
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4">
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-primary/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="send" className="text-primary" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">{statistics.summary.totalSent}</p>
+                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.totalSent}</p>
                                     <p className="text-xs text-text-secondary">Đã gửi</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4">
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-green-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="visibility" className="text-green-400" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">{statistics.summary.openRate}%</p>
+                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.openRate}%</p>
                                     <p className="text-xs text-text-secondary">Tỷ lệ mở</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4">
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-amber-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="touch_app" className="text-amber-400" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">{statistics.summary.clickRate}%</p>
+                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.clickRate}%</p>
                                     <p className="text-xs text-text-secondary">Tỷ lệ click</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4">
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 bg-red-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
                                     <Icon name="error" className="text-red-400" />
                                 </div>
                                 <div>
-                                    <p className="text-2xl font-bold text-white">{statistics.summary.totalFailed}</p>
+                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.totalFailed}</p>
                                     <p className="text-xs text-text-secondary">Thất bại</p>
                                 </div>
                             </div>
@@ -350,9 +350,9 @@ export default function AdminEmailsPage() {
                     /* Edit Form */
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Form */}
-                        <div className="lg:col-span-2 bg-surface-dark rounded-xl border border-border-color p-6">
+                        <div className="lg:col-span-2 bg-surface-dark rounded-xl border border-border-color p-6 shadow-sm">
                             <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-xl font-bold text-white">
+                                <h2 className="text-xl font-bold text-text-base">
                                     {selectedTemplate ? 'Chỉnh sửa Template' : 'Tạo Template mới'}
                                 </h2>
                                 <button
@@ -373,7 +373,7 @@ export default function AdminEmailsPage() {
                                         type="text"
                                         value={formData.code}
                                         onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                                        className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-white"
+                                        className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-text-base"
                                         placeholder="vd: welcome_email"
                                         disabled={!!selectedTemplate}
                                     />
@@ -386,7 +386,7 @@ export default function AdminEmailsPage() {
                                         type="text"
                                         value={formData.nameVi}
                                         onChange={(e) => setFormData({ ...formData, nameVi: e.target.value })}
-                                        className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-white"
+                                        className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-text-base"
                                         placeholder="vd: Email chào mừng"
                                     />
                                 </div>
@@ -394,7 +394,7 @@ export default function AdminEmailsPage() {
 
                             {/* Trigger Settings Card */}
                             <div className="bg-background-dark rounded-xl border border-border-color p-4 mb-6">
-                                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                                <h3 className="text-sm font-bold text-text-base mb-4 flex items-center gap-2">
                                     <Icon name="schedule" className="text-primary" /> Điều kiện gửi
                                 </h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -403,7 +403,7 @@ export default function AdminEmailsPage() {
                                         <select
                                             value={formData.triggerType}
                                             onChange={(e) => setFormData({ ...formData, triggerType: e.target.value })}
-                                            className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-white text-sm"
+                                            className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-text-base text-sm"
                                         >
                                             {triggerTypes.map(t => (
                                                 <option key={t.value} value={t.value}>{t.label}</option>
@@ -420,7 +420,7 @@ export default function AdminEmailsPage() {
                                                 max="30"
                                                 value={formData.triggerDays}
                                                 onChange={(e) => setFormData({ ...formData, triggerDays: parseInt(e.target.value) || 3 })}
-                                                className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-white text-sm"
+                                                className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-text-base text-sm"
                                             />
                                         </div>
                                     )}
@@ -431,7 +431,7 @@ export default function AdminEmailsPage() {
                                             <select
                                                 value={formData.triggerDayOfWeek}
                                                 onChange={(e) => setFormData({ ...formData, triggerDayOfWeek: parseInt(e.target.value) })}
-                                                className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-white text-sm"
+                                                className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-text-base text-sm"
                                             >
                                                 {daysOfWeek.map(d => (
                                                     <option key={d.value} value={d.value}>{d.label}</option>
@@ -446,7 +446,7 @@ export default function AdminEmailsPage() {
                                             <select
                                                 value={formData.triggerHour}
                                                 onChange={(e) => setFormData({ ...formData, triggerHour: parseInt(e.target.value) })}
-                                                className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-white text-sm"
+                                                className="w-full px-3 py-2 bg-surface-dark border border-border-color rounded-lg text-text-base text-sm"
                                             >
                                                 {Array.from({ length: 24 }, (_, i) => (
                                                     <option key={i} value={i}>{i}:00</option>
@@ -462,11 +462,11 @@ export default function AdminEmailsPage() {
                                 <label className="block text-sm font-medium text-text-secondary mb-1">
                                     Tiêu đề email <span className="text-red-400">*</span>
                                 </label>
-                                <input
+                                 <input
                                     type="text"
                                     value={formData.subject}
                                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                                    className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-white mb-2"
+                                    className="w-full px-4 py-2 bg-background-dark border border-border-color rounded-lg text-text-base mb-2"
                                     placeholder="Chào {{userName}}! Đừng quên học..."
                                 />
                                 <div className="flex flex-wrap gap-1">
@@ -535,7 +535,7 @@ export default function AdminEmailsPage() {
                                         onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                                         className="w-4 h-4 rounded border-border-color accent-amber-500"
                                     />
-                                    <span className="text-sm text-white">Kích hoạt email này</span>
+                                     <span className="text-sm text-text-base">Kích hoạt email này</span>
                                 </label>
                             </div>
 
@@ -564,8 +564,8 @@ export default function AdminEmailsPage() {
                         </div>
 
                         {/* Preview Panel */}
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-6">
-                            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                         <div className="bg-surface-dark rounded-xl border border-border-color p-6 shadow-sm">
+                            <h3 className="text-lg font-bold text-text-base mb-4 flex items-center gap-2">
                                 <Icon name="mail" className="text-primary" /> Xem trước
                             </h3>
                             {showPreview && previewHtml ? (
@@ -604,9 +604,9 @@ export default function AdminEmailsPage() {
                             </div>
                         ) : (
                             templates.map(template => (
-                                <div
+                                 <div
                                     key={template.id}
-                                    className="bg-surface-dark rounded-xl border border-border-color p-4"
+                                    className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm"
                                 >
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
@@ -617,8 +617,8 @@ export default function AdminEmailsPage() {
                                                 />
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <h3 className="font-bold text-white">{template.nameVi}</h3>
+                                                 <div className="flex items-center gap-2 flex-wrap">
+                                                    <h3 className="font-bold text-text-base">{template.nameVi}</h3>
                                                     <span className="px-2 py-0.5 text-[10px] font-bold bg-surface-highlight rounded-full text-text-secondary">
                                                         {template.code}
                                                     </span>

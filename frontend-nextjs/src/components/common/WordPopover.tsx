@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { videoApi, type Subtitle, type SubtitleToken } from "@/services/videoApi";
 import * as adminApi from "@/services/adminApi";
 import { Button } from "./index";
-import { renderFormattedMeaning } from "@/utils/chinese";
+import { renderGroupedPinyin, renderFormattedMeaning, highlightWord } from "@/utils/chinese";
 
 
 // Helper: Extract YouTube video ID and generate thumbnail URL
@@ -511,7 +511,7 @@ export function WordPopover({
                 </div>
             )}
 
-            <div className="relative bg-surface-dark/95 backdrop-blur-xl border border-border-color rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div className="relative bg-[var(--color-surface-dark)]/95 backdrop-blur-xl border border-border-color rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
                 {isLoading ? (
                     <div className="flex items-center justify-center py-20">
                         <div className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -535,7 +535,7 @@ export function WordPopover({
                                 <div className="flex items-start justify-between gap-6">
                                     <div className="min-w-0 flex-1">
                                         {/* Large Hanzi - Guaranteed Single Line */}
-                                        <h2 className={`font-bold text-white font-chinese leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
+                                        <h2 className={`font-bold text-text-base font-chinese leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
                                             {word}
                                         </h2>
                                         
@@ -546,7 +546,7 @@ export function WordPopover({
                                     </div>
 
                                     {/* Action Bento Box - Right Aligned */}
-                                    <div className="flex items-center bg-surface-dark/50 border border-border-color/30 rounded-2xl p-1 shrink-0 backdrop-blur-md">
+                                    <div className="flex items-center bg-[var(--color-surface-dark)]/50 border border-border-color/30 rounded-2xl p-1 shrink-0 backdrop-blur-md">
                                         <SpeakerButton text={word} size="sm" />
                                         
                                         {isAdmin && (
@@ -567,7 +567,7 @@ export function WordPopover({
                                                 onClick={handleSave}
                                                 disabled={isSaving || saveSuccess}
                                                 className={`inline-flex items-center justify-center p-2 rounded-full transition-all hover:scale-110 active:scale-95 ${saveSuccess
-                                                    ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                                                    ? 'bg-emerald-500 text-text-base shadow-lg shadow-emerald-500/20'
                                                     : 'hover:bg-primary/10 text-text-secondary hover:text-primary'
                                                     }`}
                                                 title="Lưu từ"
@@ -595,7 +595,7 @@ export function WordPopover({
                                 {/* Bottom Bento Row: Badges and Quick Info */}
                                 <div className="flex flex-wrap items-center gap-2">
                                     {lookupResult.isSystemWord && lookupResult.hskLevel ? (
-                                        <div className={`px-3 py-1 ${HSK_COLORS[lookupResult.hskLevel] || 'bg-gray-500'} bg-opacity-20 text-white text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm`}>
+                                        <div className={`px-3 py-1 ${HSK_COLORS[lookupResult.hskLevel] || 'bg-gray-500'} bg-opacity-20 text-text-base text-[10px] font-black rounded-full uppercase tracking-wider flex items-center gap-1.5 shadow-sm`}>
                                             <span className="opacity-70 text-[8px] font-bold">LEVEL</span>
                                             HSK {lookupResult.hskLevel}
                                         </div>
@@ -631,7 +631,7 @@ export function WordPopover({
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-xl text-white font-semibold leading-snug tracking-tight">
+                                            <p className="text-xl text-text-base font-semibold leading-snug tracking-tight">
                                                 {lookupResult.meaningVi}
                                             </p>
                                         )}
@@ -640,14 +640,14 @@ export function WordPopover({
                             )}
 
                             {/* Panel Navigation - Sticky Header */}
-                            <div className="sticky top-0 z-10 bg-surface-dark/95 backdrop-blur-md border-b border-border-color grid grid-cols-4 shadow-md">
+                            <div className="sticky top-0 z-10 bg-[var(--color-surface-dark)]/95 backdrop-blur-md border-b border-border-color grid grid-cols-4 shadow-md">
                                 {panels.map(panel => (
                                     <button
                                         key={panel.id}
                                         onClick={() => setActivePanel(panel.id)}
                                         className={`flex flex-col items-center justify-center py-3 transition-all ${activePanel === panel.id
                                             ? 'bg-primary/10 text-primary border-b-2 border-primary'
-                                            : 'text-text-secondary hover:text-white hover:bg-surface-highlight/50'
+                                            : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight/50'
                                             }`}
                                         title={panel.label}
                                     >
@@ -680,7 +680,7 @@ export function WordPopover({
                                                     >
                                                         {/* Reading Header */}
                                                         <div className={`px-4 py-3 flex items-center gap-3 bg-${color}-500/10`}>
-                                                            <span className={`text-2xl font-chinese text-white`} lang="zh-CN">
+                                                            <span className={`text-2xl font-chinese text-text-base`} lang="zh-CN">
                                                                 {word}
                                                             </span>
                                                             <div className="flex-1">
@@ -707,7 +707,7 @@ export function WordPopover({
                                                                         <span className={`size-5 rounded-full bg-${color}-500/20 text-${color}-400 text-xs flex items-center justify-center shrink-0 font-bold`}>
                                                                             {i + 1}
                                                                         </span>
-                                                                        <span className="text-white/90 text-sm leading-relaxed">
+                                                                        <span className="text-text-base/90 text-sm leading-relaxed">
                                                                             {renderFormattedMeaning(def)}
                                                                         </span>
                                                                     </div>
@@ -730,7 +730,7 @@ export function WordPopover({
                                                             <span className="size-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0 font-bold">
                                                                 {i + 1}
                                                             </span>
-                                                            <span className="text-white/90 text-sm leading-relaxed">{def}</span>
+                                                            <span className="text-text-base/90 text-sm leading-relaxed">{def}</span>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -752,9 +752,13 @@ export function WordPopover({
                                                         />
                                                     </div>
                                                     <div className="space-y-1">
-                                                        <p className="text-white font-chinese text-lg leading-snug" lang="zh-CN">{ex.chinese}</p>
+                                                        <p className="text-text-base font-chinese text-lg leading-snug" lang="zh-CN">
+                                                            {highlightWord(ex.chinese, word)}
+                                                        </p>
                                                         {ex.pinyin && (
-                                                            <p className="text-primary/70 text-xs font-pinyin tracking-tight">{ex.pinyin}</p>
+                                                            <p className="text-primary/70 text-xs font-pinyin tracking-tight">
+                                                                {highlightWord(ex.pinyin, lookupResult?.pinyinDisplay || '')}
+                                                            </p>
                                                         )}
                                                         <p className="text-text-secondary text-sm italic leading-relaxed mt-1">
                                                             {ex.translation}
@@ -785,11 +789,11 @@ export function WordPopover({
                                                         Bộ thủ
                                                     </h4>
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-3xl font-chinese text-white" lang="zh-CN">
+                                                        <span className="text-3xl font-chinese text-text-base" lang="zh-CN">
                                                             {enrichedData.decomposition.radical.char}
                                                         </span>
                                                         <div>
-                                                            <p className="text-white font-medium">
+                                                            <p className="text-text-base font-medium">
                                                                 {enrichedData.decomposition.radical.meaning}
                                                             </p>
                                                             {enrichedData.decomposition.radical.pinyin && (
@@ -852,7 +856,7 @@ export function WordPopover({
                                                     <div className="flex flex-wrap gap-2">
                                                         {enrichedData?.relatedWords?.collocations?.map((w, i) => (
                                                             <div key={i} className="px-3 py-1.5 bg-surface-highlight border border-border-color/30 rounded-xl flex items-center gap-2">
-                                                                <span className="text-white font-chinese whitespace-nowrap" lang="zh-CN">{w.hanzi}</span>
+                                                                <span className="text-text-base font-chinese whitespace-nowrap" lang="zh-CN">{w.hanzi}</span>
                                                                 <span className="text-text-secondary text-[10px] font-medium leading-none">({w.meaning})</span>
                                                             </div>
                                                         ))}
@@ -874,13 +878,8 @@ export function WordPopover({
                                                 
                                                 Học trong ngữ cảnh 
                                             </div>
-                                            <p className="text-white font-chinese text-base leading-relaxed" lang="zh-CN">
-                                                {sourceSentence.split(word).map((part, i, arr) => (
-                                                    <span key={i}>
-                                                        {part}
-                                                        {i < arr.length - 1 && <span className="text-primary font-bold underline underline-offset-4 Decoration-2">{word}</span>}
-                                                    </span>
-                                                ))}
+                                            <p className="text-text-base font-chinese text-base leading-relaxed" lang="zh-CN">
+                                                {highlightWord(sourceSentence, word)}
                                             </p>
                                             {sourcePinyin && (
                                                 <p className="text-text-secondary text-xs font-pinyin tracking-tight opacity-70 italic line-clamp-1">{sourcePinyin}</p>
@@ -902,7 +901,7 @@ export function WordPopover({
                                             onChange={e => setNote(e.target.value)}
                                             placeholder="Ghi lại mẹo ghi nhớ hoặc ví dụ của bạn..."
                                             rows={2}
-                                            className="w-full bg-surface-dark/50 border border-border-color/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary transition-colors resize-none"
+                                            className="w-full bg-[var(--color-surface-dark)]/50 border border-border-color/50 rounded-xl px-3 py-2 text-sm text-text-base focus:outline-none focus:border-primary transition-colors resize-none"
                                         />
                                     </div>
 
@@ -924,7 +923,7 @@ export function WordPopover({
                                                     value={newFolderName}
                                                     onChange={e => setNewFolderName(e.target.value)}
                                                     placeholder="Tên thư mục mới..."
-                                                    className="flex-1 bg-surface-dark border border-primary/50 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-primary"
+                                                    className="flex-1 bg-[var(--color-surface-dark)] border border-primary/50 rounded-xl px-3 py-2 text-sm text-text-base focus:outline-none focus:border-primary"
                                                     autoFocus
                                                     onKeyDown={e => e.key === 'Enter' && handleCreateFolder()}
                                                 />
@@ -998,13 +997,13 @@ export function WordPopover({
                                     <div className="flex bg-surface-highlight/30 p-1 rounded-xl">
                                         <button 
                                             onClick={() => setAdminSubTab('word')}
-                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'word' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'word' ? 'bg-primary text-black' : 'text-text-secondary hover:text-text-base'}`}
                                         >
                                             Từ vựng (Global)
                                         </button>
                                         <button 
                                             onClick={() => setAdminSubTab('segment')}
-                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'segment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'segment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-text-base'}`}
                                         >
                                             Phân đoạn (Video)
                                         </button>
@@ -1018,7 +1017,7 @@ export function WordPopover({
                                                     <input 
                                                         value={editHanzi} 
                                                         onChange={e => setEditHanzi(e.target.value)}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary font-chinese"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-text-base focus:outline-none focus:border-primary font-chinese"
                                                     />
                                                 </div>
                                                 <div>
@@ -1026,7 +1025,7 @@ export function WordPopover({
                                                     <input 
                                                         value={editPinyin} 
                                                         onChange={e => setEditPinyin(e.target.value)}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
                                                     />
                                                 </div>
                                                 <div>
@@ -1034,7 +1033,7 @@ export function WordPopover({
                                                     <input 
                                                         value={editPos} 
                                                         onChange={e => setEditPos(e.target.value)}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
                                                         placeholder="e.g. Danh từ, Động từ..."
                                                     />
                                                 </div>
@@ -1044,7 +1043,7 @@ export function WordPopover({
                                                         value={editMeaning} 
                                                         onChange={e => setEditMeaning(e.target.value)}
                                                         rows={3}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-text-base text-sm focus:outline-none focus:border-primary"
                                                     />
                                                 </div>
                                             </div>
@@ -1073,7 +1072,7 @@ export function WordPopover({
                                                                     {token.hanzi.length > 1 && (
                                                                         <button 
                                                                             onClick={(e) => { e.stopPropagation(); handleSplitToken(idx); }}
-                                                                            className="p-0.5 hover:text-white text-text-secondary" title="Split"
+                                                                            className="p-0.5 hover:text-text-base text-text-secondary" title="Split"
                                                                         >
                                                                             <Icon name="content_cut" size="sm" />
                                                                         </button>
@@ -1083,7 +1082,7 @@ export function WordPopover({
                                                             {idx < editingTokens.length - 1 && (
                                                                 <button 
                                                                     onClick={(e) => { e.stopPropagation(); handleMergeTokens(idx); }}
-                                                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 size-6 bg-surface-dark border border-border-color rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary shadow-lg group-hover:scale-110 transition-transform"
+                                                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 size-6 bg-[var(--color-surface-dark)] border border-border-color rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary shadow-lg group-hover:scale-110 transition-transform"
                                                                     title="Merge with next"
                                                                 >
                                                                     <Icon name="link" size="sm" />
@@ -1099,7 +1098,7 @@ export function WordPopover({
                                                 <div className="p-3 bg-surface-highlight/20 border border-border-color rounded-xl space-y-3 animate-in fade-in zoom-in-95 duration-200">
                                                     <div className="flex items-center justify-between">
                                                         <h5 className="text-xs text-primary font-bold">Chỉnh sửa: {editingTokens[selectedTokenIndex].hanzi}</h5>
-                                                        <button onClick={() => setSelectedTokenIndex(null)} className="text-text-secondary hover:text-white">
+                                                        <button onClick={() => setSelectedTokenIndex(null)} className="text-text-secondary hover:text-text-base">
                                                             <Icon name="close" size="sm" />
                                                         </button>
                                                     </div>
@@ -1113,7 +1112,7 @@ export function WordPopover({
                                                                     newTokens[selectedTokenIndex].pinyin = e.target.value;
                                                                     setEditingTokens(newTokens);
                                                                 }}
-                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-primary focus:outline-none font-pinyin"
+                                                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-1.5 text-xs text-primary focus:outline-none font-pinyin"
                                                                 placeholder="e.g. nǐ hǎo"
                                                             />
                                                         </div>
@@ -1126,7 +1125,7 @@ export function WordPopover({
                                                                     newTokens[selectedTokenIndex].meaning = e.target.value;
                                                                     setEditingTokens(newTokens);
                                                                 }}
-                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                                                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-1.5 text-xs text-text-base focus:outline-none"
                                                                 placeholder="Nghĩa nhanh..."
                                                             />
                                                         </div>
@@ -1173,7 +1172,7 @@ export function WordPopover({
                                                     }}
                                                     className="w-full flex items-center gap-3 p-3 bg-surface-highlight/40 hover:bg-surface-highlight rounded-xl transition-colors text-left group"
                                                 >
-                                                    <span className="text-2xl font-chinese text-white" lang="zh-CN">{item.word}</span>
+                                                    <span className="text-2xl font-chinese text-text-base" lang="zh-CN">{item.word}</span>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-primary text-sm font-pinyin tracking-tight">{item.pinyin}</p>
                                                         <p className="text-text-secondary text-xs truncate">{item.meaning}</p>
@@ -1202,7 +1201,7 @@ export function WordPopover({
                     <div className="p-5 border-b border-border-color bg-surface-highlight/10">
                         <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0 flex-1">
-                                <h2 className={`font-bold text-white font-chinese leading-[1.1] ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
+                                <h2 className={`font-bold text-text-base font-chinese leading-[1.1] ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
                                     {word}
                                 </h2>
                                 {matchingToken?.pinyin && (
@@ -1211,7 +1210,7 @@ export function WordPopover({
                                     </div>
                                 )}
                             </div>
-                            <div className="flex items-center bg-surface-dark/50 border border-border-color/30 rounded-2xl p-1 shrink-0">
+                            <div className="flex items-center bg-[var(--color-surface-dark)]/50 border border-border-color/30 rounded-2xl p-1 shrink-0">
                                 <SpeakerButton text={word} size="sm" />
                                 
                                 {isAdmin && (
@@ -1245,7 +1244,7 @@ export function WordPopover({
                                 <Icon name="auto_fix_high" size="sm" className="text-amber-400" />
                                 <span className="text-[10px] text-amber-300 font-black uppercase tracking-widest">Nghĩa theo ngữ cảnh video</span>
                             </div>
-                            <p className="text-xl text-white font-semibold leading-snug">{matchingToken.meaning}</p>
+                            <p className="text-xl text-text-base font-semibold leading-snug">{matchingToken.meaning}</p>
                         </div>
                     ) : (
                         <div className="px-5 py-4 border-b border-border-color/30">
@@ -1266,13 +1265,13 @@ export function WordPopover({
                                     <div className="flex bg-surface-highlight/30 p-1 rounded-xl">
                                         <button 
                                             onClick={() => setAdminSubTab('word')}
-                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'word' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'word' ? 'bg-primary text-black' : 'text-text-secondary hover:text-text-base'}`}
                                         >
                                             Từ vựng (Global)
                                         </button>
                                         <button 
                                             onClick={() => setAdminSubTab('segment')}
-                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'segment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${adminSubTab === 'segment' ? 'bg-primary text-black' : 'text-text-secondary hover:text-text-base'}`}
                                         >
                                             Phân đoạn (Video)
                                         </button>
@@ -1286,7 +1285,7 @@ export function WordPopover({
                                                     <input 
                                                         value={editHanzi} 
                                                         onChange={e => setEditHanzi(e.target.value)}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white focus:outline-none focus:border-primary font-chinese"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-text-base focus:outline-none focus:border-primary font-chinese"
                                                     />
                                                 </div>
                                                 <div>
@@ -1294,7 +1293,7 @@ export function WordPopover({
                                                     <input 
                                                         value={editPinyin} 
                                                         onChange={e => setEditPinyin(e.target.value)}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
                                                     />
                                                 </div>
                                                 <div>
@@ -1302,7 +1301,7 @@ export function WordPopover({
                                                     <input 
                                                         value={editPos} 
                                                         onChange={e => setEditPos(e.target.value)}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
                                                         placeholder="e.g. Danh từ, Động từ..."
                                                     />
                                                 </div>
@@ -1312,7 +1311,7 @@ export function WordPopover({
                                                         value={editMeaning} 
                                                         onChange={e => setEditMeaning(e.target.value)}
                                                         rows={3}
-                                                        className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary"
+                                                        className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-text-base text-sm focus:outline-none focus:border-primary"
                                                     />
                                                 </div>
                                             </div>
@@ -1341,7 +1340,7 @@ export function WordPopover({
                                                                     {token.hanzi.length > 1 && (
                                                                         <button 
                                                                             onClick={(e) => { e.stopPropagation(); handleSplitToken(idx); }}
-                                                                            className="p-0.5 hover:text-white text-text-secondary" title="Split"
+                                                                            className="p-0.5 hover:text-text-base text-text-secondary" title="Split"
                                                                         >
                                                                             <Icon name="content_cut" size="sm" />
                                                                         </button>
@@ -1351,7 +1350,7 @@ export function WordPopover({
                                                             {idx < editingTokens.length - 1 && (
                                                                 <button 
                                                                     onClick={(e) => { e.stopPropagation(); handleMergeTokens(idx); }}
-                                                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 size-6 bg-surface-dark border border-border-color rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary shadow-lg group-hover:scale-110 transition-transform"
+                                                                    className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 size-6 bg-[var(--color-surface-dark)] border border-border-color rounded-full flex items-center justify-center text-text-secondary hover:text-primary hover:border-primary shadow-lg group-hover:scale-110 transition-transform"
                                                                     title="Merge with next"
                                                                 >
                                                                     <Icon name="link" size="sm" />
@@ -1367,7 +1366,7 @@ export function WordPopover({
                                                 <div className="p-3 bg-surface-highlight/20 border border-border-color rounded-xl space-y-3 animate-in fade-in zoom-in-95 duration-200">
                                                     <div className="flex items-center justify-between">
                                                         <h5 className="text-xs text-primary font-bold">Chỉnh sửa: {editingTokens[selectedTokenIndex].hanzi}</h5>
-                                                        <button onClick={() => setSelectedTokenIndex(null)} className="text-text-secondary hover:text-white">
+                                                        <button onClick={() => setSelectedTokenIndex(null)} className="text-text-secondary hover:text-text-base">
                                                             <Icon name="close" size="sm" />
                                                         </button>
                                                     </div>
@@ -1381,7 +1380,7 @@ export function WordPopover({
                                                                     newTokens[selectedTokenIndex].pinyin = e.target.value;
                                                                     setEditingTokens(newTokens);
                                                                 }}
-                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-primary focus:outline-none font-pinyin"
+                                                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-1.5 text-xs text-primary focus:outline-none font-pinyin"
                                                                 placeholder="e.g. nǐ hǎo"
                                                             />
                                                         </div>
@@ -1394,7 +1393,7 @@ export function WordPopover({
                                                                     newTokens[selectedTokenIndex].meaning = e.target.value;
                                                                     setEditingTokens(newTokens);
                                                                 }}
-                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none"
+                                                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-1.5 text-xs text-text-base focus:outline-none"
                                                                 placeholder="Nghĩa nhanh..."
                                                             />
                                                         </div>
@@ -1426,14 +1425,14 @@ export function WordPopover({
                                     <div className="flex bg-surface-highlight/30 p-1 rounded-xl">
                                         <button
                                             onClick={() => setNotFoundMode('search')}
-                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${notFoundMode === 'search' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${notFoundMode === 'search' ? 'bg-primary text-black' : 'text-text-secondary hover:text-text-base'}`}
                                         >
                                             <Icon name="search" size="sm" />
                                             Tìm từ có sẵn
                                         </button>
                                         <button
                                             onClick={() => setNotFoundMode('create')}
-                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${notFoundMode === 'create' ? 'bg-primary text-black' : 'text-text-secondary hover:text-white'}`}
+                                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 ${notFoundMode === 'create' ? 'bg-primary text-black' : 'text-text-secondary hover:text-text-base'}`}
                                         >
                                             <Icon name="add_circle" size="sm" />
                                             Tạo từ mới
@@ -1449,7 +1448,7 @@ export function WordPopover({
                                                     value={searchQuery}
                                                     onChange={e => handleSearchWord(e.target.value)}
                                                     placeholder={`Tìm "${word}" hoặc từ tương tự...`}
-                                                    className="w-full bg-surface-dark border border-border-color rounded-xl pl-9 pr-3 py-2.5 text-sm text-white focus:outline-none focus:border-primary transition-colors"
+                                                    className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-xl pl-9 pr-3 py-2.5 text-sm text-text-base focus:outline-none focus:border-primary transition-colors"
                                                     autoFocus
                                                 />
                                                 {isSearching && (
@@ -1468,7 +1467,7 @@ export function WordPopover({
                                                             onClick={() => handleLinkWord(result)}
                                                             className="w-full flex items-center gap-3 p-3 bg-surface-highlight/30 hover:bg-primary/10 hover:border-primary/30 border border-border-color/20 rounded-xl transition-all text-left group active:scale-[0.98]"
                                                         >
-                                                            <span className="text-xl font-chinese text-white group-hover:text-primary transition-colors" lang="zh-CN">
+                                                            <span className="text-xl font-chinese text-text-base group-hover:text-primary transition-colors" lang="zh-CN">
                                                                 {result.hanzi}
                                                             </span>
                                                             <div className="flex-1 min-w-0">
@@ -1516,7 +1515,7 @@ export function WordPopover({
                                                         <input
                                                             value={word}
                                                             disabled
-                                                            className="w-full bg-surface-dark/50 border border-border-color/30 rounded-lg px-3 py-2 text-white/60 font-chinese cursor-not-allowed"
+                                                            className="w-full bg-[var(--color-surface-dark)]/50 border border-border-color/30 rounded-lg px-3 py-2 text-text-base/60 font-chinese cursor-not-allowed"
                                                         />
                                                     </div>
                                                     <div>
@@ -1525,7 +1524,7 @@ export function WordPopover({
                                                             value={newWordPinyin}
                                                             onChange={e => setNewWordPinyin(e.target.value)}
                                                             placeholder="e.g. nǐ hǎo"
-                                                            className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
+                                                            className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-primary focus:outline-none focus:border-primary font-pinyin"
                                                             autoFocus
                                                         />
                                                     </div>
@@ -1536,7 +1535,7 @@ export function WordPopover({
                                                             onChange={e => setNewWordMeaning(e.target.value)}
                                                             rows={2}
                                                             placeholder="Nhập nghĩa..."
-                                                            className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-primary resize-none"
+                                                            className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-text-base text-sm focus:outline-none focus:border-primary resize-none"
                                                         />
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-3">
@@ -1546,7 +1545,7 @@ export function WordPopover({
                                                                 value={newWordPos}
                                                                 onChange={e => setNewWordPos(e.target.value)}
                                                                 placeholder="Danh từ, Động từ..."
-                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-blue-400 focus:outline-none focus:border-primary"
+                                                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-1.5 text-xs text-blue-400 focus:outline-none focus:border-primary"
                                                             />
                                                         </div>
                                                         <div>
@@ -1554,7 +1553,7 @@ export function WordPopover({
                                                             <select
                                                                 value={newWordHsk}
                                                                 onChange={e => setNewWordHsk(Number(e.target.value))}
-                                                                className="w-full bg-surface-dark border border-border-color rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-primary"
+                                                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-1.5 text-xs text-text-base focus:outline-none focus:border-primary"
                                                             >
                                                                 {[1,2,3,4,5,6,7,8,9].map(level => (
                                                                     <option key={level} value={level}>HSK {level}</option>

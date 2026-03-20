@@ -560,7 +560,7 @@ export default function AdminVideosPage() {
             sortable: true,
             render: (video: Video) => (
                 <div>
-                    <p className="font-medium text-white">{video.title}</p>
+                    <p className="font-medium text-text-base">{video.title}</p>
                     <p className="text-xs text-text-secondary line-clamp-1">{video.description}</p>
                 </div>
             ),
@@ -705,10 +705,10 @@ export default function AdminVideosPage() {
                     <input
                         type="text"
                         placeholder="Tìm kiếm video..."
-                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                     />
                 </div>
-                <select className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors">
+                <select className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors">
                     <option value="">Tất cả HSK</option>
                     <option value="1">HSK 1</option>
                     <option value="2">HSK 2</option>
@@ -717,7 +717,7 @@ export default function AdminVideosPage() {
                     <option value="5">HSK 5</option>
                     <option value="6">HSK 6</option>
                 </select>
-                <select className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors">
+                <select className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors">
                     <option value="">Tất cả trạng thái</option>
                     <option value="true">Đã xuất bản</option>
                     <option value="false">Nháp</option>
@@ -789,7 +789,7 @@ export default function AdminVideosPage() {
                                     )}
 
                                      {/* Chinese Hanzi Tier */}
-                                    <p className="text-white text-2xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
+                                    <p className="text-text-base text-2xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
                                         {(currentSubtitle.tokens && currentSubtitle.tokens.length > 0 
                                             ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
                                             : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))
@@ -821,7 +821,7 @@ export default function AdminVideosPage() {
 
                                     {/* Vietnamese Tier */}
                                     {currentSubtitle.meaningVi && (
-                                        <p className="text-white/70 text-lg font-medium mt-1">
+                                        <p className="text-text-secondary text-lg font-medium mt-1">
                                             {currentSubtitle.meaningVi}
                                         </p>
                                     )}
@@ -837,7 +837,7 @@ export default function AdminVideosPage() {
                     <div className="lg:col-span-4 flex flex-col bg-background-dark/50 rounded-2xl border border-border-color overflow-hidden">
                         <div className="p-3 border-b border-border-color bg-surface-dark flex items-center gap-2">
                             <Icon name="subtitles" size="sm" className="text-primary" />
-                            <h3 className="text-sm font-bold text-white uppercase tracking-wider">Danh sách phụ đề</h3>
+                            <h3 className="text-sm font-bold text-text-base uppercase tracking-wider">Danh sách phụ đề</h3>
                         </div>
                         <div 
                             ref={subtitleListRef}
@@ -863,8 +863,8 @@ export default function AdminVideosPage() {
                                             )}
                                         </div>
                                         <p className={`font-chinese leading-relaxed ${currentSubtitleIndex === index
-                                            ? 'text-white text-base font-bold'
-                                            : 'text-text-secondary group-hover:text-white text-sm'
+                                            ? 'text-text-base text-base font-bold'
+                                            : 'text-text-secondary group-hover:text-text-base text-sm'
                                             }`} lang="zh-CN">
                                             {sub.hanzi}
                                         </p>
@@ -893,6 +893,16 @@ export default function AdminVideosPage() {
                     <WordPopover
                         word={popoverWord}
                         position={popoverPosition}
+                        sourceVideoId={previewVideo?.id}
+                        sourceTimestamp={previewCurrentTime}
+                        sourceSentence={currentSubtitle?.hanzi}
+                        sourcePinyin={currentSubtitle?.pinyin}
+                        videoUrl={previewVideo?.videoUrl}
+                        onSubtitlesUpdated={() => {
+                            if (previewVideo) {
+                                videoApi.getSubtitles(previewVideo.id).then(setPreviewSubtitles);
+                            }
+                        }}
                         onClose={() => {
                             setPopoverWord(null);
                             setSelectedWord(null);
@@ -917,7 +927,7 @@ export default function AdminVideosPage() {
                                 setShowModal(false);
                                 resetForm();
                             }}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -940,7 +950,7 @@ export default function AdminVideosPage() {
                             type="text"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                             placeholder="Nhập tiêu đề video"
                             required
                         />
@@ -953,7 +963,7 @@ export default function AdminVideosPage() {
                         <textarea
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors resize-none"
                             placeholder="Nhập mô tả video"
                             rows={3}
                         />
@@ -972,7 +982,7 @@ export default function AdminVideosPage() {
                                     value={formData.videoUrl}
                                     onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
                                     placeholder="https://youtube.com/watch?v=... hoặc link video"
-                                    className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                                    className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                                 />
                                 <Icon
                                     name="link"
@@ -1029,7 +1039,7 @@ export default function AdminVideosPage() {
                             <select
                                 value={formData.hskLevel}
                                 onChange={(e) => setFormData({ ...formData, hskLevel: Number(e.target.value) })}
-                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors"
                             >
                                 {[1, 2, 3, 4, 5, 6].map((level) => (
                                     <option key={level} value={level}>HSK {level}</option>
@@ -1044,7 +1054,7 @@ export default function AdminVideosPage() {
                             <select
                                 value={formData.category}
                                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors"
                             >
                                 <option value="">Chọn chủ đề</option>
                                 <option value="Hội thoại">Hội thoại</option>
@@ -1070,7 +1080,7 @@ export default function AdminVideosPage() {
                                 type="number"
                                 value={formData.durationSeconds}
                                 onChange={(e) => setFormData({ ...formData, durationSeconds: Number(e.target.value) })}
-                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                                 placeholder="Tự động khi upload file"
                                 min="0"
                             />
@@ -1089,7 +1099,7 @@ export default function AdminVideosPage() {
                     <>
                         <button
                             onClick={() => setShowDeleteConfirm(null)}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -1117,7 +1127,7 @@ export default function AdminVideosPage() {
                     <>
                         <button
                             onClick={() => setShowSubtitlesModal(null)}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -1167,7 +1177,7 @@ export default function AdminVideosPage() {
                         {/* Manual editor */}
                         <div className="border-t border-border-color pt-4">
                             <div className="flex items-center justify-between mb-4">
-                                <p className="text-sm font-medium text-white">
+                                <p className="text-sm font-medium text-text-base">
                                     Phụ đề ({subtitleLines.length} dòng)
                                 </p>
                                 <div className="flex items-center gap-2 text-xs text-text-secondary">
@@ -1188,7 +1198,7 @@ export default function AdminVideosPage() {
                                             value={line.startTime}
                                             onChange={(e) => updateSubtitleLine(line.id, 'startTime', e.target.value)}
                                             placeholder="00:00"
-                                            className="w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white text-center focus:border-primary focus:outline-none"
+                                            className="w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base text-center focus:border-primary focus:outline-none"
                                         />
                                         <span className="text-text-secondary">→</span>
                                         <input
@@ -1196,28 +1206,28 @@ export default function AdminVideosPage() {
                                             value={line.endTime}
                                             onChange={(e) => updateSubtitleLine(line.id, 'endTime', e.target.value)}
                                             placeholder="00:05"
-                                            className="w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white text-center focus:border-primary focus:outline-none"
+                                            className="w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base text-center focus:border-primary focus:outline-none"
                                         />
                                         <input
                                             type="text"
                                             value={line.hanzi}
                                             onChange={(e) => updateSubtitleLine(line.id, 'hanzi', e.target.value)}
                                             placeholder="你好"
-                                            className="flex-1 min-w-[100px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none font-chinese"
+                                            className="flex-1 min-w-[100px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none font-chinese"
                                         />
                                         <input
                                             type="text"
                                             value={line.pinyin}
                                             onChange={(e) => updateSubtitleLine(line.id, 'pinyin', e.target.value)}
                                             placeholder="nǐ hǎo"
-                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none font-pinyin"
+                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none font-pinyin"
                                         />
                                         <input
                                             type="text"
                                             value={line.meaningVi}
                                             onChange={(e) => updateSubtitleLine(line.id, 'meaningVi', e.target.value)}
                                             placeholder="Xin chào"
-                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-white focus:border-primary focus:outline-none"
+                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none"
                                         />
                                         <button
                                             onClick={() => removeSubtitleLine(line.id)}

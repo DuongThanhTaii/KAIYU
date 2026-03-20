@@ -157,39 +157,39 @@ export default function VideoLibraryPage() {
                                 style={{ backgroundImage: `url(${continueWatching.video.thumbnailUrl || '/placeholder-video.jpg'})` }}
                             />
                             {/* Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-background-dark/40 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-background-dark)] via-[var(--color-background-dark)]/40 to-transparent" />
 
                             {/* Content */}
                             <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
                                 <div className="flex flex-col gap-3 max-w-2xl">
                                     <div className="flex items-center gap-3">
-                                        <span className="px-3 py-1 bg-primary/90 backdrop-blur-sm text-on-primary text-xs font-extrabold uppercase tracking-wide rounded-full">
+                                        <span className="px-3 py-1 bg-primary/90 backdrop-blur-sm text-on-primary text-xs font-black uppercase tracking-wide rounded-full">
                                             Tiếp tục học
                                         </span>
-                                        <span className="text-text-secondary text-sm font-medium flex items-center gap-1">
+                                        <span className="text-primary text-sm font-black flex items-center gap-1">
                                             <Icon name="schedule" size="sm" />
                                             {progressApi.formatRemainingTime(continueWatching)}
                                         </span>
                                     </div>
-                                    <h1 className="text-3xl md:text-4xl font-bold text-white leading-tight">
+                                    <h1 className="text-3xl md:text-4xl font-black text-text-base leading-tight">
                                         {continueWatching.video.title}
                                     </h1>
-                                    <p className="text-gray-300 text-sm md:text-base">
-                                        HSK {continueWatching.video.hskLevel} • {continueWatching.video.category || 'Video'}
+                                    <p className="text-text-secondary text-sm md:text-base font-bold">
+                                        HSK {continueWatching.video.hskLevel} • <span className="text-primary">Tiếp tục từ lần trước</span>
                                     </p>
                                     {/* Progress Bar */}
-                                    <div className="w-full max-w-md h-1.5 bg-white/20 rounded-full mt-2 overflow-hidden">
+                                    <div className="w-full max-w-md h-2 bg-border-color rounded-full mt-2 overflow-hidden shadow-inner">
                                         <div
-                                            className="h-full bg-primary rounded-full transition-all"
+                                            className="h-full bg-primary rounded-full transition-all shadow-[0_0_10px_rgba(76,223,32,0.3)]"
                                             style={{ width: `${continueWatching.progressPercent}%` }}
                                         />
                                     </div>
-                                    <span className="text-text-secondary text-xs">
+                                    <span className="text-text-secondary text-xs font-bold">
                                         {Math.round(continueWatching.progressPercent)}% hoàn thành
                                     </span>
                                 </div>
                                 {/* Play Button */}
-                                <div className="size-14 md:size-16 rounded-full bg-primary text-on-primary flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_20px_rgba(76,223,32,0.4)]">
+                                <div className="size-14 md:size-16 rounded-full bg-primary text-on-primary flex items-center justify-center hover:scale-110 transition-transform shadow-[0_0_25px_rgba(76,223,32,0.4)]">
                                     <Icon name="play_arrow" size="lg" filled className="ml-1" />
                                 </div>
                             </div>
@@ -200,7 +200,7 @@ export default function VideoLibraryPage() {
                 {/* Filters Section */}
                 <div className="flex flex-col gap-4">
                     <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-white">Duyệt thư viện</h3>
+                        <h3 className="text-xl font-bold text-text-base">Duyệt thư viện</h3>
                         <button
                             onClick={resetFilters}
                             className="text-sm text-text-secondary hover:text-primary transition-colors font-medium"
@@ -213,9 +213,9 @@ export default function VideoLibraryPage() {
                     <div className="flex flex-wrap gap-2 md:gap-3">
                         <button
                             onClick={() => setActiveHskFilter(null)}
-                            className={`h-9 px-4 rounded-full text-sm font-bold transition-all ${!activeHskFilter
-                                ? 'bg-primary text-on-primary border border-primary'
-                                : 'bg-surface-dark hover:bg-surface-highlight text-white border border-transparent'
+                            className={`h-10 px-5 rounded-full text-sm font-black transition-all shadow-sm ${!activeHskFilter
+                                ? 'bg-primary text-on-primary border-2 border-primary scale-105'
+                                : 'bg-surface-dark hover:bg-surface-highlight text-text-base border-2 border-border-color'
                                 }`}
                         >
                             Tất cả
@@ -224,9 +224,9 @@ export default function VideoLibraryPage() {
                             <button
                                 key={level}
                                 onClick={() => setActiveHskFilter(activeHskFilter === level ? null : level)}
-                                className={`h-9 px-4 rounded-full text-sm font-medium transition-all ${activeHskFilter === level
-                                    ? 'bg-primary text-on-primary border border-primary'
-                                    : 'bg-surface-dark hover:bg-surface-highlight text-white border border-transparent'
+                                className={`h-10 px-5 rounded-full text-sm font-black transition-all shadow-sm ${activeHskFilter === level
+                                    ? 'bg-primary text-on-primary border-2 border-primary scale-105'
+                                    : 'bg-surface-dark hover:bg-surface-highlight text-text-base border-2 border-border-color'
                                     }`}
                             >
                                 HSK {level}
@@ -246,7 +246,7 @@ export default function VideoLibraryPage() {
                                 placeholder="Tìm video..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 pl-9 pr-4 rounded-full bg-surface-dark border border-border-color text-white text-sm placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 w-48"
+                                className="h-9 pl-9 pr-4 rounded-full bg-surface-dark border border-border-color text-text-base text-sm placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 w-48 transition-colors"
                             />
                         </div>
 
@@ -257,9 +257,9 @@ export default function VideoLibraryPage() {
                             <button
                                 key={cat.category}
                                 onClick={() => setActiveCategory(activeCategory === cat.category ? null : cat.category)}
-                                className={`flex items-center gap-2 h-9 px-4 rounded-full shrink-0 transition-colors ${activeCategory === cat.category
-                                    ? 'bg-primary text-on-primary'
-                                    : 'border border-border-color hover:border-text-secondary text-white'
+                                className={`flex items-center gap-2 h-9 px-4 rounded-full shrink-0 transition-all font-bold border-2 ${activeCategory === cat.category
+                                    ? 'bg-primary text-on-primary border-primary shadow-md'
+                                    : 'bg-surface-dark border-border-color hover:border-text-secondary text-text-base hover:bg-surface-highlight'
                                     }`}
                             >
                                 <span className="text-sm">{cat.category}</span>
@@ -290,7 +290,7 @@ export default function VideoLibraryPage() {
                 {!isLoading && videos.length === 0 && (
                     <div className="text-center py-16">
                         <Icon name="video_library" size="xl" className="text-text-secondary mb-4" />
-                        <h3 className="text-xl font-bold text-white mb-2">Không tìm thấy video</h3>
+                        <h3 className="text-xl font-bold text-text-base mb-2">Không tìm thấy video</h3>
                         <p className="text-text-secondary mb-6">Thử điều chỉnh bộ lọc để tìm nội dung khác.</p>
                         <Button variant="secondary" onClick={resetFilters}>
                             Xóa bộ lọc
@@ -334,7 +334,7 @@ export default function VideoLibraryPage() {
                                         </span>
 
                                         {/* HSK Badge */}
-                                        <span className={`absolute top-2 left-2 px-2 py-1 rounded-md text-[10px] font-bold text-white shadow-sm ${getHskBadgeColor(video.hskLevel)}`}>
+                                        <span className={`absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold text-white shadow-sm ${getHskBadgeColor(video.hskLevel)}`}>
                                             HSK {video.hskLevel}
                                         </span>
 
@@ -349,16 +349,16 @@ export default function VideoLibraryPage() {
                                     {/* Content */}
                                     <div className="p-4 flex flex-col flex-1 justify-between">
                                         <div>
-                                            <h4 className="text-white font-bold text-lg leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
+                                            <h4 className="text-text-base font-black text-lg leading-snug mb-1 line-clamp-2 group-hover:text-primary transition-colors">
                                                 {video.title}
                                             </h4>
-                                            <p className="text-text-secondary text-xs">
+                                            <p className="text-text-secondary text-xs font-bold">
                                                 {video.category} • {video.hskLevel <= 2 ? 'Sơ cấp' : video.hskLevel <= 4 ? 'Trung cấp' : 'Cao cấp'}
                                             </p>
                                         </div>
 
                                         {/* Footer */}
-                                        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+                                        <div className="mt-4 flex items-center justify-between border-t border-border-color pt-3">
                                             <div className="flex items-center gap-1">
                                                 <Icon name="visibility" size="sm" className="text-text-secondary" />
                                                 <span className="text-text-secondary text-xs">
@@ -368,7 +368,7 @@ export default function VideoLibraryPage() {
                                                 </span>
                                             </div>
                                             <button
-                                                className={`transition-colors ${savedVideoIds.has(video.id) ? 'text-primary' : 'text-white hover:text-primary'}`}
+                                                className={`transition-colors ${savedVideoIds.has(video.id) ? 'text-primary' : 'text-text-base hover:text-primary'}`}
                                                 onClick={(e) => handleToggleSave(e, video.id)}
                                             >
                                                 <Icon name={savedVideoIds.has(video.id) ? 'bookmark' : 'bookmark_add'} size="md" filled={savedVideoIds.has(video.id)} />
@@ -388,7 +388,7 @@ export default function VideoLibraryPage() {
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
-                                className="p-2 rounded-full text-text-secondary hover:text-white hover:bg-surface-highlight disabled:opacity-50"
+                                className="p-2 rounded-full text-text-secondary hover:text-text-base hover:bg-surface-highlight disabled:opacity-50 transition-colors"
                             >
                                 <Icon name="chevron_left" size="md" />
                             </button>
@@ -399,7 +399,7 @@ export default function VideoLibraryPage() {
                                     onClick={() => setCurrentPage(page)}
                                     className={`size-9 rounded-full font-medium text-sm transition-colors ${currentPage === page
                                         ? 'bg-primary text-on-primary font-bold'
-                                        : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
+                                        : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                         }`}
                                 >
                                     {page}
@@ -411,7 +411,7 @@ export default function VideoLibraryPage() {
                             <button
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
-                                className="p-2 rounded-full text-text-secondary hover:text-white hover:bg-surface-highlight disabled:opacity-50"
+                                className="p-2 rounded-full text-text-secondary hover:text-text-base hover:bg-surface-highlight disabled:opacity-50 transition-colors"
                             >
                                 <Icon name="chevron_right" size="md" />
                             </button>

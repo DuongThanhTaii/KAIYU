@@ -17,12 +17,12 @@ const Card: React.FC<CardProps> = ({
     className = '',
     onClick,
 }) => {
-    const baseStyles = 'rounded-xl transition-all';
+    const baseStyles = 'rounded-xl transition-all text-text-base';
 
     const variants = {
         default: 'bg-surface-dark border border-border-color',
         elevated: 'bg-surface-dark border border-border-color shadow-lg shadow-black/20',
-        glass: 'bg-surface-dark/70 backdrop-blur-md border border-white/5',
+        glass: 'glass-panel border border-border-color/20',
     };
 
     const paddings = {

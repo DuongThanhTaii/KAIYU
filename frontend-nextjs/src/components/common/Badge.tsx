@@ -20,19 +20,19 @@ const Badge: React.FC<BadgeProps> = ({
     const baseStyles = 'inline-flex items-center justify-center font-bold rounded-full';
 
     const hskColors: Record<number, string> = {
-        1: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-        2: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-        3: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-        4: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-        5: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
-        6: 'bg-red-500/10 text-red-400 border-red-500/20',
+        1: 'bg-[var(--color-hsk1)]/10 text-[var(--color-hsk1)] border-[var(--color-hsk1)]/20',
+        2: 'bg-[var(--color-hsk2)]/10 text-[var(--color-hsk2)] border-[var(--color-hsk2)]/20',
+        3: 'bg-[var(--color-hsk3)]/10 text-[var(--color-hsk3)] border-[var(--color-hsk3)]/20',
+        4: 'bg-[var(--color-hsk4)]/10 text-[var(--color-hsk4)] border-[var(--color-hsk4)]/20',
+        5: 'bg-[var(--color-hsk5)]/10 text-[var(--color-hsk5)] border-[var(--color-hsk5)]/20',
+        6: 'bg-[var(--color-hsk6)]/10 text-[var(--color-hsk6)] border-[var(--color-hsk6)]/20',
     };
 
     const statusColors: Record<string, string> = {
-        new: 'bg-blue-500/10 text-blue-400',
-        learning: 'bg-yellow-500/10 text-yellow-400',
-        review: 'bg-orange-500/10 text-orange-400',
-        mastered: 'bg-primary/10 text-primary',
+        new: 'bg-[var(--color-status-new)]/10 text-[var(--color-status-new)]',
+        learning: 'bg-[var(--color-status-learning)]/10 text-[var(--color-status-learning)]',
+        review: 'bg-[var(--color-status-review)]/10 text-[var(--color-status-review)]',
+        mastered: 'bg-[var(--color-status-mastered)]/10 text-[var(--color-status-mastered)]',
     };
 
     const variants: Record<string, string> = {

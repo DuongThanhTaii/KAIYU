@@ -69,14 +69,14 @@ const Modal: React.FC<ModalProps> = ({
             {/* Modal Content */}
             <div
                 ref={modalRef}
-                className={`relative w-full ${sizeClasses[size]} bg-surface-dark rounded-2xl border border-border-color shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200 overflow-hidden`}
+                className={`relative w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col bg-surface-dark rounded-2xl border border-border-color shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200 overflow-hidden`}
             >
                 {/* Header */}
-                <div className={`flex items-center justify-between px-6 border-b border-border-color ${compact ? 'py-2' : 'py-4'}`}>
-                    <h2 className={`${compact ? 'text-base' : 'text-lg'} font-bold text-white`}>{title}</h2>
+                <div className={`flex items-center justify-between px-6 border-b border-border-color shrink-0 ${compact ? 'py-2' : 'py-4'}`}>
+                    <h2 className={`${compact ? 'text-base' : 'text-lg'} font-bold text-text-base`}>{title}</h2>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-white inline-flex items-center justify-center cursor-pointer"
+                        className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-text-base inline-flex items-center justify-center cursor-pointer"
                     >
                         <Icon name="close" className="text-xl" />
                     </button>

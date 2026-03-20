@@ -86,6 +86,16 @@ export const renderGroupedPinyin = (hanzi: string, pinyin: string, tokens?: any[
 };
 
 /**
+ * Helper for case-insensitive POS_COLORS lookup
+ */
+export const getPosColor = (pos: string) => {
+    if (!pos) return 'text-text-secondary';
+    // Find key case-insensitively
+    const key = Object.keys(POS_COLORS).find(k => k.toLowerCase() === pos.toLowerCase());
+    return key ? POS_COLORS[key] : 'text-text-secondary';
+};
+
+/**
  * Format a Vietnamese meaning line by removing numbering and colorizing the part of speech
  */
 export const renderFormattedMeaning = (text: string) => {
@@ -97,15 +107,44 @@ export const renderFormattedMeaning = (text: string) => {
     if (match) {
         const pos = match[1].trim();
         const meaning = cleanText.substring(match[0].length).trim();
-        const colorClass = POS_COLORS[pos] || 'text-text-secondary';
+        const colorClass = getPosColor(pos);
 
         return (
             <React.Fragment>
                 <span className={`${colorClass} font-bold mr-2 whitespace-nowrap`}>{pos}:</span>
-                <span className="text-white">{meaning}</span>
+                <span className="text-text-base">{meaning}</span>
             </React.Fragment>
         );
     }
 
-    return <span className="text-white">{cleanText}</span>;
+    return <span className="text-text-base">{cleanText}</span>;
 }
+
+/**
+ * Highlight a specific word/phrase within a sentence
+ */
+export const highlightWord = (text: string, target: string, className: string = "text-primary font-bold") => {
+    if (!text || !target) return text;
+
+    // Use regex for case-insensitive matching if it's Pinyin (alphabetic)
+    // For Hanzi, exact match is usually better
+    const isPinyin = /^[a-zA-Záéíóúüāēīōūǖǎěǐǒǔǚàèìòùǜ\s,.;!?，。！？]+$/.test(target);
+    
+    // Escape target for regex
+    const escapedTarget = target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(`(${escapedTarget})`, isPinyin ? 'gi' : 'g');
+    
+    const parts = text.split(regex);
+    
+    return (
+        <>
+            {parts.map((part, i) => 
+                part.toLowerCase() === target.toLowerCase() ? (
+                    <span key={i} className={className}>{part}</span>
+                ) : (
+                    part
+                )
+            )}
+        </>
+    );
+};

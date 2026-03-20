@@ -152,7 +152,7 @@ export default function AdminUsersPage() {
                         {user.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                        <p className="font-medium text-white flex items-center gap-2">
+                        <p className="font-medium text-text-base flex items-center gap-2">
                             {user.name}
                             {user.isPremium && (
                                 <Icon name="verified" className="text-sm text-purple-400" />
@@ -194,7 +194,7 @@ export default function AdminUsersPage() {
                 <div className="flex items-center gap-1">
                     <Icon name="local_fire_department" className={`text-lg ${user.streak > 0 ? 'text-orange-400' : 'text-gray-500'
                         }`} />
-                    <span className={user.streak > 0 ? 'text-white' : 'text-text-secondary'}>
+                    <span className={user.streak > 0 ? 'text-text-base font-medium' : 'text-text-secondary'}>
                         {user.streak}
                     </span>
                 </div>
@@ -271,10 +271,10 @@ export default function AdminUsersPage() {
         <AdminLayout title="Quản lý Users">
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{stats.total}</p>
+                            <p className="text-2xl font-bold text-text-base">{stats.total}</p>
                             <p className="text-xs text-text-secondary">Tổng users</p>
                         </div>
                         <div className="p-3 rounded-lg bg-blue-500/10 flex items-center justify-center">
@@ -282,10 +282,10 @@ export default function AdminUsersPage() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{stats.premium}</p>
+                            <p className="text-2xl font-bold text-text-base">{stats.premium}</p>
                             <p className="text-xs text-text-secondary">Premium</p>
                         </div>
                         <div className="p-3 rounded-lg bg-purple-500/10 flex items-center justify-center">
@@ -293,10 +293,10 @@ export default function AdminUsersPage() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{stats.admins}</p>
+                            <p className="text-2xl font-bold text-text-base">{stats.admins}</p>
                             <p className="text-xs text-text-secondary">Admins</p>
                         </div>
                         <div className="p-3 rounded-lg bg-amber-500/10 flex items-center justify-center">
@@ -304,10 +304,10 @@ export default function AdminUsersPage() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{stats.activeToday}</p>
+                            <p className="text-2xl font-bold text-text-base">{stats.activeToday}</p>
                             <p className="text-xs text-text-secondary">Hoạt động hôm nay</p>
                         </div>
                         <div className="p-3 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -329,13 +329,13 @@ export default function AdminUsersPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Tìm kiếm theo tên hoặc email..."
-                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
                     />
                 </div>
                 <select
                     value={filterRole}
                     onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                    className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
                 >
                     <option value="">Tất cả vai trò</option>
                     <option value="admin">Admin</option>
@@ -344,7 +344,7 @@ export default function AdminUsersPage() {
                 <select
                     value={filterPremium}
                     onChange={(e) => setFilterPremium(e.target.value)}
-                    className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                    className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
                 >
                     <option value="">Tất cả gói</option>
                     <option value="true">Premium</option>
@@ -383,7 +383,7 @@ export default function AdminUsersPage() {
                                 {showUserDetail.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                                <h3 className="text-xl font-bold text-text-base flex items-center gap-2">
                                     {showUserDetail.name}
                                     {showUserDetail.isPremium && (
                                         <Icon name="verified" className="text-purple-400" />
@@ -395,16 +395,16 @@ export default function AdminUsersPage() {
 
                         {/* Stats Grid */}
                         <div className="grid grid-cols-3 gap-4">
-                            <div className="p-4 bg-background-dark rounded-xl text-center">
+                            <div className="p-4 bg-background-dark rounded-xl text-center border border-border-color/30">
                                 <p className="text-2xl font-bold text-primary">HSK {showUserDetail.hskLevel}</p>
                                 <p className="text-xs text-text-secondary">Cấp độ</p>
                             </div>
-                            <div className="p-4 bg-background-dark rounded-xl text-center">
+                            <div className="p-4 bg-background-dark rounded-xl text-center border border-border-color/30">
                                 <p className="text-2xl font-bold text-orange-400">{showUserDetail.streak}</p>
                                 <p className="text-xs text-text-secondary">Streak</p>
                             </div>
-                            <div className="p-4 bg-background-dark rounded-xl text-center">
-                                <p className="text-2xl font-bold text-white">{showUserDetail._count?.userVocabulary || 0}</p>
+                            <div className="p-4 bg-background-dark rounded-xl text-center border border-border-color/30">
+                                <p className="text-2xl font-bold text-text-base">{showUserDetail._count?.userVocabulary || 0}</p>
                                 <p className="text-xs text-text-secondary">Từ vựng</p>
                             </div>
                         </div>
@@ -431,7 +431,7 @@ export default function AdminUsersPage() {
                             </div>
                             <div className="flex items-center justify-between py-2">
                                 <span className="text-text-secondary">Ngày đăng ký</span>
-                                <span className="text-white">{formatDate(showUserDetail.createdAt)}</span>
+                                <span className="text-text-base font-medium">{formatDate(showUserDetail.createdAt)}</span>
                             </div>
                         </div>
                     </div>
@@ -454,7 +454,7 @@ export default function AdminUsersPage() {
                                 setShowRoleModal(null);
                                 setNewRole('');
                             }}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -469,13 +469,13 @@ export default function AdminUsersPage() {
             >
                 {showRoleModal && (
                     <div className="space-y-4">
-                        <p className="text-text-secondary">
-                            Thay đổi vai trò cho <span className="text-white font-medium">{showRoleModal.name}</span>
+                        <p className="text-text-secondary text-sm">
+                            Thay đổi vai trò cho <span className="text-text-base font-bold">{showRoleModal.name}</span>
                         </p>
                         <select
                             value={newRole}
                             onChange={(e) => setNewRole(e.target.value)}
-                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-amber-500 transition-colors"
+                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors"
                         >
                             <option value="user">User</option>
                             <option value="admin">Admin</option>
@@ -501,7 +501,7 @@ export default function AdminUsersPage() {
                     <>
                         <button
                             onClick={() => setShowDeleteConfirm(null)}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                             disabled={isSaving}
                         >
                             Hủy
@@ -519,7 +519,7 @@ export default function AdminUsersPage() {
                 {showDeleteConfirm && (
                     <div className="space-y-4">
                         <p className="text-text-secondary">
-                            Bạn có chắc chắn muốn xóa user <span className="text-white font-medium">{showDeleteConfirm.name}</span>?
+                            Bạn có chắc chắn muốn xóa user <span className="text-text-base font-bold">{showDeleteConfirm.name}</span>?
                         </p>
                         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
                             <p className="text-sm text-red-400">

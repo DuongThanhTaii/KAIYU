@@ -79,8 +79,8 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
                             <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
                         </div>
                         <div className="hidden sm:flex flex-col leading-none">
-                            <span className="font-extrabold text-lg tracking-widest text-white uppercase">KAIYU</span>
-                            <span className="text-[8px] font-semibold tracking-[0.18em] text-white/60 uppercase">CHINESE LANGUAGE SYSTEM</span>
+                            <span className="font-extrabold text-lg tracking-widest text-text-base uppercase">KAIYU</span>
+                            <span className="text-[8px] font-semibold tracking-[0.18em] text-text-secondary uppercase">CHINESE LANGUAGE SYSTEM</span>
                         </div>
                     </Link>
 
@@ -107,7 +107,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
 
     // App variant navbar
     return (
-        <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-border-color bg-background-dark/90 backdrop-blur-md sticky top-0 z-20">
+        <header className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-border-color bg-[var(--color-background-dark)]/90 backdrop-blur-md sticky top-0 z-20">
             {/* Mobile: Hamburger + Title */}
             <div className="flex items-center gap-3 lg:hidden">
                 <button
@@ -115,7 +115,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
                     className="p-2 rounded-xl hover:bg-surface-highlight transition-colors inline-flex items-center justify-center cursor-pointer"
                     aria-label="Mở menu"
                 >
-                    <Icon name="menu" size="md" className="text-white" />
+                    <Icon name="menu" size="md" className="text-text-base" />
                 </button>
                 {/* Mobile logo shown in app header */}
                 <div className="size-8 flex items-center justify-center">
@@ -126,11 +126,11 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
             <div className="hidden lg:flex flex-1 max-w-md">
                 <div className="relative w-full group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Icon name="search" className="text-text-secondary group-focus-within:text-white transition-colors" />
+                        <Icon name="search" className="text-text-secondary group-focus-within:text-text-base transition-colors" />
                     </div>
                     <input
                         type="text"
-                        className="block w-full pl-10 pr-3 py-2.5 border-none rounded-full leading-5 bg-surface-dark text-white placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm transition-all"
+                        className="block w-full pl-10 pr-3 py-2.5 border-none rounded-full leading-5 bg-surface-dark text-text-base placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm transition-all"
                         placeholder="Tìm bài học, từ vựng..."
                     />
                 </div>
@@ -138,15 +138,15 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
 
             <div className="flex items-center gap-4 md:gap-6">
                 {/* Streak Display */}
-                <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color">
-                    <Icon name="local_fire_department" className="text-orange-500" size="md" />
-                    <span className="text-sm font-bold text-white">{user?.streak || 0}</span>
+                <div className="hidden md:flex items-center gap-2 bg-orange-500/10 px-4 py-2 rounded-full border border-orange-500/20 shadow-sm transition-all hover:scale-105">
+                    <Icon name="local_fire_department" className="text-orange-600 dark:text-orange-500" size="md" />
+                    <span className="text-sm font-black text-text-base">{user?.streak || 0}</span>
                 </div>
 
                 {/* XP Display */}
-                <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color">
-                    <Icon name="sailing" className="text-cyan-400" size="md" />
-                    <span className="text-sm font-bold text-white">{user?.xp || 0}</span>
+                <div className="hidden md:flex items-center gap-2 bg-cyan-500/10 px-4 py-2 rounded-full border border-cyan-500/20 shadow-sm transition-all hover:scale-105">
+                    <Icon name="sailing" className="text-cyan-600 dark:text-cyan-400" size="md" />
+                    <span className="text-sm font-black text-text-base">{user?.xp || 0}</span>
                 </div>
 
                 {/* Notifications */}
@@ -158,7 +158,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
                     className="flex items-center gap-3 pl-2 border-l border-border-color cursor-pointer hover:opacity-80 transition-opacity"
                 >
                     <div className="text-right hidden md:block">
-                        <p className="text-sm font-bold text-white leading-tight">{displayName}</p>
+                        <p className="text-sm font-bold text-text-base leading-tight">{displayName}</p>
                         <p className="text-xs text-text-secondary">HSK {user?.hskLevel || 1}</p>
                     </div>
                     {user?.avatarUrl ? (

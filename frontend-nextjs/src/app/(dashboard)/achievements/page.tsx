@@ -98,17 +98,17 @@ export default function AchievementsPage() {
                                     <Icon name="celebration" className="text-2xl text-yellow-400" />
                                 </div>
                                 <div>
-                                    <p className="text-white font-bold">🎉 Chúc mừng! Bạn đã đạt {newlyAwarded.length} thành tựu mới!</p>
-                                    <p className="text-sm text-yellow-200/80">
+                                    <p className="text-text-base font-bold">🎉 Chúc mừng! Bạn đã đạt {newlyAwarded.length} thành tựu mới!</p>
+                                    <p className="text-sm text-text-secondary">
                                         {newlyAwarded.map(a => a.title).join(', ')} • +{newlyAwarded.reduce((sum, a) => sum + a.xpReward, 0)} XP
                                     </p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => setNewlyAwarded([])}
-                                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                                className="p-2 hover:bg-black/5 dark:hover:bg-white/10 rounded-lg transition-colors"
                             >
-                                <Icon name="close" className="text-white/60" />
+                                <Icon name="close" className="text-text-secondary" />
                             </button>
                         </div>
                     </div>
@@ -121,8 +121,8 @@ export default function AchievementsPage() {
                             <Icon name="emoji_events" className="text-3xl text-yellow-400" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold text-white">Thành tựu</h1>
-                            <p className="text-text-secondary">Theo dõi tiến trình và thành tựu của bạn</p>
+                            <h1 className="text-2xl font-bold text-text-base">Thành tựu</h1>
+                            <p className="text-text-secondary font-medium">Theo dõi tiến trình và thành tựu của bạn</p>
                         </div>
                     </div>
                 </div>
@@ -144,8 +144,8 @@ export default function AchievementsPage() {
                     <Card variant="default" className="!p-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-3xl font-black text-white">
-                                    {earnedCount}<span className="text-lg text-text-secondary">/{achievements.length}</span>
+                                <p className="text-3xl font-black text-text-base leading-none mb-1">
+                                    {earnedCount}<span className="text-lg text-text-secondary ml-1">/{achievements.length}</span>
                                 </p>
                                 <p className="text-sm text-text-secondary">Thành tựu đã đạt</p>
                             </div>
@@ -159,9 +159,9 @@ export default function AchievementsPage() {
                         <div>
                             <div className="flex items-center justify-between mb-2">
                                 <p className="text-sm font-bold text-text-secondary">Tiến độ tổng</p>
-                                <p className="text-lg font-bold text-white">{progress}%</p>
+                                <p className="text-lg font-bold text-text-base">{progress}%</p>
                             </div>
-                            <div className="h-3 bg-background-dark rounded-full overflow-hidden">
+                            <div className="h-3 bg-border-color/30 dark:bg-background-dark rounded-full overflow-hidden">
                                 <div
                                     className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full transition-all duration-500"
                                     style={{ width: `${progress}%` }}
@@ -182,8 +182,8 @@ export default function AchievementsPage() {
                             key={tab.key}
                             onClick={() => setFilter(tab.key as FilterType)}
                             className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${filter === tab.key
-                                ? 'bg-primary text-on-primary'
-                                : 'bg-surface-dark border border-border-color text-text-secondary hover:text-white hover:border-primary/50'
+                                ? 'bg-primary text-on-primary shadow-lg shadow-primary/20'
+                                : 'bg-surface-dark border border-border-color text-text-secondary hover:text-text-base hover:border-primary/50'
                                 }`}
                         >
                             {tab.label} ({tab.count})
@@ -195,7 +195,7 @@ export default function AchievementsPage() {
                 {filteredAchievements.length === 0 ? (
                     <Card variant="default" className="py-16 text-center">
                         <Icon name="emoji_events" className="text-6xl text-text-secondary/20 mb-4" />
-                        <p className="text-lg font-bold text-white mb-2">
+                        <p className="text-lg font-bold text-text-base mb-2">
                             {filter === 'earned' ? 'Chưa có thành tựu nào' : 'Không có thành tựu'}
                         </p>
                         <p className="text-text-secondary">
@@ -212,9 +212,9 @@ export default function AchievementsPage() {
                             return (
                                 <div
                                     key={achievement.id}
-                                    className={`relative bg-surface-dark rounded-2xl border p-6 transition-all ${isEarned
-                                        ? 'border-yellow-500/30 shadow-lg shadow-yellow-500/5'
-                                        : 'border-border-color opacity-60 grayscale'
+                                    className={`relative rounded-2xl border p-6 transition-all ${isEarned
+                                        ? 'bg-primary/5 dark:bg-surface-dark border-primary/30 shadow-lg shadow-primary/5'
+                                        : 'bg-surface-dark border-border-color opacity-70 grayscale'
                                         }`}
                                 >
                                     {/* Earned Badge */}
@@ -236,7 +236,7 @@ export default function AchievementsPage() {
                                     </div>
 
                                     {/* Content */}
-                                    <h3 className="text-lg font-bold text-white mb-1">{achievement.title}</h3>
+                                    <h3 className="text-lg font-bold text-text-base mb-1">{achievement.title}</h3>
                                     <p className="text-sm text-text-secondary mb-4 line-clamp-2">
                                         {achievement.description}
                                     </p>
@@ -250,7 +250,7 @@ export default function AchievementsPage() {
                                                     {achievement.currentValue || 0}/{achievement.targetValue}
                                                 </span>
                                             </div>
-                                            <div className="h-2 bg-background-dark rounded-full overflow-hidden">
+                                            <div className="h-2 bg-border-color/30 dark:bg-background-dark rounded-full overflow-hidden">
                                                 <div
                                                     className={`h-full rounded-full transition-all duration-500 ${isEarned
                                                         ? 'bg-gradient-to-r from-green-400 to-primary'

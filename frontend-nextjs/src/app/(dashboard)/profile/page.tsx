@@ -162,7 +162,7 @@ export default function ProfilePage() {
     return (
         <DashboardLayout>
             <div className="max-w-4xl mx-auto p-6">
-                <h1 className="text-2xl font-bold text-white mb-8">Hồ sơ cá nhân</h1>
+                <h1 className="text-2xl font-bold text-text-base mb-8 uppercase tracking-wider opacity-80">Hồ sơ cá nhân</h1>
 
                 {/* Success Message */}
                 {successMessage && (
@@ -179,7 +179,8 @@ export default function ProfilePage() {
                 )}
 
                 {/* Profile Card */}
-                <div className="bg-surface-dark rounded-2xl border border-border-color p-8 mb-6">
+                <div className="bg-surface-dark rounded-3xl border border-border-color p-8 mb-6 shadow-sm relative overflow-hidden transition-colors">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/5 to-transparent rounded-full -mr-10 -mt-10 pointer-events-none" />
                     <div className="flex items-start gap-6">
                         {/* Avatar */}
                         <div className="relative">
@@ -225,12 +226,12 @@ export default function ProfilePage() {
                                         <label className="block text-sm font-medium text-text-secondary mb-2">
                                             Họ và tên
                                         </label>
-                                        <input
-                                            type="text"
-                                            value={formData.name}
-                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white focus:outline-none focus:border-primary transition-colors"
-                                        />
+                                            <input
+                                                type="text"
+                                                value={formData.name}
+                                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-primary transition-colors"
+                                            />
                                     </div>
                                     <p className="text-xs text-text-secondary">
                                         💡 Nhấp vào ảnh đại diện để tải ảnh mới
@@ -248,7 +249,7 @@ export default function ProfilePage() {
                                                 setIsEditing(false);
                                                 setFormData({ name: user.name || '', avatarUrl: user.avatarUrl || '' });
                                             }}
-                                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                                         >
                                             Hủy
                                         </button>
@@ -256,8 +257,8 @@ export default function ProfilePage() {
                                 </div>
                             ) : (
                                 <>
-                                    <h2 className="text-2xl font-bold text-white">{displayName}</h2>
-                                    <p className="text-text-secondary">{user.email}</p>
+                                    <h2 className="text-2xl font-bold text-text-base">{displayName}</h2>
+                                    <p className="text-text-secondary font-medium">{user.email}</p>
                                     <div className="flex items-center gap-4 mt-4">
                                         <span className={`px-3 py-1 text-sm font-bold rounded-full ${user.role === 'admin'
                                             ? 'bg-amber-500/20 text-amber-400'
@@ -285,37 +286,37 @@ export default function ProfilePage() {
                 </div>
 
                 {/* Stats */}
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                    <div className="bg-surface-dark rounded-xl border border-border-color p-4 text-center">
-                        <p className="text-3xl font-bold text-primary">HSK {user.hskLevel}</p>
-                        <p className="text-sm text-text-secondary">Cấp độ</p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="bg-emerald-500/5 dark:bg-surface-dark rounded-2xl border border-emerald-500/10 p-5 text-center transition-all hover:scale-105 group">
+                        <p className="text-3xl font-black text-emerald-500">HSK {user.hskLevel}</p>
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mt-1">Cấp độ</p>
                     </div>
-                    <div className="bg-surface-dark rounded-xl border border-border-color p-4 text-center">
+                    <div className="bg-orange-500/5 dark:bg-surface-dark rounded-2xl border border-orange-500/10 p-5 text-center transition-all hover:scale-105 group">
                         <div className="flex items-center justify-center gap-1">
-                            <Icon name="local_fire_department" className="text-2xl text-orange-400" />
-                            <p className="text-3xl font-bold text-white">{user.streak}</p>
+                            <Icon name="local_fire_department" className="text-2xl text-orange-500" />
+                            <p className="text-3xl font-black text-text-base">{user.streak}</p>
                         </div>
-                        <p className="text-sm text-text-secondary">Streak</p>
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mt-1">Streak</p>
                     </div>
-                    <div className="bg-surface-dark rounded-xl border border-border-color p-4 text-center">
-                        <p className="text-3xl font-bold text-white">{user.dailyGoalMinutes}</p>
-                        <p className="text-sm text-text-secondary">Phút/ngày</p>
+                    <div className="bg-blue-500/5 dark:bg-surface-dark rounded-2xl border border-blue-500/10 p-5 text-center transition-all hover:scale-105 group">
+                        <p className="text-3xl font-black text-text-base">{user.dailyGoalMinutes}</p>
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mt-1">Phút/ngày</p>
                     </div>
-                    <div className="bg-surface-dark rounded-xl border border-border-color p-4 text-center">
-                        <p className="text-3xl font-bold text-white">{vocabStats?.total || 0}</p>
-                        <p className="text-sm text-text-secondary">Từ vựng</p>
+                    <div className="bg-purple-500/5 dark:bg-surface-dark rounded-2xl border border-purple-500/10 p-5 text-center transition-all hover:scale-105 group">
+                        <p className="text-3xl font-black text-text-base">{vocabStats?.total || 0}</p>
+                        <p className="text-xs font-bold text-text-secondary uppercase tracking-widest mt-1">Từ vựng</p>
                     </div>
                 </div>
 
                 {/* Actions */}
-                <div className="bg-surface-dark rounded-2xl border border-border-color divide-y divide-border-color">
+                <div className="bg-surface-dark rounded-3xl border border-border-color divide-y divide-border-color shadow-sm transition-colors">
                     <button
                         onClick={() => router.push('/settings')}
-                        className="w-full flex items-center justify-between p-4 hover:bg-surface-highlight transition-colors rounded-t-2xl"
+                        className="w-full flex items-center justify-between p-5 hover:bg-surface-highlight transition-colors rounded-t-3xl"
                     >
                         <div className="flex items-center gap-3">
                             <Icon name="settings" className="text-text-secondary" />
-                            <span className="text-white">Cài đặt</span>
+                            <span className="text-text-base font-bold">Cài đặt</span>
                         </div>
                         <Icon name="chevron_right" className="text-text-secondary" />
                     </button>
@@ -325,8 +326,8 @@ export default function ProfilePage() {
                             className="w-full flex items-center justify-between p-4 hover:bg-surface-highlight transition-colors"
                         >
                             <div className="flex items-center gap-3">
-                                <Icon name="admin_panel_settings" className="text-amber-400" />
-                                <span className="text-white">Trang quản trị</span>
+                                <Icon name="admin_panel_settings" className="text-amber-500" />
+                                <span className="text-text-base font-bold">Trang quản trị</span>
                             </div>
                             <Icon name="chevron_right" className="text-text-secondary" />
                         </button>

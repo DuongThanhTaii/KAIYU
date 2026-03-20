@@ -206,10 +206,10 @@ export default function AdminAchievementsPage() {
 
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{achievements.length}</p>
+                            <p className="text-2xl font-bold text-text-base">{achievements.length}</p>
                             <p className="text-xs text-text-secondary">Tổng achievements</p>
                         </div>
                         <div className="p-3 rounded-lg bg-yellow-500/10 flex items-center justify-center">
@@ -217,10 +217,10 @@ export default function AdminAchievementsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{totalEarned.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-text-base">{totalEarned.toLocaleString()}</p>
                             <p className="text-xs text-text-secondary">Lần đạt được</p>
                         </div>
                         <div className="p-3 rounded-lg bg-green-500/10 flex items-center justify-center">
@@ -228,10 +228,10 @@ export default function AdminAchievementsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">{totalXPAwarded.toLocaleString()}</p>
+                            <p className="text-2xl font-bold text-text-base">{totalXPAwarded.toLocaleString()}</p>
                             <p className="text-xs text-text-secondary">XP đã trao</p>
                         </div>
                         <div className="p-3 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -239,10 +239,10 @@ export default function AdminAchievementsPage() {
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color">
+                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
                         <div>
-                            <p className="text-2xl font-bold text-white">
+                            <p className="text-2xl font-bold text-text-base">
                                 {achievements.length > 0
                                     ? Math.round(totalEarned / achievements.length)
                                     : 0}
@@ -261,7 +261,7 @@ export default function AdminAchievementsPage() {
                 {achievements.map((achievement) => (
                     <div
                         key={achievement.id}
-                        className="bg-surface-dark rounded-xl border border-border-color p-6 hover:border-amber-500/30 transition-colors group"
+                        className="bg-surface-dark rounded-xl border border-border-color p-6 hover:border-amber-500/30 transition-colors group shadow-sm"
                     >
                         <div className="flex items-start justify-between mb-4">
                             <div className={`p-4 rounded-xl flex items-center justify-center ${getColorBg(achievement.iconColor || 'text-yellow-400')}`}>
@@ -286,7 +286,7 @@ export default function AdminAchievementsPage() {
                             </div>
                         </div>
 
-                        <h3 className="text-lg font-bold text-white mb-1">{achievement.title}</h3>
+                        <h3 className="text-lg font-bold text-text-base mb-1">{achievement.title}</h3>
                         <p className="text-sm text-text-secondary mb-4 line-clamp-2">
                             {achievement.description}
                         </p>
@@ -327,7 +327,7 @@ export default function AdminAchievementsPage() {
                                 setShowModal(false);
                                 resetForm();
                             }}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>
@@ -342,12 +342,12 @@ export default function AdminAchievementsPage() {
             >
                 <form onSubmit={handleSubmit} className="space-y-4">
                     {/* Preview */}
-                    <div className="flex items-center gap-4 p-4 bg-background-dark rounded-xl">
+                    <div className="flex items-center gap-4 p-4 bg-background-dark rounded-xl border border-border-color/30">
                         <div className={`p-3 rounded-xl flex items-center justify-center ${getColorBg(formData.iconColor)}`}>
                             <Icon name={formData.icon} className={`text-3xl ${formData.iconColor}`} />
                         </div>
                         <div>
-                            <h4 className="font-bold text-white">{formData.title || 'Tiêu đề'}</h4>
+                            <h4 className="font-bold text-text-base">{formData.title || 'Tiêu đề'}</h4>
                             <p className="text-sm text-text-secondary">{formData.description || 'Mô tả...'}</p>
                         </div>
                     </div>
@@ -361,7 +361,7 @@ export default function AdminAchievementsPage() {
                                 type="text"
                                 value={formData.code}
                                 onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase().replace(/\s+/g, '_') })}
-                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white font-mono placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base font-mono placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                                 placeholder="VD: FIRST_VIDEO"
                                 required
                             />
@@ -374,7 +374,7 @@ export default function AdminAchievementsPage() {
                                 type="number"
                                 value={formData.xpReward}
                                 onChange={(e) => setFormData({ ...formData, xpReward: Number(e.target.value) })}
-                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                                className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                                 placeholder="100"
                                 min="0"
                                 required
@@ -390,7 +390,7 @@ export default function AdminAchievementsPage() {
                             type="text"
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                             placeholder="VD: Người xem đầu tiên"
                             required
                         />
@@ -403,7 +403,7 @@ export default function AdminAchievementsPage() {
                         <textarea
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors resize-none"
+                            className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors resize-none"
                             placeholder="Mô tả cách đạt được achievement..."
                             rows={2}
                         />
@@ -421,7 +421,7 @@ export default function AdminAchievementsPage() {
                                     onClick={() => setFormData({ ...formData, icon })}
                                     className={`p-2 rounded-lg transition-colors flex items-center justify-center ${formData.icon === icon
                                         ? 'bg-primary/20 text-primary ring-2 ring-primary'
-                                        : 'bg-background-dark text-text-secondary hover:text-white'
+                                        : 'bg-background-dark text-text-secondary hover:text-text-base'
                                         }`}
                                 >
                                     <Icon name={icon} className="text-xl" />
@@ -463,7 +463,7 @@ export default function AdminAchievementsPage() {
                     <>
                         <button
                             onClick={() => setShowDeleteConfirm(null)}
-                            className="px-4 py-2 text-text-secondary hover:text-white transition-colors"
+                            className="px-4 py-2 text-text-secondary hover:text-text-base transition-colors"
                         >
                             Hủy
                         </button>

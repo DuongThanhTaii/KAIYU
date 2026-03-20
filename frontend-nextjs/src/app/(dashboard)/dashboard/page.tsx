@@ -118,10 +118,10 @@ export default function DashboardPage() {
                 {/* Welcome Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-2">
+                        <h1 className="text-3xl md:text-4xl font-black text-text-base tracking-tight mb-2">
                             Xin chào, {user?.name || 'Bạn'}! 👋
                         </h1>
-                        <p className="text-text-secondary text-lg">
+                        <p className="text-text-secondary text-lg font-bold tracking-tight">
                             {user?.streak && user.streak > 0
                                 ? `Streak ${user.streak} ngày! Tiếp tục phát huy nhé.`
                                 : 'Hãy bắt đầu học ngay hôm nay!'
@@ -163,8 +163,10 @@ export default function DashboardPage() {
                                 <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-surface-dark to-surface-dark" />
                             )}
                         </div>
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 via-surface-dark/80 to-surface-dark"></div>
-                        <div className="absolute inset-0 bg-gradient-to-t from-background-dark via-transparent to-transparent opacity-90"></div>
+                        <div
+                            className="absolute inset-0 transition-opacity duration-300"
+                            style={{ background: 'var(--hero-overlay)' }}
+                        />
 
                         <div className="relative p-6 flex flex-col justify-end h-full">
                             <div className="flex items-center gap-3 mb-3">
@@ -172,18 +174,18 @@ export default function DashboardPage() {
                                     {resumeVideo ? 'Tiếp tục xem' : 'Bắt đầu học'}
                                 </Badge>
                                 {resumeVideo && (
-                                    <span className="text-text-secondary text-sm font-medium flex items-center gap-1">
+                                    <span className="text-primary text-sm font-bold flex items-center gap-1">
                                         <Icon name="schedule" size="sm" />
                                         {Math.round((100 - resumeVideo.progressPercent) * resumeVideo.video.durationSeconds / 100 / 60)} phút còn lại
                                     </span>
                                 )}
                             </div>
-                            <h3 className="text-2xl md:text-3xl font-bold text-white mb-2 leading-tight">
+                            <h3 className="text-2xl md:text-3xl font-black text-text-base mb-2 leading-tight">
                                 {resumeVideo?.video.title || 'Khám phá thư viện video'}
                             </h3>
-                            <p className="text-gray-300 text-sm md:text-base mb-6 line-clamp-2 max-w-lg">
+                            <p className="text-text-secondary text-sm md:text-base mb-6 font-bold line-clamp-2 max-w-lg">
                                 {resumeVideo
-                                    ? `HSK ${resumeVideo.video.hskLevel} • Tiếp tục từ lần trước`
+                                    ? <span>HSK {resumeVideo.video.hskLevel} • <span className="text-primary">Tiếp tục từ lần trước</span></span>
                                     : 'Học tiếng Trung qua video thực tế với phụ đề tương tác.'
                                 }
                             </p>
@@ -193,26 +195,26 @@ export default function DashboardPage() {
                                 </button>
                                 {resumeVideo ? (
                                     <div className="flex flex-col gap-1 min-w-[140px]">
-                                        <div className="flex justify-between text-xs font-semibold text-white/80">
+                                        <div className="flex justify-between text-xs font-black text-text-base">
                                             <span>Tiến độ</span>
                                             <span>{resumeVideo.progressPercent}%</span>
                                         </div>
-                                        <div className="h-1.5 bg-white/20 rounded-full w-full overflow-hidden">
+                                        <div className="h-1.5 bg-border-color rounded-full w-full overflow-hidden">
                                             <div
-                                                className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(76,223,32,0.5)]"
+                                                className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(76,223,32,0.3)]"
                                                 style={{ width: `${resumeVideo.progressPercent}%` }}
                                             ></div>
                                         </div>
                                     </div>
                                 ) : (
-                                    <span className="text-white font-medium">Xem video</span>
+                                    <span className="text-text-base font-medium">Xem video</span>
                                 )}
                             </div>
                         </div>
                     </Card>
 
                     {/* 2. SRS Review Today */}
-                    <Card variant="default" hover className="relative overflow-hidden group">
+                    <Card variant="default" hover className="relative overflow-hidden group bg-orange-500/5 border-orange-500/20 shadow-sm">
                         <div className="absolute -right-4 -top-4 text-surface-highlight opacity-20 group-hover:opacity-30 transition-opacity transform rotate-12">
                             <Icon name="style" size="xl" className="text-[100px]" />
                         </div>
@@ -223,10 +225,10 @@ export default function DashboardPage() {
                                 </div>
                                 <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">Ôn tập SRS</span>
                             </div>
-                            <h3 className="text-4xl font-extrabold text-white mb-1">
+                            <h3 className="text-4xl font-black text-text-base mb-1">
                                 {flashcardStats?.dueToday || 0}
                             </h3>
-                            <p className="text-text-secondary font-medium">Từ cần ôn hôm nay</p>
+                            <p className="text-text-secondary font-bold">Từ cần ôn hôm nay</p>
                         </div>
                         <div className="mt-8">
                             <Button
@@ -241,7 +243,7 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* 3. Vocab Stats (Tall Pillar) */}
-                    <Card variant="default" padding="none" className="row-span-2 flex flex-col overflow-hidden">
+                    <Card variant="default" padding="none" className="row-span-2 flex flex-col overflow-hidden bg-blue-500/5 border-blue-500/20 shadow-sm">
                         <div className="p-6 border-b border-border-color">
                             <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
@@ -256,26 +258,26 @@ export default function DashboardPage() {
                             </div>
                         </div>
                         <div className="flex-1 p-4 flex flex-col gap-4">
-                            <div className="flex items-center justify-between p-4 bg-surface-highlight/30 rounded-xl">
-                                <span className="text-text-secondary">Tổng từ đã lưu</span>
-                                <span className="text-2xl font-bold text-white">{vocabStats?.total || 0}</span>
+                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold">Tổng từ đã lưu</span>
+                                <span className="text-2xl font-black text-text-base">{vocabStats?.total || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-surface-highlight/30 rounded-xl">
-                                <span className="text-text-secondary">Thành thạo</span>
+                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold">Thành thạo</span>
                                 <span className="text-2xl font-bold text-primary">{vocabStats?.mastered || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-surface-highlight/30 rounded-xl">
-                                <span className="text-text-secondary">Đang học</span>
-                                <span className="text-2xl font-bold text-yellow-400">{vocabStats?.learning || 0}</span>
+                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold">Đang học</span>
+                                <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{vocabStats?.learning || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-surface-highlight/30 rounded-xl">
-                                <span className="text-text-secondary">Cần ôn</span>
-                                <span className="text-2xl font-bold text-orange-400">{(vocabStats?.review || 0) + (vocabStats?.new || 0)}</span>
+                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold">Cần ôn</span>
+                                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">{(vocabStats?.review || 0) + (vocabStats?.new || 0)}</span>
                             </div>
                         </div>
                         <div className="p-4 border-t border-border-color">
                             <button
-                                className="w-full text-sm font-bold text-text-secondary hover:text-white text-center"
+                                className="w-full text-sm font-bold text-text-secondary hover:text-text-base text-center"
                                 onClick={() => router.push('/vocab')}
                             >
                                 Xem tất cả từ vựng
@@ -287,7 +289,7 @@ export default function DashboardPage() {
                     <Card variant="default" className="col-span-1 md:col-span-2 xl:col-span-2">
                         <div className="flex items-center justify-between mb-6">
                             <div>
-                                <h3 className="text-lg font-bold text-white">Hoạt động học tập</h3>
+                                <h3 className="text-lg font-black text-text-base">Hoạt động học tập</h3>
                                 <p className="text-sm text-text-secondary">7 ngày qua</p>
                             </div>
                         </div>
@@ -330,7 +332,7 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* 5. Daily Goal Circle */}
-                    <Card variant="default" className="flex flex-col justify-center items-center relative overflow-hidden">
+                    <Card variant="default" className="flex flex-col justify-center items-center relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm">
                         <div className="relative size-32 mb-4">
                             <svg className="size-full -rotate-90" viewBox="0 0 36 36">
                                 <path
@@ -352,11 +354,11 @@ export default function DashboardPage() {
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-3xl font-bold text-white">{dailyGoalPercent}<span className="text-sm align-top">%</span></span>
+                                <span className="text-3xl font-bold text-text-base">{dailyGoalPercent}<span className="text-sm align-top">%</span></span>
                             </div>
                         </div>
                         <div className="text-center relative z-10">
-                            <h4 className="text-white font-bold text-lg">Mục tiêu hôm nay</h4>
+                            <h4 className="text-text-base font-bold text-lg">Mục tiêu hôm nay</h4>
                             <p className="text-text-secondary text-sm">
                                 {minutesStudied}/{user?.dailyGoalMinutes || 30} phút
                             </p>
@@ -366,7 +368,7 @@ export default function DashboardPage() {
                     {/* 6. Achievements Table */}
                     <Card variant="default" padding="none" className="col-span-1 md:col-span-2 xl:col-span-4 overflow-hidden">
                         <div className="p-6 border-b border-border-color flex justify-between items-center">
-                            <h3 className="text-lg font-bold text-white">Thành tựu gần đây</h3>
+                            <h3 className="text-lg font-black text-text-base">Thành tựu gần đây</h3>
                             <Link href="/achievements" className="text-primary text-sm font-bold hover:underline">
                                 Xem tất cả
                             </Link>
@@ -390,13 +392,13 @@ export default function DashboardPage() {
                                     <tbody className="divide-y divide-border-color">
                                         {achievements.slice(0, 5).map((item) => (
                                             <tr key={item.id} className="hover:bg-surface-highlight/50 transition-colors">
-                                                <td className="px-6 py-4 font-medium text-white flex items-center gap-3">
+                                                <td className="px-6 py-4 font-medium text-text-base flex items-center gap-3">
                                                     <div className={`size-8 rounded-full bg-${item.iconColor?.replace('text-', '')}/20 flex items-center justify-center ${item.iconColor || 'text-primary'}`}>
                                                         <Icon name={item.icon || 'emoji_events'} size="md" />
                                                     </div>
                                                     {item.title}
                                                 </td>
-                                                <td className="px-6 py-4 text-gray-300">{item.description}</td>
+                                                <td className="px-6 py-4 text-text-secondary">{item.description}</td>
                                                 <td className="px-6 py-4 text-text-secondary">{formatDate(item.earnedAt)}</td>
                                                 <td className="px-6 py-4 text-right font-bold text-primary">+{item.xpReward} XP</td>
                                             </tr>
