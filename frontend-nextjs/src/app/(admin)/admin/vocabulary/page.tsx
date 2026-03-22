@@ -559,16 +559,16 @@ export default function AdminVocabularyPage() {
 
         return {
             hanzi,
-            pinyin: pinyin || undefined,
-            meaningVi: meaningVi || undefined,
+            pinyin: pinyin || '-',
+            meaningVi: meaningVi || '-',
             meaningEn: '',
-            partOfSpeech: partOfSpeech || undefined,
+            partOfSpeech: partOfSpeech || '',
             hskLevel,
-            example1_cn: exampleCn || undefined,
-            example1_py: examplePy || undefined,
-            example1_vi: exampleVi || undefined,
-            synonym1: synonymRaw || undefined,
-            antonym1: antonymRaw || undefined,
+            example1_cn: exampleCn || '',
+            example1_py: examplePy || '',
+            example1_vi: exampleVi || '',
+            synonym1: synonymRaw || '',
+            antonym1: antonymRaw || '',
         };
     };
 
