@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, BadRequestException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
     CreateVocabularyDto,
@@ -12,6 +12,8 @@ import {
 
 @Injectable()
 export class VocabularyService {
+    private readonly logger = new Logger(VocabularyService.name);
+
     constructor(private prisma: PrismaService) { }
 
     async findAll(query: {
@@ -237,7 +239,17 @@ export class VocabularyService {
     }
 
     /**
+     * Helper: check if a string is empty/placeholder
+     */
+    private isEmptyValue(val: string | undefined | null): boolean {
+        if (!val) return true;
+        const trimmed = val.trim();
+        return trimmed === '' || trimmed === '-' || trimmed === '—' || trimmed === 'N/A';
+    }
+
+    /**
      * Import vocabulary from XLSX/CSV data
+     * Enhanced with detailed skip/error logging
      */
     async importVocabulary(request: ImportRequestDto): Promise<ImportResultDto> {
         const { items, duplicateAction = 'skip' } = request;
@@ -248,7 +260,10 @@ export class VocabularyService {
             merged: 0,
             errors: 0,
             errorDetails: [],
+            skippedDetails: [],
         };
+
+        this.logger.log(`[IMPORT START] Total items: ${items.length}, duplicateAction: ${duplicateAction}`);
 
         // Get current max sequenceOrder
         const maxSeqRes = await this.prisma.vocabulary.aggregate({
@@ -256,24 +271,37 @@ export class VocabularyService {
         });
         let currentSequence = maxSeqRes._max.sequenceOrder || 0;
 
-        for (const item of items) {
+        for (let idx = 0; idx < items.length; idx++) {
+            const item = items[idx];
             currentSequence++;
             const itemSequence = currentSequence;
 
             try {
-                // Validate required fields (pinyin is optional - some words missing it)
-                if (!item.hanzi || !item.meaningVi) {
+                // Normalize hanzi: trim whitespace
+                const hanzi = (item.hanzi || '').trim();
+
+                // Validate required field: hanzi
+                if (!hanzi) {
+                    const reason = `Row ${idx + 1}: Thiếu hanzi (trống)`;
+                    this.logger.warn(`[IMPORT SKIP] ${reason}`);
                     result.errors++;
-                    result.errorDetails?.push({
-                        hanzi: item.hanzi || '(trống)',
-                        error: 'Thiếu thông tin bắt buộc (hanzi, meaningVi)',
+                    result.errorDetails!.push({
+                        hanzi: '(trống)',
+                        error: reason,
                     });
                     continue;
                 }
 
+                // Auto-fill meaningVi if missing or placeholder
+                let meaningVi = (item.meaningVi || '').trim();
+                if (this.isEmptyValue(meaningVi)) {
+                    meaningVi = '(chưa có nghĩa)';
+                    this.logger.debug(`[IMPORT] hanzi='${hanzi}': meaningVi was empty/'-', auto-filled`);
+                }
+
                 // Check for existing
                 const existing = await this.prisma.vocabulary.findUnique({
-                    where: { hanzi: item.hanzi },
+                    where: { hanzi },
                 });
 
                 // Parse examples from flattened format
@@ -335,14 +363,14 @@ export class VocabularyService {
                 }
 
                 const vocabData = {
-                    hanzi: item.hanzi,
-                    pinyin: item.pinyin || '',
-                    meaningVi: item.meaningVi,
-                    meaningEn: item.meaningEn,
-                    radical: item.radical,
+                    hanzi,
+                    pinyin: (item.pinyin || '').trim() || '',
+                    meaningVi,
+                    meaningEn: item.meaningEn ? item.meaningEn.trim() : undefined,
+                    radical: item.radical ? item.radical.trim() : undefined,
                     radicalMeaning: item.radicalMeaning,
                     strokeCount: item.strokeCount,
-                    partOfSpeech: item.partOfSpeech,
+                    partOfSpeech: item.partOfSpeech ? item.partOfSpeech.trim() : undefined,
                     hskLevel: item.hskLevel ?? 1,
                     tags: item.tags || [],
                     examples: examples.length > 0 ? examples : [],
@@ -354,6 +382,10 @@ export class VocabularyService {
                 if (existing) {
                     if (duplicateAction === 'skip') {
                         result.skipped++;
+                        result.skippedDetails!.push({
+                            hanzi,
+                            reason: `Đã tồn tại trong DB (duplicate, action=skip)`,
+                        });
                         continue;
                     }
 
@@ -362,8 +394,8 @@ export class VocabularyService {
                     if (item.pinyin && !existing.pinyin) updateData.pinyin = item.pinyin;
                     if (item.meaningEn && !existing.meaningEn) updateData.meaningEn = item.meaningEn;
                     if (item.partOfSpeech && !existing.partOfSpeech) updateData.partOfSpeech = item.partOfSpeech;
-                    if (item.meaningVi) updateData.meaningVi = item.meaningVi;
-                    if (item.hskLevel < existing.hskLevel) updateData.hskLevel = item.hskLevel;
+                    if (meaningVi && meaningVi !== '(chưa có nghĩa)') updateData.meaningVi = meaningVi;
+                    if (item.hskLevel != null && item.hskLevel < existing.hskLevel) updateData.hskLevel = item.hskLevel;
 
                     if (examples.length > 0) updateData.examples = examples;
                     if (synonyms.length > 0) updateData.synonyms = synonyms;
@@ -374,18 +406,18 @@ export class VocabularyService {
                     const isAlreadyInMeanings = existingMeanings.some(m =>
                         m.pinyin === (item.pinyin || '') &&
                         m.partOfSpeech === (item.partOfSpeech || '') &&
-                        (m.meanings as string[] || []).includes(item.meaningVi)
+                        (m.meanings as string[] || []).includes(meaningVi)
                     );
                     const isIdenticalToPrimary = (existing.pinyin || '') === (item.pinyin || '') &&
-                        existing.meaningVi === item.meaningVi &&
+                        existing.meaningVi === meaningVi &&
                         (existing.partOfSpeech || '') === (item.partOfSpeech || '');
 
                     let hasMerged = false;
-                    if (!isAlreadyInMeanings && !isIdenticalToPrimary) {
+                    if (!isAlreadyInMeanings && !isIdenticalToPrimary && meaningVi !== '(chưa có nghĩa)') {
                         existingMeanings.push({
                             partOfSpeech: item.partOfSpeech || '',
                             pinyin: item.pinyin || '',
-                            meanings: [item.meaningVi]
+                            meanings: [meaningVi]
                         });
                         updateData.meanings = existingMeanings;
                         hasMerged = true;
@@ -393,7 +425,7 @@ export class VocabularyService {
 
                     if (Object.keys(updateData).length > 0) {
                         await this.prisma.vocabulary.update({
-                            where: { hanzi: item.hanzi },
+                            where: { hanzi },
                             data: updateData,
                         });
                     }
@@ -401,6 +433,10 @@ export class VocabularyService {
                         result.merged = (result.merged || 0) + 1;
                     } else {
                         result.skipped++;
+                        result.skippedDetails!.push({
+                            hanzi,
+                            reason: `Đã tồn tại, không có dữ liệu mới để merge (action=overwrite)`,
+                        });
                     }
                 } else {
                     // Create new
@@ -409,12 +445,22 @@ export class VocabularyService {
                     result.created++;
                 }
             } catch (error) {
+                const errMsg = error instanceof Error ? error.message : 'Unknown error';
+                this.logger.error(`[IMPORT ERROR] hanzi='${item.hanzi || '?'}': ${errMsg}`);
                 result.errors++;
-                result.errorDetails?.push({
+                result.errorDetails!.push({
                     hanzi: item.hanzi || '(unknown)',
-                    error: error instanceof Error ? error.message : 'Unknown error',
+                    error: errMsg,
                 });
             }
+        }
+
+        // Log summary
+        this.logger.log(`[IMPORT DONE] created=${result.created} skipped=${result.skipped} merged=${result.merged} errors=${result.errors}`);
+        if (result.skippedDetails!.length > 0 && result.skippedDetails!.length <= 50) {
+            this.logger.log(`[IMPORT SKIPPED DETAILS] ${JSON.stringify(result.skippedDetails)}`);
+        } else if (result.skippedDetails!.length > 50) {
+            this.logger.log(`[IMPORT SKIPPED] ${result.skippedDetails!.length} items skipped (too many to log individually)`);
         }
 
         return result;

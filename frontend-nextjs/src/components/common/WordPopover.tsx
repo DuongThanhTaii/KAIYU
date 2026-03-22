@@ -41,6 +41,7 @@ interface WordPopoverProps {
     videoUrl?: string;
     onSubtitlesUpdated?: () => void;
     currentSubtitleTokens?: { hanzi: string; pinyin?: string; meaning?: string }[];
+    sourceSubtitle?: any;
 }
 
 type PanelType = 'dictionary' | 'related' | 'flashcard' | 'history' | 'admin_edit';
@@ -55,7 +56,8 @@ export function WordPopover({
     sourcePinyin,
     videoUrl,
     onSubtitlesUpdated,
-    currentSubtitleTokens
+    currentSubtitleTokens,
+    sourceSubtitle
 }: WordPopoverProps) {
     // Data states
     const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
@@ -181,6 +183,21 @@ export function WordPopover({
     const hasFetchedRef = useRef<string | null>(null);
     const hasEnrichedRef = useRef<string | null>(null);
 
+    // Sync subtitle from props
+    useEffect(() => {
+        if (sourceSubtitle) {
+            setSubtitle(sourceSubtitle);
+        } else if (sourceVideoId) {
+            videoApi.getSubtitles(sourceVideoId).then(subs => {
+                const sub = subs.find(s => 
+                    Number(s.startTime) <= (sourceTimestamp || 0) && 
+                    Number(s.endTime) >= (sourceTimestamp || 0)
+                );
+                if (sub) setSubtitle(sub);
+            });
+        }
+    }, [sourceSubtitle, sourceVideoId, sourceTimestamp]);
+
     // Lookup word and examples
     useEffect(() => {
         if (hasFetchedRef.current === word) return;
@@ -188,17 +205,6 @@ export function WordPopover({
             hasFetchedRef.current = word;
             setIsLoading(true);
             try {
-                // Determine subtitle if sourceVideoId is provided
-                if (sourceVideoId) {
-                    videoApi.getSubtitles(sourceVideoId).then(subs => {
-                        const sub = subs.find(s => 
-                            Number(s.startTime) <= (sourceTimestamp || 0) && 
-                            Number(s.endTime) >= (sourceTimestamp || 0)
-                        );
-                        if (sub) setSubtitle(sub);
-                    });
-                }
-
                 const [result, foldersList] = await Promise.all([
                     // Pass sourcePinyin for context-aware entry prioritization
                     dictionaryApi.lookup(word, sourcePinyin),
@@ -244,15 +250,27 @@ export function WordPopover({
                 setLookupHistory(history);
             });
         }
-        
+    }, [activePanel]);
+
+    useEffect(() => {
+        // Reset editing tokens if subtitle changes to allow regeneration
+        setEditingTokens([]);
+    }, [subtitle?.id]);
+
+    useEffect(() => {
         // Prepare tokens for segmentation tab
         if (activePanel === 'admin_edit' && adminSubTab === 'segment' && subtitle && editingTokens.length === 0) {
             if (subtitle.tokens && subtitle.tokens.length > 0) {
                 setEditingTokens(subtitle.tokens.map(t => ({ ...t })));
             } else {
                 // Fallback to Intl.Segmenter initial guess
-                const segmenter = new Intl.Segmenter('zh-CN', { granularity: 'word' });
-                const segments = Array.from(segmenter.segment(subtitle.hanzi));
+                const segmenter = typeof Intl !== 'undefined' && Intl.Segmenter 
+                    ? new Intl.Segmenter('zh-CN', { granularity: 'word' })
+                    : null;
+                const segments = segmenter
+                    ? Array.from(segmenter.segment(subtitle.hanzi || ''))
+                    : (subtitle.hanzi || '').split('').map(c => ({ segment: c }));
+                
                 setEditingTokens(segments.filter(s => s.segment.trim()).map((s, i) => ({
                     hanzi: s.segment,
                     pinyin: '',
@@ -261,7 +279,7 @@ export function WordPopover({
                 })));
             }
         }
-    }, [activePanel, adminSubTab, subtitle]);
+    }, [activePanel, adminSubTab, subtitle, editingTokens.length]);
 
 
     // XP animation
@@ -385,10 +403,11 @@ export function WordPopover({
             hanzi: char,
             pinyin: '', // Will fetch/guess later
             meaning: '',
-            position: token.position + i
+            position: 0 // Will re-index
         }));
         
         newTokens.splice(index, 1, ...splitTokens);
+        newTokens.forEach((t, i) => t.position = i);
         setEditingTokens(newTokens);
     };
 
@@ -403,10 +422,11 @@ export function WordPopover({
             hanzi: t1.hanzi + t2.hanzi,
             pinyin: (t1.pinyin + ' ' + t2.pinyin).trim(),
             meaning: '',
-            position: t1.position
+            position: 0 // Will re-index
         };
         
         newTokens.splice(index, 2, mergedToken);
+        newTokens.forEach((t, i) => t.position = i);
         setEditingTokens(newTokens);
     };
 

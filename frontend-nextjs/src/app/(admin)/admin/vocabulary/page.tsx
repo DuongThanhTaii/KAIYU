@@ -22,6 +22,7 @@ import {
     type Vocabulary,
     type ImportVocabularyItem
 } from '@/services/adminApi';
+import { dictionaryApi } from '@/services/dictionaryApi';
 import { HSK_COLORS, POS_COLORS } from '@/constants/vocabulary';
 import { highlightWord, getPosColor } from '@/utils/chinese';
 
@@ -118,13 +119,14 @@ export default function AdminVocabularyPage() {
     const [updateData, setUpdateData] = useState<ImportVocabularyItem[]>([]);
     const [importError, setImportError] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
-    const [importResult, setImportResult] = useState<{ created: number; skipped: number; merged?: number; errors: number } | null>(null);
+    const [importResult, setImportResult] = useState<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[]; skippedDetails?: { hanzi: string; reason: string }[] } | null>(null);
     const [updateResult, setUpdateResult] = useState<{ updated: number; skipped: number; errors: number } | null>(null);
     const [duplicateConfirm, setDuplicateConfirm] = useState<{ message: string; vocab: Vocabulary } | null>(null);
     const [hskStats, setHskStats] = useState<Record<number, number>>({});
     const [importProgress, setImportProgress] = useState<{ active: boolean; message: string; percent?: number }>({ active: false, message: '' });
     const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
     const [deleteAllConfirmText, setDeleteAllConfirmText] = useState('');
+    const [isLookingUp, setIsLookingUp] = useState(false);
     const searchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Detail state
@@ -270,6 +272,55 @@ export default function AdminVocabularyPage() {
         setSynonyms('');
         setAntonyms('');
         setEditingVocab(null);
+    };
+
+    const handleDictionaryLookup = async () => {
+        if (!formData.hanzi.trim()) {
+            setError('Vui lòng nhập Hán tự để tra cứu');
+            return;
+        }
+        setIsLookingUp(true);
+        setError(null);
+        try {
+            const hanzi = formData.hanzi.trim();
+            const result = await dictionaryApi.lookup(hanzi);
+            if (result && result.found) {
+                setFormData(prev => ({
+                    ...prev,
+                    pinyin: result.pinyin || prev.pinyin,
+                    meaningVi: result.meaningVi || result.meaningEn || prev.meaningVi,
+                    meaningEn: result.meaningEn || prev.meaningEn,
+                    partOfSpeech: result.partOfSpeech || prev.partOfSpeech,
+                    hskLevel: result.hskLevel || prev.hskLevel,
+                }));
+
+                const newMeanings = [...meaningEntries];
+                if (result.meaningVi || result.meaningEn) {
+                    newMeanings[0].meanings = result.meaningVi || result.meaningEn || '';
+                    if (result.partOfSpeech) newMeanings[0].partOfSpeech = result.partOfSpeech;
+                    setMeaningEntries(newMeanings);
+                }
+
+                try {
+                    const examples = await dictionaryApi.getExamples(hanzi);
+                    if (examples && examples.length > 0) {
+                        setExampleEntries(examples.map(ex => ({
+                            chinese: ex.chinese,
+                            pinyin: ex.pinyin || '',
+                            vietnamese: ex.translation || '',
+                        })));
+                    }
+                } catch (e) {
+                    console.error('Failed to fetch examples:', e);
+                }
+            } else {
+                setError('Không tìm thấy từ này trong từ điển');
+            }
+        } catch (err: any) {
+            setError(err?.message || 'Lỗi tra từ điển');
+        } finally {
+            setIsLookingUp(false);
+        }
     };
 
     const handleOpenCreate = () => {
@@ -441,31 +492,75 @@ export default function AdminVocabularyPage() {
     };
 
     // Helper: parse one sheet row to ImportVocabularyItem using Vietnamese header keys
+    // Uses fuzzy matching (includes) for all Vietnamese headers to handle variations
     const parseSheetRow = (row: any, hskLevel: number): ImportVocabularyItem | null => {
         let hanzi = '', pinyin = '', meaningVi = '', partOfSpeech = '', exampleCn = '', examplePy = '', exampleVi = '', synonymRaw = '', antonymRaw = '';
+        const unmatchedKeys: string[] = [];
 
         Object.keys(row).forEach(k => {
             const key = k.trim().toLowerCase();
             const val = String(row[k] || '').trim();
             if (!val) return;
 
-            if (key === 'từ vựng' || key === 'hanzi' || key === '汉字') hanzi = val;
-            else if (key.includes('pinyin') || key === '拼音') pinyin = val;
-            else if (key.includes('từ loại') || key === 'partofspeech') partOfSpeech = val;
-            else if (key === 'nghĩa' || key === 'meaningvi' || key.includes('ý nghĩa') || key === 'nghia') meaningVi = val;
-            else if (key.includes('ví dụ')) exampleCn = val;
-            else if (key.includes('phiên âm')) examplePy = val;
-            else if (key === 'dịch' || key.includes('nghĩa tiếng việt')) exampleVi = val;
-            else if (key.includes('cận nghĩa') || key.includes('đồng nghĩa')) synonymRaw = val;
-            else if (key.includes('trái nghĩa')) antonymRaw = val;
+            // Skip STT column
+            if (key === 'stt' || key === '__rownum__') return;
+
+            // Hanzi: "từ vựng", "hanzi", "汉字", "chữ hán"
+            if (key === 'từ vựng' || key === 'hanzi' || key === '汉字' || key.includes('chữ hán')) {
+                hanzi = val;
+            }
+            // Pinyin: "pinyin", "拼音", "phiên âm ví dụ" is NOT pinyin of the word
+            else if ((key === 'pinyin' || key.startsWith('pinyin')) && !key.includes('phiên âm')) {
+                pinyin = val;
+            }
+            // Part of speech: "từ loại", "partofspeech"
+            else if (key.includes('từ loại') || key === 'partofspeech' || key === 'pos') {
+                partOfSpeech = val;
+            }
+            // Meaning Vi: "nghĩa", "meaningvi", "ý nghĩa" 
+            // IMPORTANT: Must check BEFORE 'đồng nghĩa' and 'trái nghĩa' to avoid false match
+            else if (
+                (key === 'nghĩa' || key === 'nghia' || key === 'meaningvi' || key.includes('ý nghĩa'))
+                && !key.includes('đồng nghĩa') && !key.includes('cận nghĩa') && !key.includes('trái nghĩa')
+            ) {
+                meaningVi = val;
+            }
+            // Example Chinese: "ví dụ (chữ hán)", "ví dụ"
+            else if (key.includes('ví dụ')) {
+                exampleCn = val;
+            }
+            // Example Pinyin: "phiên âm" (for example sentence)
+            else if (key.includes('phiên âm') || (key.startsWith('pinyin') && key.includes('phiên âm'))) {
+                examplePy = val;
+            }
+            // Example Vietnamese: "dịch", "nghĩa tiếng việt"
+            else if (key === 'dịch' || key.startsWith('dịch') || key.includes('nghĩa tiếng việt')) {
+                exampleVi = val;
+            }
+            // Synonyms: "từ cận nghĩa", "từ đồng nghĩa", "cận nghĩa", "đồng nghĩa"
+            else if (key.includes('cận nghĩa') || key.includes('đồng nghĩa')) {
+                synonymRaw = val;
+            }
+            // Antonyms: "từ trái nghĩa", "trái nghĩa"
+            else if (key.includes('trái nghĩa')) {
+                antonymRaw = val;
+            }
+            else {
+                unmatchedKeys.push(key);
+            }
         });
+
+        // Log unmatched headers once (for debugging)
+        if (unmatchedKeys.length > 0 && hanzi) {
+            console.debug(`[parseSheetRow] hanzi='${hanzi}': unmatched headers: [${unmatchedKeys.join(', ')}]`);
+        }
 
         if (!hanzi) return null;
 
         return {
             hanzi,
-            pinyin: pinyin || '-',
-            meaningVi: meaningVi || '-',
+            pinyin: pinyin || undefined,
+            meaningVi: meaningVi || undefined,
             meaningEn: '',
             partOfSpeech: partOfSpeech || undefined,
             hskLevel,
@@ -606,7 +701,11 @@ export default function AdminVocabularyPage() {
                 chunks.push(importData.slice(i, i + CHUNK_SIZE));
             }
 
-            const aggregatedResult = { created: 0, skipped: 0, merged: 0, errors: 0 };
+            const aggregatedResult: {
+                created: number; skipped: number; merged: number; errors: number;
+                errorDetails: { hanzi: string; error: string }[];
+                skippedDetails: { hanzi: string; reason: string }[];
+            } = { created: 0, skipped: 0, merged: 0, errors: 0, errorDetails: [], skippedDetails: [] };
             let processedItems = 0;
 
             for (let i = 0; i < chunks.length; i++) {
@@ -617,6 +716,8 @@ export default function AdminVocabularyPage() {
                 aggregatedResult.skipped += result.skipped;
                 aggregatedResult.merged += (result.merged || 0);
                 aggregatedResult.errors += result.errors;
+                if (result.errorDetails) aggregatedResult.errorDetails.push(...result.errorDetails);
+                if (result.skippedDetails) aggregatedResult.skippedDetails.push(...result.skippedDetails);
 
                 processedItems += chunk.length;
                 const percent = Math.round((processedItems / totalItems) * 100);
@@ -1394,8 +1495,17 @@ export default function AdminVocabularyPage() {
                         </h4>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-medium text-text-secondary mb-1">
-                                    Hán tự <span className="text-red-400">*</span>
+                                <label className="flex items-center justify-between text-xs font-medium text-text-secondary mb-1">
+                                    <span>Hán tự <span className="text-red-400">*</span></span>
+                                    <button
+                                        type="button"
+                                        onClick={handleDictionaryLookup}
+                                        disabled={isLookingUp || !formData.hanzi.trim()}
+                                        className="text-[10px] flex items-center gap-1 text-amber-400 hover:text-amber-300 disabled:opacity-50 transition-colors"
+                                    >
+                                        {isLookingUp ? <span className="size-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"/> : <Icon name="search" size="sm" className="text-[14px]" />}
+                                        Tra từ điển
+                                    </button>
                                 </label>
                                 <input
                                     type="text"
@@ -1916,7 +2026,7 @@ export default function AdminVocabularyPage() {
                 isOpen={!!importResult}
                 onClose={() => setImportResult(null)}
                 title="Kết quả Import"
-                size="sm"
+                size="lg"
                 footer={
                     <button
                         onClick={() => setImportResult(null)}
@@ -1991,6 +2101,67 @@ export default function AdminVocabularyPage() {
                                 </div>
                             )}
                         </div>
+
+                        {/* Error Details */}
+                        {importResult.errorDetails && importResult.errorDetails.length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-bold text-red-400 flex items-center gap-1">
+                                    <Icon name="error" size="sm" /> Chi tiết lỗi ({importResult.errorDetails.length})
+                                </h4>
+                                <div className="max-h-40 overflow-y-auto rounded-lg border border-red-500/20 bg-red-500/5">
+                                    <table className="w-full text-xs">
+                                        <thead className="sticky top-0 bg-surface-secondary">
+                                            <tr>
+                                                <th className="text-left p-2 text-text-secondary">Hanzi</th>
+                                                <th className="text-left p-2 text-text-secondary">Lỗi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {importResult.errorDetails.map((e, i) => (
+                                                <tr key={i} className="border-t border-red-500/10">
+                                                    <td className="p-2 font-chinese text-text-base">{e.hanzi}</td>
+                                                    <td className="p-2 text-red-300">{e.error}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Skipped Details */}
+                        {importResult.skippedDetails && importResult.skippedDetails.length > 0 && (
+                            <div className="space-y-2">
+                                <h4 className="text-sm font-bold text-amber-400 flex items-center gap-1">
+                                    <Icon name="info" size="sm" /> Chi tiết bỏ qua ({importResult.skippedDetails.length})
+                                </h4>
+                                <div className="max-h-40 overflow-y-auto rounded-lg border border-amber-500/20 bg-amber-500/5">
+                                    <table className="w-full text-xs">
+                                        <thead className="sticky top-0 bg-surface-secondary">
+                                            <tr>
+                                                <th className="text-left p-2 text-text-secondary">Hanzi</th>
+                                                <th className="text-left p-2 text-text-secondary">Lý do</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {importResult.skippedDetails.slice(0, 100).map((s, i) => (
+                                                <tr key={i} className="border-t border-amber-500/10">
+                                                    <td className="p-2 font-chinese text-text-base">{s.hanzi}</td>
+                                                    <td className="p-2 text-amber-300">{s.reason}</td>
+                                                </tr>
+                                            ))}
+                                            {importResult.skippedDetails.length > 100 && (
+                                                <tr>
+                                                    <td colSpan={2} className="p-2 text-center text-text-secondary italic">
+                                                        ... và {importResult.skippedDetails.length - 100} từ khác
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Tip */}
                         {importResult.created === 0 && importResult.skipped > 0 && (

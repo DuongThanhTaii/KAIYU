@@ -25,31 +25,8 @@ const renderGroupedPinyin = (hanzi: string, pinyin: string, tokens?: any[]) => {
         return tokens.map(t => t.pinyin || '').join(' ').replace(/\s+/g, ' ').trim();
     }
 
-    if (!segmenter) return pinyin;
-
-    const syllables = pinyin.split(/\s+/);
-    const segments = Array.from(segmenter.segment(hanzi));
-    const groupedPinyin: string[] = [];
-    let syllableIndex = 0;
-
-    for (const seg of segments) {
-        const word = seg.segment;
-        const charCount = word.length;
-
-        if (seg.isWordLike) {
-            // Take n syllables corresponding to the word's character count
-            const wordPinyin = syllables.slice(syllableIndex, syllableIndex + charCount).join('');
-            groupedPinyin.push(wordPinyin);
-            syllableIndex += charCount;
-        } else {
-            // For punctuation/whitespace, just append if it's whitespace or skip if it matches nothing
-            if (word.trim() === '') {
-                groupedPinyin.push(' ');
-            }
-        }
-    }
-
-    return groupedPinyin.join(' ');
+    // Keep original spaces exactly as the admin entered them in the subtitle file!
+    return pinyin;
 };
 
 export default function AdminVideosPage() {
@@ -897,6 +874,7 @@ export default function AdminVideosPage() {
                         sourceTimestamp={previewCurrentTime}
                         sourceSentence={currentSubtitle?.hanzi}
                         sourcePinyin={currentSubtitle?.pinyin}
+                        sourceSubtitle={currentSubtitle}
                         videoUrl={previewVideo?.videoUrl}
                         onSubtitlesUpdated={() => {
                             if (previewVideo) {

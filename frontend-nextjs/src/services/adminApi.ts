@@ -282,8 +282,8 @@ export const validateImport = (
 export const importVocabulary = (
     items: ImportVocabularyItem[],
     duplicateAction: 'skip' | 'overwrite' = 'skip'
-): Promise<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }> => {
-    return apiRequest<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[] }>('/vocabulary/import', {
+): Promise<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[]; skippedDetails?: { hanzi: string; reason: string }[] }> => {
+    return apiRequest<{ created: number; skipped: number; merged?: number; errors: number; errorDetails?: { hanzi: string; error: string }[]; skippedDetails?: { hanzi: string; reason: string }[] }>('/vocabulary/import', {
         method: 'POST',
         body: JSON.stringify({ items, duplicateAction }),
     });

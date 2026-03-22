@@ -251,7 +251,8 @@ export class ImportVocabularyItemDto {
     pinyin?: string;
 
     @IsString()
-    meaningVi: string;
+    @IsOptional()
+    meaningVi?: string;
 
     @IsString()
     @IsOptional()
@@ -276,7 +277,8 @@ export class ImportVocabularyItemDto {
     @IsNumber()
     @Min(0)
     @Max(9)
-    hskLevel: number;
+    @IsOptional()
+    hskLevel?: number;
 
     @IsArray()
     @IsOptional()
@@ -409,4 +411,7 @@ export class ImportResultDto {
 
     @ApiPropertyOptional({ description: 'Error details' })
     errorDetails?: { hanzi: string; error: string }[];
+
+    @ApiPropertyOptional({ description: 'Skipped item details with reasons' })
+    skippedDetails?: { hanzi: string; reason: string }[];
 }
