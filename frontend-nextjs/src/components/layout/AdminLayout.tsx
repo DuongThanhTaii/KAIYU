@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import AdminSidebar from './AdminSidebar';
 import Icon from '../common/Icon';
 import { getNotifications, type AdminNotification } from '../../services/adminApi';
@@ -10,12 +11,13 @@ interface AdminLayoutProps {
     children: React.ReactNode;
     title?: string;
     actions?: React.ReactNode;
+    showLogo?: boolean;
 }
 
 // Local storage key for dismissed notifications
 const DISMISSED_NOTIFS_KEY = 'KAIYU_admin_dismissed_notifs';
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) => {
+const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions, showLogo = true }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isMobileOpen, setIsMobileOpen] = useState(false);
     const [showNotifications, setShowNotifications] = useState(false);
@@ -137,8 +139,24 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                             <Icon name="menu" size="md" className="text-text-base" />
                         </button>
 
+                        {showLogo && (
+                            <Link href="/admin" className="flex lg:hidden items-center gap-2.5">
+                                <div className="size-8 md:size-9 flex items-center justify-center rounded-full overflow-hidden bg-white shadow-sm ring-1 ring-border-color/20">
+                                    <Image src="/images/logo_nentrang.png" alt="KAIYU" width={32} height={32} className="object-contain" />
+                                </div>
+                                {title && (
+                                    <h1 className="text-base md:text-xl font-black text-text-base uppercase tracking-tight line-clamp-1">{title}</h1>
+                                )}
+                            </Link>
+                        )}
+                        {!showLogo && title && (
+                            <h1 className="lg:hidden text-lg md:text-xl font-black text-text-base uppercase tracking-tight line-clamp-1">{title}</h1>
+                        )}
+                        {/* Title only for desktop */}
                         {title && (
-                            <h1 className="text-lg md:text-xl font-bold text-text-base">{title}</h1>
+                            <h1 className="hidden lg:block text-xl font-black text-text-base uppercase tracking-tight line-clamp-1">
+                                {title}
+                            </h1>
                         )}
                     </div>
                     <div className="flex items-center gap-2 md:gap-4">
@@ -240,11 +258,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                                                                 <p className="text-sm font-medium text-text-base">
                                                                     {getNotificationTitle(notif.type)}
                                                                 </p>
-                                                                <span className="text-[10px] text-text-secondary whitespace-nowrap">
+                                                                <span className="text-[10px] text-text-muted whitespace-nowrap">
                                                                     {notif.time}
                                                                 </span>
                                                             </div>
-                                                            <p className="text-xs text-text-secondary mt-0.5 line-clamp-2">
+                                                            <p className="text-xs text-text-muted mt-0.5 line-clamp-2">
                                                                 {notif.message}
                                                             </p>
                                                         </div>
@@ -255,7 +273,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title, actions }) =
                                                             className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-500/20 transition-all active:scale-95 inline-flex items-center justify-center cursor-pointer"
                                                             title="Xóa thông báo"
                                                         >
-                                                            <Icon name="close" size="sm" className="text-text-secondary hover:text-red-400" />
+                                                            <Icon name="close" size="sm" className="text-text-muted hover:text-red-400" />
                                                         </button>
                                                     </div>
                                                 );

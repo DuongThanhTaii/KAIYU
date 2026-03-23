@@ -7,6 +7,7 @@ interface Column<T> {
     render?: (item: T) => React.ReactNode;
     sortable?: boolean;
     width?: string;
+    hideOnMobile?: boolean;
 }
 
 interface DataTableProps<T> {
@@ -68,7 +69,8 @@ function DataTable<T extends { id: string | number }>({
                             {columns.map((col) => (
                                 <th
                                     key={String(col.key)}
-                                    className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-secondary"
+                                    className={`px-4 py-3 text-left text-xs font-bold uppercase tracking-wider text-text-secondary ${col.hideOnMobile ? 'hidden md:table-cell' : ''
+                                        }`}
                                     style={{ width: col.width }}
                                 >
                                     <div className="flex items-center gap-2">
@@ -107,7 +109,8 @@ function DataTable<T extends { id: string | number }>({
                                     {columns.map((col) => (
                                         <td
                                             key={String(col.key)}
-                                            className="px-4 py-4 text-sm text-text-base"
+                                            className={`px-4 py-4 text-sm text-text-base ${col.hideOnMobile ? 'hidden md:table-cell' : ''
+                                                }`}
                                         >
                                             {col.render
                                                 ? col.render(item)

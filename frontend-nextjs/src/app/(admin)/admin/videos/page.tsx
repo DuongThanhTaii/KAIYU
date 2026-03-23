@@ -546,6 +546,7 @@ export default function AdminVideosPage() {
             key: 'hskLevel',
             header: 'HSK',
             width: '75px',
+            hideOnMobile: true,
             render: (video: Video) => (
                 <span className="px-2 py-1 text-xs font-bold rounded-full bg-primary/20 text-primary whitespace-nowrap">
                     HSK {video.hskLevel}
@@ -556,6 +557,7 @@ export default function AdminVideosPage() {
             key: 'durationSeconds',
             header: 'Thời lượng',
             width: '80px',
+            hideOnMobile: true,
             render: (video: Video) => (
                 <span className="text-text-secondary">{formatSecondsToTime(video.durationSeconds)}</span>
             ),
@@ -564,6 +566,7 @@ export default function AdminVideosPage() {
             key: 'viewCount',
             header: 'Lượt xem',
             width: '80px',
+            hideOnMobile: true,
             render: (video: Video) => (
                 <span className="text-text-secondary">{video.viewCount.toLocaleString()}</span>
             ),
@@ -572,6 +575,7 @@ export default function AdminVideosPage() {
             key: '_count.subtitles',
             header: 'Phụ đề',
             width: '70px',
+            hideOnMobile: true,
             render: (video: Video) => (
                 <span className={video._count?.subtitles ? 'text-primary' : 'text-red-400'}>
                     {video._count?.subtitles || 0}
@@ -655,13 +659,14 @@ export default function AdminVideosPage() {
     return (
         <AdminLayout
             title="Quản lý Video"
+            showLogo={false}
             actions={
                 <button
                     onClick={handleOpenCreate}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors"
                 >
                     <Icon name="add" />
-                    Thêm Video
+                    <span className="hidden sm:inline">Thêm Video</span>
                 </button>
             }
         >
@@ -673,7 +678,7 @@ export default function AdminVideosPage() {
             )}
 
             {/* Filters */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 mb-6">
                 <div className="flex-1 relative">
                     <Icon
                         name="search"
@@ -682,23 +687,25 @@ export default function AdminVideosPage() {
                     <input
                         type="text"
                         placeholder="Tìm kiếm video..."
-                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                        className="w-full pl-12 pr-4 py-2.5 sm:py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors text-sm sm:text-base"
                     />
                 </div>
-                <select className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors">
-                    <option value="">Tất cả HSK</option>
-                    <option value="1">HSK 1</option>
-                    <option value="2">HSK 2</option>
-                    <option value="3">HSK 3</option>
-                    <option value="4">HSK 4</option>
-                    <option value="5">HSK 5</option>
-                    <option value="6">HSK 6</option>
-                </select>
-                <select className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors">
-                    <option value="">Tất cả trạng thái</option>
-                    <option value="true">Đã xuất bản</option>
-                    <option value="false">Nháp</option>
-                </select>
+                <div className="flex gap-3">
+                    <select className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors text-sm sm:text-base">
+                        <option value="">Tất cả HSK</option>
+                        <option value="1">HSK 1</option>
+                        <option value="2">HSK 2</option>
+                        <option value="3">HSK 3</option>
+                        <option value="4">HSK 4</option>
+                        <option value="5">HSK 5</option>
+                        <option value="6">HSK 6</option>
+                    </select>
+                    <select className="flex-1 sm:flex-none px-3 sm:px-4 py-2.5 sm:py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors text-sm sm:text-base">
+                        <option value="">Trạng thái</option>
+                        <option value="true">Đã xuất bản</option>
+                        <option value="false">Nháp</option>
+                    </select>
+                </div>
             </div>
 
             {/* Data Table */}
@@ -729,9 +736,9 @@ export default function AdminVideosPage() {
                 size="2xl"
                 compact={true}
             >
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-[82vh]">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-auto lg:h-[82vh] overflow-y-auto lg:overflow-hidden">
                     {/* Left Column: Video & Active Subtitle (8/12) */}
-                    <div className="lg:col-span-8 flex flex-col gap-4 overflow-visible">
+                    <div className="lg:col-span-8 flex flex-col gap-4 overflow-visible h-full">
                         <div className="aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-border-color shrink-0">
                             {previewVideo && (
                                 videoApi.isYouTubeUrl(previewVideo.videoUrl) ? (
@@ -811,14 +818,14 @@ export default function AdminVideosPage() {
                     </div>
 
                     {/* Right Column: Full Subtitle List (4/12) */}
-                    <div className="lg:col-span-4 flex flex-col bg-background-dark/50 rounded-2xl border border-border-color overflow-hidden">
+                    <div className="lg:col-span-4 flex flex-col bg-background-dark/50 rounded-2xl border border-border-color overflow-hidden min-h-[300px] lg:h-full">
                         <div className="p-3 border-b border-border-color bg-surface-dark flex items-center gap-2">
                             <Icon name="subtitles" size="sm" className="text-primary" />
                             <h3 className="text-sm font-bold text-text-base uppercase tracking-wider">Danh sách phụ đề</h3>
                         </div>
                         <div 
                             ref={subtitleListRef}
-                            className="flex-1 overflow-y-auto p-2 custom-scrollbar flex flex-col gap-1.5"
+                            className="flex-1 overflow-y-auto p-2 custom-scrollbar flex flex-col gap-1.5 max-h-[40vh] lg:max-h-none"
                         >
                             {previewSubtitles.length > 0 ? (
                                 previewSubtitles.map((sub, index) => (
@@ -1009,7 +1016,7 @@ export default function AdminVideosPage() {
                         maxSizeMB={5}
                     />
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-2">
                                 HSK Level
@@ -1167,49 +1174,64 @@ export default function AdminVideosPage() {
                                 </div>
                             </div>
 
-                            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+                            <div className="space-y-4 lg:space-y-2 max-h-[60vh] lg:max-h-96 overflow-y-auto pr-2">
                                 {subtitleLines.map((line, index) => (
-                                    <div key={line.id} className="flex items-center gap-2 p-3 bg-background-dark rounded-lg group">
-                                        <span className="w-6 text-xs text-text-secondary text-center">{index + 1}</span>
-                                        <input
-                                            type="text"
-                                            value={line.startTime}
-                                            onChange={(e) => updateSubtitleLine(line.id, 'startTime', e.target.value)}
-                                            placeholder="00:00"
-                                            className="w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base text-center focus:border-primary focus:outline-none"
-                                        />
-                                        <span className="text-text-secondary">→</span>
-                                        <input
-                                            type="text"
-                                            value={line.endTime}
-                                            onChange={(e) => updateSubtitleLine(line.id, 'endTime', e.target.value)}
-                                            placeholder="00:05"
-                                            className="w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base text-center focus:border-primary focus:outline-none"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={line.hanzi}
-                                            onChange={(e) => updateSubtitleLine(line.id, 'hanzi', e.target.value)}
-                                            placeholder="你好"
-                                            className="flex-1 min-w-[100px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none font-chinese"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={line.pinyin}
-                                            onChange={(e) => updateSubtitleLine(line.id, 'pinyin', e.target.value)}
-                                            placeholder="nǐ hǎo"
-                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none font-pinyin"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={line.meaningVi}
-                                            onChange={(e) => updateSubtitleLine(line.id, 'meaningVi', e.target.value)}
-                                            placeholder="Xin chào"
-                                            className="flex-1 min-w-[80px] px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none"
-                                        />
+                                    <div key={line.id} className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 p-3 lg:p-2 bg-background-dark rounded-xl lg:rounded-lg group border border-border-color lg:border-transparent transition-colors hover:border-border-color">
+                                        <div className="flex items-center gap-2">
+                                            <span className="w-6 text-xs text-text-secondary text-center font-bold">{index + 1}</span>
+                                            <div className="flex items-center gap-1 flex-1">
+                                                <input
+                                                    type="text"
+                                                    value={line.startTime}
+                                                    onChange={(e) => updateSubtitleLine(line.id, 'startTime', e.target.value)}
+                                                    placeholder="00:00"
+                                                    className="w-full lg:w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base text-center focus:border-primary focus:outline-none"
+                                                />
+                                                <span className="text-text-secondary">→</span>
+                                                <input
+                                                    type="text"
+                                                    value={line.endTime}
+                                                    onChange={(e) => updateSubtitleLine(line.id, 'endTime', e.target.value)}
+                                                    placeholder="00:05"
+                                                    className="w-full lg:w-16 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base text-center focus:border-primary focus:outline-none"
+                                                />
+                                            </div>
+                                            <button
+                                                onClick={() => removeSubtitleLine(line.id)}
+                                                className="lg:hidden p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded transition-opacity"
+                                                disabled={subtitleLines.length <= 1}
+                                            >
+                                                <Icon name="close" className="text-lg" />
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:flex-1 gap-2">
+                                            <input
+                                                type="text"
+                                                value={line.hanzi}
+                                                onChange={(e) => updateSubtitleLine(line.id, 'hanzi', e.target.value)}
+                                                placeholder="Tiếng Trung"
+                                                className="col-span-1 lg:flex-1 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none font-chinese"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={line.pinyin}
+                                                onChange={(e) => updateSubtitleLine(line.id, 'pinyin', e.target.value)}
+                                                placeholder="Pinyin"
+                                                className="col-span-1 lg:flex-1 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none font-pinyin"
+                                            />
+                                            <input
+                                                type="text"
+                                                value={line.meaningVi}
+                                                onChange={(e) => updateSubtitleLine(line.id, 'meaningVi', e.target.value)}
+                                                placeholder="Tiếng Việt"
+                                                className="col-span-1 lg:flex-1 px-2 py-1.5 bg-surface-dark border border-border-color rounded text-sm text-text-base focus:border-primary focus:outline-none"
+                                            />
+                                        </div>
+                                        
                                         <button
                                             onClick={() => removeSubtitleLine(line.id)}
-                                            className="p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                                            className="hidden lg:block p-1.5 text-red-400 hover:text-red-300 hover:bg-red-500/20 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                                             disabled={subtitleLines.length <= 1}
                                         >
                                             <Icon name="close" className="text-lg" />

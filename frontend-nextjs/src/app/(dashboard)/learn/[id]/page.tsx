@@ -479,14 +479,14 @@ export default function VideoPlayerPage() {
     return (
         <div className="h-screen flex flex-col bg-background-dark overflow-hidden transition-colors duration-300">
             {/* Header */}
-            <header className="flex items-center justify-between whitespace-nowrap border-b border-border-color bg-surface-dark px-6 py-3 shrink-0 transition-colors">
-                <div className="flex items-center gap-4">
-                    <Link href="/learn" className="flex items-center gap-2 text-text-secondary hover:text-text-base transition-colors">
+            <header className="flex items-center justify-between whitespace-nowrap border-b border-border-color bg-surface-dark px-4 md:px-6 py-2 md:py-3 shrink-0 transition-colors">
+                <div className="flex items-center gap-2 md:gap-4 shrink-0">
+                    <Link href="/learn" className="flex items-center gap-2 text-text-secondary hover:text-text-base transition-colors p-2 -ml-2">
                         <Icon name="arrow_back" />
-                        <span>Quay lại</span>
+                        <span className="hidden sm:inline">Quay lại</span>
                     </Link>
                 </div>
-                <h1 className="text-text-base font-bold truncate max-w-xl leading-tight tracking-tight">{video.title}</h1>
+                <h1 className="text-text-base font-bold truncate max-w-[40%] sm:max-w-xl text-sm sm:text-base md:text-lg leading-tight tracking-tight px-2">{video.title}</h1>
                 <div className="flex items-center gap-3">
                     {/* Streak Display */}
                     <div className="hidden md:flex items-center gap-1 bg-surface-dark px-3 py-1.5 rounded-full border border-border-color shadow-sm">
@@ -506,31 +506,31 @@ export default function VideoPlayerPage() {
                     {/* User Avatar */}
                     <button
                         onClick={() => router.push('/profile')}
-                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity shrink-0"
                     >
                         {user?.avatarUrl ? (
                             <img
                                 src={user.avatarUrl}
                                 alt={user?.name || 'User'}
-                                className="rounded-full size-10 ring-2 ring-border-color object-cover"
+                                className="rounded-full size-8 sm:size-10 ring-2 ring-border-color object-cover"
                             />
                         ) : (
-                            <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-10 ring-2 ring-border-color flex items-center justify-center text-on-primary font-bold">
+                            <div className="bg-gradient-to-br from-primary to-emerald-600 rounded-full size-8 sm:size-10 ring-2 ring-border-color flex items-center justify-center text-on-primary font-bold text-xs sm:text-base">
                                 {user?.name?.charAt(0).toUpperCase() || 'U'}
                             </div>
                         )}
                     </button>
-
+                    
                     {quiz && (
                         <Link
                             href={`/learn/${videoId}/quiz`}
-                            className="flex items-center gap-2 px-4 py-2 rounded-full border border-primary text-primary hover:bg-primary hover:text-white transition-colors text-sm font-bold"
+                            className="flex items-center gap-2 px-2 sm:px-4 py-1.5 sm:py-2 rounded-full border border-primary text-primary hover:bg-primary hover:text-white transition-colors text-xs sm:text-sm font-bold shrink-0"
                         >
                             <Icon name="quiz" size="sm" />
-                            Làm bài tập
+                            <span className="hidden sm:inline">Làm bài tập</span>
                         </Link>
                     )}
-                    <Badge variant="primary">HSK {video.hskLevel}</Badge>
+                    <Badge variant="primary" className="hidden xs:inline-flex">HSK {video.hskLevel}</Badge>
                 </div>
             </header>
 
@@ -575,8 +575,8 @@ export default function VideoPlayerPage() {
                         )}
                     </div>
 
-                    {/* Interactive Subtitle Box - fixed height */}
-                    <div className="bg-surface-dark rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-1 border border-border-color shadow-lg flex-shrink-0" style={{ height: '143px' }}>
+                    {/* Interactive Subtitle Box - fixed height on md, flexible on mobile */}
+                    <div className="bg-surface-dark rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-1 border border-border-color shadow-lg shrink-0 overflow-hidden min-h-[120px] md:h-[143px]">
                         {currentSubtitle ? (
                             <>
                                 {/* Pinyin Tier */}

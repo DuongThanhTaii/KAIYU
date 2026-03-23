@@ -127,18 +127,17 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Chart Section */}
-                <div className="lg:col-span-2 bg-surface-dark rounded-xl border border-border-color p-6 shadow-sm transition-colors">
-                    <div className="flex items-center justify-between mb-6">
-                        <h3 className="text-lg font-bold text-text-base">Thống kê hoạt động</h3>
-                        <div className="flex items-center gap-2 bg-background-dark rounded-lg p-1">
+                <div className="lg:col-span-2 bg-surface-dark rounded-xl border border-border-color p-4 sm:p-6 shadow-sm transition-colors overflow-hidden">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <h3 className="text-base sm:text-lg font-bold text-text-base">Thống kê hoạt động</h3>
+                        <div className="flex items-center gap-1 bg-background-dark rounded-xl p-1 shrink-0">
                             {[7, 30, 90].map((days) => (
                                 <button
                                     key={days}
                                     onClick={() => handleDaysChange(days)}
-                                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${selectedDays === days
+                                    className={`px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${selectedDays === days
                                         ? 'bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105'
-                                        : 'text-text-secondary hover:text-text-base'
+                                        : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
                                         }`}
                                 >
                                     {days} ngày
@@ -169,10 +168,10 @@ export default function AdminDashboard() {
                                             <span>0</span>
                                         </div>
 
-                                        {/* Chart area */}
-                                        <div className="flex-1 flex flex-col">
+                                            {/* Chart area */}
+                                        <div className="flex-1 flex flex-col min-w-0">
                                             {/* Grid lines and bars */}
-                                            <div className="relative border-l border-b border-border-color" style={{ height: `${chartHeight}px` }}>
+                                            <div className="relative border-l border-b border-border-color overflow-hidden" style={{ height: `${chartHeight}px` }}>
                                                 {/* Horizontal grid lines */}
                                                 <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
                                                     <div className="border-t border-border-color/30 w-full" />
@@ -221,7 +220,7 @@ export default function AdminDashboard() {
                                             </div>
 
                                             {/* X-axis labels - border-l transparent matches bars container */}
-                                            <div className="flex pt-2 text-xs text-text-secondary border-l border-transparent">
+                                            <div className="flex pt-2 text-[10px] sm:text-xs text-text-secondary border-l border-transparent overflow-hidden">
                                                 {chartData.map((day, index) => {
                                                     const isToday = day.date === today;
                                                     return (
@@ -326,7 +325,7 @@ export default function AdminDashboard() {
                     )}
 
                     {/* Legend */}
-                    <div className="flex items-center justify-center gap-6 mt-4">
+                    <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mt-6">
                         <div className="flex items-center gap-2">
                             <div className="w-3 h-3 rounded bg-amber-500" />
                             <span className="text-xs text-text-secondary">Người dùng mới</span>
@@ -339,7 +338,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* Recent Users */}
-                <div className="bg-surface-dark rounded-xl border border-border-color p-6 shadow-sm transition-colors">
+                <div className="bg-surface-dark rounded-xl border border-border-color p-4 sm:p-6 shadow-sm transition-colors">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-text-base">Người dùng mới</h3>
                         <Link
@@ -355,7 +354,7 @@ export default function AdminDashboard() {
                         {stats.recentUsers.map((user) => (
                             <div
                                 key={user.id}
-                                className="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-highlight transition-colors"
+                                className="flex items-center gap-3 p-2 sm:p-3 rounded-xl hover:bg-surface-highlight transition-colors"
                             >
                                 <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white font-bold">
                                     {user.name.charAt(0).toUpperCase()}
@@ -374,10 +373,10 @@ export default function AdminDashboard() {
             </div>
 
             {/* Quick Actions */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="mt-6 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
                 <Link
                     href="/admin/videos"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-amber-500/30 transition-colors shadow-sm flex items-center gap-4"
+                    className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-amber-500/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
                 >
                     <div className="p-3 rounded-lg bg-amber-500/10 flex items-center justify-center">
                         <Icon name="add_circle" className="text-2xl text-amber-500" />
@@ -390,7 +389,7 @@ export default function AdminDashboard() {
 
                 <Link
                     href="/admin/vocabulary"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-primary/30 transition-colors shadow-sm flex items-center gap-4"
+                    className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-primary/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
                 >
                     <div className="p-3 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Icon name="library_add" className="text-2xl text-primary" />
@@ -403,7 +402,7 @@ export default function AdminDashboard() {
 
                 <Link
                     href="/admin/vocabulary"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-blue-500/30 transition-colors shadow-sm flex items-center gap-4"
+                    className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-blue-500/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
                 >
                     <div className="p-3 rounded-lg bg-blue-500/10 flex items-center justify-center">
                         <Icon name="upload_file" className="text-2xl text-blue-500" />
@@ -416,7 +415,7 @@ export default function AdminDashboard() {
 
                 <Link
                     href="/admin/achievements"
-                    className="p-4 bg-surface-dark rounded-xl border border-border-color hover:border-purple-500/30 transition-colors shadow-sm flex items-center gap-4"
+                    className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-purple-500/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
                 >
                     <div className="p-3 rounded-lg bg-purple-500/10 flex items-center justify-center">
                         <Icon name="emoji_events" className="text-2xl text-purple-500" />

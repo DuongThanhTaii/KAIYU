@@ -381,46 +381,60 @@ function QuizContent() {
     return (
         <AdminLayout>
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-2 sm:gap-4">
                     <button
                         onClick={() => router.push('/admin/videos')}
-                        className="inline-flex items-center justify-center p-3 hover:bg-surface-highlight rounded-full transition-colors"
+                        className="inline-flex items-center justify-center p-2 sm:p-3 hover:bg-surface-highlight rounded-full transition-colors"
                     >
                         <Icon name="arrow_back" className="text-text-secondary" />
                     </button>
-                    <div>
-                        <h1 className="text-2xl font-bold text-white">Quản lý bài tập</h1>
-                        <p className="text-text-secondary text-sm">{videoTitle}</p>
+                    <div className="min-w-0">
+                        <h1 className="text-xl sm:text-2xl font-bold text-white truncate">Quản lý bài tập</h1>
+                        <p className="text-text-secondary text-xs sm:text-sm truncate">{videoTitle}</p>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Button onClick={handleCreateManual} disabled={generating || loading} variant="secondary" size="sm" className="whitespace-nowrap">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                    <Button 
+                        onClick={handleCreateManual} 
+                        disabled={generating || loading} 
+                        variant="secondary" 
+                        size="sm" 
+                        className="flex-1 sm:flex-none whitespace-nowrap text-xs sm:text-sm h-9 sm:h-10"
+                    >
                         {generating ? '...' : (
                             <>
                                 <Icon name="add" className="text-[16px]" />
-                                Tạo thủ công
+                                <span className="hidden xs:inline">Tạo thủ công</span>
+                                <span className="xs:hidden">Thủ công</span>
                             </>
                         )}
                     </Button>
-                    <Button onClick={handleGenerate} disabled={generating || loading} variant="secondary" size="sm" className="whitespace-nowrap bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border-none">
-                        {generating ? 'Đang tạo bằng AI...' : (
+                    <Button 
+                        onClick={handleGenerate} 
+                        disabled={generating || loading} 
+                        variant="secondary" 
+                        size="sm" 
+                        className="flex-1 sm:flex-none whitespace-nowrap bg-amber-500/20 text-amber-500 hover:bg-amber-500/30 border-none text-xs sm:text-sm h-9 sm:h-10"
+                    >
+                        {generating ? 'Đang tạo...' : (
                             <>
                                 <Icon name="auto_awesome" className="text-[16px] text-amber-500" />
-                                AI Tự động
+                                <span className="hidden xs:inline">AI Tự động</span>
+                                <span className="xs:hidden">AI</span>
                             </>
                         )}
                     </Button>
-                    <div className="w-px h-6 bg-border-color mx-1"></div>
+                    <div className="hidden sm:block w-px h-6 bg-border-color mx-1"></div>
                     {quiz && !quiz.isPublished && (
-                        <Button onClick={handlePublish} variant="primary" size="sm" className="whitespace-nowrap">
+                        <Button onClick={handlePublish} variant="primary" size="sm" className="flex-1 sm:flex-none whitespace-nowrap h-9 sm:h-10 text-xs sm:text-sm">
                             <Icon name="publish" className="text-lg" />
                             Xuất bản
                         </Button>
                     )}
                     {quiz?.isPublished && (
-                        <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-sm font-medium whitespace-nowrap">
+                        <span className="flex-1 sm:flex-none px-3 py-1.5 bg-green-500/20 text-green-400 rounded-lg sm:rounded-full text-xs sm:text-sm font-medium whitespace-nowrap text-center">
                             Đã xuất bản
                         </span>
                     )}
@@ -476,31 +490,49 @@ function QuizContent() {
                             {quiz.questions.map((question, index) => (
                                 <div
                                     key={question.id}
-                                    className="bg-surface-dark rounded-xl border border-border-color p-4"
+                                    className="bg-surface-dark rounded-xl border border-border-color p-4 sm:p-5"
                                 >
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-2 mb-2">
-                                                <span className="px-2 py-0.5 bg-primary/20 text-primary rounded text-sm font-medium">
-                                                    Câu {index + 1}
-                                                </span>
-                                                <span className="px-2 py-0.5 bg-surface-highlight text-text-secondary rounded text-xs">
-                                                    Đáp án: {question.blankWord}
-                                                </span>
+                                    <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+                                        <div className="flex-1 w-full">
+                                            <div className="flex items-center justify-between sm:justify-start gap-2 mb-3">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="px-2.5 py-1 bg-primary/20 text-primary rounded-lg text-xs sm:text-sm font-bold">
+                                                        Câu {index + 1}
+                                                    </span>
+                                                    <span className="px-2.5 py-1 bg-surface-highlight text-text-secondary rounded-lg text-xs">
+                                                        Đáp án: {question.blankWord}
+                                                    </span>
+                                                </div>
+                                                <div className="flex sm:hidden gap-1">
+                                                    <button
+                                                        onClick={() => openEditModal(question)}
+                                                        className="p-2 text-amber-400 bg-amber-500/10 rounded-lg transition-colors"
+                                                        title="Chỉnh sửa"
+                                                    >
+                                                        <Icon name="edit" className="text-lg" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteQuestion(question.id)}
+                                                        className="p-2 text-red-400 bg-red-500/10 rounded-lg transition-colors"
+                                                        title="Xóa"
+                                                    >
+                                                        <Icon name="delete" className="text-lg" />
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <p className="text-white text-lg font-chinese">
+                                            <p className="text-white text-lg sm:text-xl font-chinese leading-relaxed">
                                                 {renderSentenceWithBlank(question.sentenceHanzi, question.blankWord)}
                                             </p>
                                             {question.meaningVi && (
-                                                <p className="text-text-secondary text-sm mt-1">
+                                                <p className="text-text-secondary text-sm sm:text-base mt-2 border-l-2 border-border-color pl-3 py-0.5">
                                                     {question.meaningVi}
                                                 </p>
                                             )}
-                                            <div className="flex flex-wrap gap-2 mt-3">
+                                            <div className="flex flex-wrap gap-2 mt-4">
                                                 {question.options.map((option, optIdx) => (
                                                     <span
                                                         key={optIdx}
-                                                        className={`px-3 py-1 rounded-lg text-sm ${option === question.blankWord
+                                                        className={`px-3 py-1.5 rounded-lg text-sm sm:text-base font-chinese ${option === question.blankWord
                                                             ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                                                             : 'bg-surface-highlight text-text-secondary'
                                                             }`}
@@ -510,20 +542,20 @@ function QuizContent() {
                                                 ))}
                                             </div>
                                         </div>
-                                        <div className="flex flex-col gap-1">
+                                        <div className="hidden sm:flex flex-col gap-1">
                                             <button
                                                 onClick={() => openEditModal(question)}
-                                                className="p-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors"
+                                                className="p-2.5 text-amber-400 hover:bg-amber-500/10 rounded-xl transition-colors"
                                                 title="Chỉnh sửa"
                                             >
-                                                <Icon name="edit" className="text-lg" />
+                                                <Icon name="edit" size="md" />
                                             </button>
                                             <button
                                                 onClick={() => handleDeleteQuestion(question.id)}
-                                                className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                                                className="p-2.5 text-red-400 hover:bg-red-500/10 rounded-xl transition-colors"
                                                 title="Xóa"
                                             >
-                                                <Icon name="delete" className="text-lg" />
+                                                <Icon name="delete" size="md" />
                                             </button>
                                         </div>
                                     </div>
@@ -589,7 +621,7 @@ function QuizContent() {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-2">
                                 Đáp án sai 1
@@ -599,7 +631,7 @@ function QuizContent() {
                                 value={questionForm.option1}
                                 onChange={(e) => setQuestionForm({ ...questionForm, option1: e.target.value })}
                                 className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors font-chinese"
-                                placeholder="VD: 快乐"
+                                placeholder="..."
                             />
                         </div>
                         <div>
@@ -611,7 +643,7 @@ function QuizContent() {
                                 value={questionForm.option2}
                                 onChange={(e) => setQuestionForm({ ...questionForm, option2: e.target.value })}
                                 className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors font-chinese"
-                                placeholder="VD: 开心"
+                                placeholder="..."
                             />
                         </div>
                         <div>
@@ -623,7 +655,7 @@ function QuizContent() {
                                 value={questionForm.option3}
                                 onChange={(e) => setQuestionForm({ ...questionForm, option3: e.target.value })}
                                 className="w-full px-4 py-3 bg-background-dark border border-border-color rounded-xl text-white placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors font-chinese"
-                                placeholder="VD: 难过"
+                                placeholder="..."
                             />
                         </div>
                     </div>

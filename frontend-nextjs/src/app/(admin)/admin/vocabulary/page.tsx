@@ -933,7 +933,7 @@ export default function AdminVocabularyPage() {
         setIsSaving(true);
         setImportProgress({ active: true, message: 'Đang xóa toàn bộ từ vựng...' });
         try {
-            const result = await deleteAllVocabulary();
+            await deleteAllVocabulary();
             setShowDeleteAllConfirm(false);
             setDeleteAllConfirmText('');
             setImportProgress({ active: false, message: '' });
@@ -968,7 +968,7 @@ export default function AdminVocabularyPage() {
             sortable: true,
             render: (vocab: Vocabulary) => (
                 <div className="flex flex-col min-w-0">
-                    <span className="text-xl font-bold text-text-base font-chinese whitespace-nowrap overflow-hidden text-ellipsis" lang="zh-CN">
+                    <span className="text-base sm:text-xl font-bold text-text-base font-chinese whitespace-nowrap overflow-hidden text-ellipsis" lang="zh-CN">
                         {searchQuery ? highlightText(vocab.hanzi, searchQuery) : vocab.hanzi}
                     </span>
                     <span className="text-xs text-primary/80 mt-0.5 font-pinyin tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">
@@ -981,6 +981,7 @@ export default function AdminVocabularyPage() {
             key: 'partOfSpeech',
             header: 'Từ loại',
             width: '100px',
+            hideOnMobile: true,
             render: (vocab: Vocabulary) => {
                 if (!vocab.partOfSpeech) {
                     return <span className="text-text-secondary italic text-xs">-</span>;
@@ -1026,6 +1027,7 @@ export default function AdminVocabularyPage() {
             key: 'examples',
             header: 'Ví dụ',
             width: '250px',
+            hideOnMobile: true,
             render: (vocab: Vocabulary) => {
                 const examples = vocab.examples as Array<{ chinese?: string; pinyin?: string; vietnamese?: string }> | null;
                 if (!examples || examples.length === 0) return <span className="text-text-secondary text-sm">-</span>;
@@ -1043,6 +1045,7 @@ export default function AdminVocabularyPage() {
             key: 'relatedWords',
             header: 'Cận nghĩa / Trái nghĩa',
             width: '160px',
+            hideOnMobile: true,
             render: (vocab: Vocabulary) => {
                 const synonyms = vocab.synonyms as Array<{ hanzi?: string; meaning?: string }> | null;
                 const antonyms = vocab.antonyms as Array<{ hanzi?: string; meaning?: string }> | null;
@@ -1120,15 +1123,16 @@ export default function AdminVocabularyPage() {
     return (
         <AdminLayout
             title="Quản lý Từ vựng"
+            showLogo={false}
             actions={
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center justify-end gap-2">
                     <div className="relative group">
                         <button
-                            className="flex items-center gap-2 px-4 py-2 bg-surface-dark border border-border-color text-text-base font-medium rounded-lg hover:bg-surface-highlight transition-colors"
+                            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-surface-dark border border-border-color text-text-base text-xs sm:text-sm font-medium rounded-lg hover:bg-surface-highlight transition-colors"
                         >
-                            <Icon name="download" />
-                            Export
-                            <Icon name="expand_more" className="text-sm" />
+                            <Icon name="download" className="text-base sm:text-lg" />
+                            <span className="hidden xs:inline">Export</span>
+                            <Icon name="expand_more" className="text-xs sm:text-sm" />
                         </button>
                         <div className="absolute right-0 mt-2 w-40 py-2 bg-surface-dark border border-border-color rounded-lg shadow-xl hidden group-hover:block z-10">
                             <button
@@ -1148,26 +1152,27 @@ export default function AdminVocabularyPage() {
                     <button
                         onClick={() => setShowImportModal(true)}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white font-medium rounded-lg hover:bg-blue-400 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-blue-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-blue-400 transition-colors disabled:opacity-50"
                     >
-                        <Icon name="upload" />
-                        Import
+                        <Icon name="upload" className="text-base sm:text-lg" />
+                        <span className="hidden xs:inline">Import</span>
                     </button>
                     <button
                         onClick={() => setShowUpdateModal(true)}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-400 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-purple-500 text-white text-xs sm:text-sm font-medium rounded-lg hover:bg-purple-400 transition-colors disabled:opacity-50"
                     >
-                        <Icon name="sync" />
-                        Cập nhật
+                        <Icon name="sync" className="text-base sm:text-lg" />
+                        <span className="hidden xs:inline text-nowrap">Cập nhật</span>
                     </button>
                     <button
                         onClick={handleOpenCreate}
                         disabled={isSaving}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs sm:text-sm font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50"
                     >
-                        <Icon name="add" />
-                        Thêm Từ
+                        <Icon name="add" className="text-base sm:text-lg" />
+                        <span className="hidden xs:inline text-nowrap">Thêm Từ</span>
+                        <span className="xs:hidden">Thêm</span>
                     </button>
                 </div>
             }
@@ -1209,7 +1214,7 @@ export default function AdminVocabularyPage() {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-4 md:grid-cols-8 gap-3 mb-4">
+            <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2 mb-4">
                 {[1, 2, 3, 4, 5, 6, 7, 0].map((level) => {
                     const count = hskStats[level] || 0;
                     const label = level === 0 ? 'Không chia cấp' : level === 7 ? 'Ngoài HSK' : `HSK ${level}`;
@@ -1217,53 +1222,54 @@ export default function AdminVocabularyPage() {
                         <button
                             key={level}
                             onClick={() => setFilterHsk(filterHsk === level ? '' : level)}
-                            className={`p-3 rounded-xl border transition-all ${filterHsk === level
+                            className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all ${filterHsk === level
                                 ? 'bg-primary/20 border-primary scale-105'
                                 : 'bg-surface-dark border-border-color hover:border-primary/30'
                                 }`}
                         >
-                            <p className="text-xl font-bold text-text-base">{count}</p>
-                            <p className="text-[10px] text-text-secondary leading-tight">{label}</p>
+                            <p className="text-sm sm:text-xl font-bold text-text-base">{count}</p>
+                            <p className="text-[8px] sm:text-[10px] text-text-secondary leading-tight line-clamp-1">{label}</p>
                         </button>
                     );
                 })}
             </div>
             {/* Total + Delete All */}
-            <div className="flex items-center justify-between mb-6">
-                <p className="text-sm text-text-secondary">
+            <div className="flex items-center justify-between mb-3 sm:mb-6">
+                <p className="text-xs sm:text-sm text-text-secondary">
                     Tổng: <span className="text-text-base font-bold">{Object.values(hskStats).reduce((a, b) => a + b, 0)}</span> từ vựng
                 </p>
                 <button
                     onClick={() => setShowDeleteAllConfirm(true)}
                     disabled={isSaving}
-                    className="text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                    className="text-[10px] sm:text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
                 >
-                    Xóa toàn bộ để import lại
+                    Xóa tất cả
                 </button>
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-2 sm:gap-4 mb-4 sm:mb-6">
                 <div className="flex-1 relative">
                     <Icon
                         name="search"
-                        className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary"
+                        className="absolute left-3 sm:left-4 top-1/2 -translate-y-1/2 text-text-secondary text-sm sm:text-base"
                     />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={(e) => handleSearchChange(e.target.value)}
-                        placeholder="Tìm kiếm từ vựng (Hanzi, Pinyin, nghĩa)..."
-                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
+                        placeholder="Tìm kiếm..."
+                        className="w-full pl-9 sm:pl-12 pr-4 py-2 sm:py-3 bg-surface-dark border border-border-color rounded-lg sm:rounded-xl text-xs sm:text-base text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors"
                     />
                 </div>
                 {filterHsk && (
                     <button
                         onClick={() => setFilterHsk('')}
-                        className="flex items-center gap-2 px-4 py-3 bg-primary/20 text-primary rounded-xl whitespace-nowrap"
+                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-primary/20 text-primary rounded-lg sm:rounded-xl whitespace-nowrap text-xs sm:text-sm"
                     >
-                        {filterHsk === 7 ? 'Ngoài HSK' : filterHsk === 0 ? 'Không chia cấp' : `HSK ${filterHsk}`}
-                        <Icon name="close" className="text-sm" />
+                        <span className="hidden xs:inline">{filterHsk === 7 ? 'Ngoài HSK' : filterHsk === 0 ? 'Không chia cấp' : `HSK ${filterHsk}`}</span>
+                        <span className="xs:hidden">{filterHsk === 7 ? 'EXT' : filterHsk === 0 ? 'N/A' : `H${filterHsk}`}</span>
+                        <Icon name="close" className="text-[10px] sm:text-sm" />
                     </button>
                 )}
             </div>
@@ -1306,11 +1312,11 @@ export default function AdminVocabularyPage() {
                 {selectedVocab && (
                     <div className="space-y-6">
                         {/* Bento-style Header Section */}
-                        <div className="bg-surface-highlight/10 border border-border-color/30 rounded-3xl p-8 text-center relative overflow-hidden backdrop-blur-sm">
+                        <div className="bg-surface-highlight/10 border border-border-color/30 rounded-2xl sm:rounded-3xl p-4 sm:p-8 text-center relative overflow-hidden backdrop-blur-sm">
                             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
                             
-                            <h2 className="text-7xl font-chinese text-text-base mb-2 leading-none drop-shadow-lg">{selectedVocab.hanzi}</h2>
-                            <p className="text-3xl font-pinyin text-primary mb-6 tracking-wide drop-shadow-md">{selectedVocab.pinyin}</p>
+                            <h2 className="text-4xl sm:text-7xl font-chinese text-text-base mb-2 leading-none drop-shadow-lg">{selectedVocab.hanzi}</h2>
+                            <p className="text-xl sm:text-3xl font-pinyin text-primary mb-4 sm:mb-6 tracking-wide drop-shadow-md">{selectedVocab.pinyin}</p>
                             
                             <div className="flex flex-wrap justify-center gap-3">
                                 {selectedVocab.hskLevel > 0 && (
@@ -1332,12 +1338,12 @@ export default function AdminVocabularyPage() {
                                     <div className="space-y-2">
                                         {selectedVocab.meaningVi.includes('1.') ? (
                                             selectedVocab.meaningVi.split(/(?=\d+\.)/).map((part, i) => (
-                                                <div key={i} className="text-xl font-medium leading-relaxed">
+                                                <div key={i} className="text-base sm:text-xl font-medium leading-relaxed">
                                                     {renderFormattedMeaning(part)}
                                                 </div>
                                             ))
                                         ) : (
-                                            <p className="text-2xl text-text-base font-semibold tracking-tight text-center">
+                                            <p className="text-lg sm:text-2xl text-text-base font-semibold tracking-tight text-center">
                                                 {selectedVocab.meaningVi}
                                             </p>
                                         )}
@@ -1355,8 +1361,8 @@ export default function AdminVocabularyPage() {
                                         Bộ thủ
                                     </h4>
                                     <div className="flex items-baseline gap-2">
-                                        <span className="text-2xl font-chinese text-text-base">{selectedVocab.radical || '-'}</span>
-                                        <span className="text-sm text-text-secondary">{selectedVocab.radicalMeaning}</span>
+                                        <span className="text-xl sm:text-2xl font-chinese text-text-base">{selectedVocab.radical || '-'}</span>
+                                        <span className="text-xs sm:text-sm text-text-secondary">{selectedVocab.radicalMeaning}</span>
                                     </div>
                                 </div>
                             )}
@@ -1389,14 +1395,14 @@ export default function AdminVocabularyPage() {
                                             </div>
                                             <div className="flex items-start justify-between gap-6">
                                                 <div className="flex-1 space-y-3">
-                                                    <p className="text-2xl font-chinese text-text-base leading-snug" lang="zh-CN">
+                                                    <p className="text-lg sm:text-2xl font-chinese text-text-base leading-snug" lang="zh-CN">
                                                         {highlightWord(ex.chinese || "", selectedVocab.hanzi)}
                                                     </p>
                                                     <div className="space-y-1">
-                                                        <p className="text-primary font-pinyin text-lg tracking-tight opacity-80">
+                                                        <p className="text-primary font-pinyin text-base sm:text-lg tracking-tight opacity-80">
                                                             {highlightWord(ex.pinyin || "", selectedVocab.pinyin)}
                                                         </p>
-                                                        <p className="text-text-secondary text-base italic border-l-2 border-primary/20 pl-4 py-1">{ex.vietnamese}</p>
+                                                        <p className="text-text-secondary text-sm sm:text-base italic border-l-2 border-primary/20 pl-4 py-1">{ex.vietnamese}</p>
                                                     </div>
                                                 </div>
                                                 <div className="shrink-0 pt-1 group-hover:scale-110 transition-transform">

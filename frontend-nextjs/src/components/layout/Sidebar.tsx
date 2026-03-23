@@ -87,8 +87,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                         {/* Brand - Hidden entirely when collapsed */}
                         {!isCollapsed && (
                             <div className="flex items-center gap-2">
-                                <div className="size-9 flex items-center justify-center shrink-0">
-                                    <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                                <div className="size-9 flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-white">
+                                    <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain" />
                                 </div>
                                 <div className="flex flex-col leading-none">
                                     <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
@@ -191,8 +191,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Icon name="close" size="md" className="text-text-secondary" />
                         </button>
                         <div className="flex items-center gap-2">
-                            <div className="size-9 flex items-center justify-center shrink-0">
-                                <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain rounded-full" />
+                            <div className="size-9 flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-white">
+                                <Image src="/images/logo_nentrang.png" alt="KAIYU Logo" width={36} height={36} className="object-contain" />
                             </div>
                             <div className="flex flex-col leading-none">
                                 <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>

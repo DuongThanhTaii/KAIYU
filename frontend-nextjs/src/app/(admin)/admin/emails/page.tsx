@@ -267,7 +267,7 @@ export default function AdminEmailsPage() {
 
     if (loading) {
         return (
-            <AdminLayout title="Quản lý Email">
+            <AdminLayout title="Quản lý Email" showLogo={false}>
                 <div className="flex items-center justify-center h-64">
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500" />
                 </div>
@@ -279,67 +279,70 @@ export default function AdminEmailsPage() {
         <>
             <AdminLayout
                 title="Quản lý Email Templates"
+                showLogo={false}
                 actions={
                     <div className="flex items-center gap-2">
                         <button
                             onClick={handleCreate}
-                            className="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/80 transition-colors flex items-center"
+                            className="px-3 sm:px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/80 transition-colors flex items-center text-xs sm:text-sm"
                         >
-                            <Icon name="add" className="mr-1" /> Tạo mới
+                            <Icon name="add" className="sm:mr-1" />
+                            <span className="hidden xs:inline">Tạo mới</span>
                         </button>
                         <button
                             onClick={handleSeed}
-                            className="px-4 py-2 bg-surface-highlight text-white rounded-lg font-medium hover:bg-surface-highlight/80 transition-colors flex items-center"
+                            className="px-3 sm:px-4 py-2 bg-surface-highlight text-white rounded-lg font-medium hover:bg-surface-highlight/80 transition-colors flex items-center text-xs sm:text-sm"
                         >
-                            <Icon name="auto_fix_high" className="mr-1" /> Seed Mẫu
+                            <Icon name="auto_fix_high" className="sm:mr-1" />
+                            <span className="hidden xs:inline">Seed Mẫu</span>
                         </button>
                     </div>
                 }
             >
                 {/* Statistics Cards */}
                 {statistics && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-primary/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
-                                    <Icon name="send" className="text-primary" />
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-3 sm:p-4 shadow-sm">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="size-8 sm:size-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="send" className="text-sm sm:text-xl text-primary" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.totalSent}</p>
-                                    <p className="text-xs text-text-secondary">Đã gửi</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-green-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
-                                    <Icon name="visibility" className="text-green-400" />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.openRate}%</p>
-                                    <p className="text-xs text-text-secondary">Tỷ lệ mở</p>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-base truncate">{statistics.summary.totalSent}</p>
+                                    <p className="text-[10px] sm:text-xs text-text-secondary truncate">Đã gửi</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-amber-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
-                                    <Icon name="touch_app" className="text-amber-400" />
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-3 sm:p-4 shadow-sm">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="size-8 sm:size-10 bg-green-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="visibility" className="text-sm sm:text-xl text-green-400" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.clickRate}%</p>
-                                    <p className="text-xs text-text-secondary">Tỷ lệ click</p>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-base truncate">{statistics.summary.openRate}%</p>
+                                    <p className="text-[10px] sm:text-xs text-text-secondary truncate">Tỷ lệ mở</p>
                                 </div>
                             </div>
                         </div>
-                        <div className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-red-500/10 rounded-lg inline-flex items-center justify-center cursor-pointer">
-                                    <Icon name="error" className="text-red-400" />
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-3 sm:p-4 shadow-sm">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="size-8 sm:size-10 bg-amber-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="touch_app" className="text-sm sm:text-xl text-amber-400" />
                                 </div>
-                                <div>
-                                    <p className="text-2xl font-bold text-text-base">{statistics.summary.totalFailed}</p>
-                                    <p className="text-xs text-text-secondary">Thất bại</p>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-base truncate">{statistics.summary.clickRate}%</p>
+                                    <p className="text-[10px] sm:text-xs text-text-secondary truncate">Tỷ lệ click</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-surface-dark rounded-xl border border-border-color p-3 sm:p-4 shadow-sm">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <div className="size-8 sm:size-10 bg-red-500/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <Icon name="error" className="text-sm sm:text-xl text-red-400" />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-lg sm:text-2xl font-bold text-text-base truncate">{statistics.summary.totalFailed}</p>
+                                    <p className="text-[10px] sm:text-xs text-text-secondary truncate">Thất bại</p>
                                 </div>
                             </div>
                         </div>
@@ -606,57 +609,59 @@ export default function AdminEmailsPage() {
                             templates.map(template => (
                                  <div
                                     key={template.id}
-                                    className="bg-surface-dark rounded-xl border border-border-color p-4 shadow-sm"
+                                    className="bg-surface-dark rounded-xl border border-border-color p-3 sm:p-4 shadow-sm"
                                 >
                                     <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className={`p-3 rounded-xl flex items-center justify-center ${template.isActive ? 'bg-amber-500/10' : 'bg-gray-500/10'}`}>
+                                        <div className="flex items-start sm:items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                                            <div className={`p-2 sm:p-3 rounded-xl flex items-center justify-center shrink-0 ${template.isActive ? 'bg-amber-500/10' : 'bg-gray-500/10'}`}>
                                                 <Icon
                                                     name={template.category === 'reminder' ? 'notifications' : template.category === 'engagement' ? 'favorite' : template.category === 'report' ? 'assessment' : 'mail'}
-                                                    className={template.isActive ? 'text-amber-400' : 'text-gray-400'}
+                                                    className={`text-sm sm:text-lg ${template.isActive ? 'text-amber-400' : 'text-gray-400'}`}
                                                 />
                                             </div>
-                                            <div>
+                                            <div className="min-w-0 flex-1">
                                                  <div className="flex items-center gap-2 flex-wrap">
-                                                    <h3 className="font-bold text-text-base">{template.nameVi}</h3>
-                                                    <span className="px-2 py-0.5 text-[10px] font-bold bg-surface-highlight rounded-full text-text-secondary">
-                                                        {template.code}
-                                                    </span>
-                                                    {!template.isActive && (
-                                                        <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/20 text-red-400 rounded-full">
-                                                            Tắt
+                                                     <h3 className="font-bold text-text-base text-sm sm:text-base truncate">{template.nameVi}</h3>
+                                                     <div className="flex gap-1">
+                                                        <span className="px-1.5 py-0.5 text-[8px] sm:text-[10px] font-bold bg-surface-highlight rounded-full text-text-secondary uppercase">
+                                                            {template.code}
                                                         </span>
-                                                    )}
+                                                        {!template.isActive && (
+                                                            <span className="px-1.5 py-0.5 text-[8px] sm:text-[10px] font-bold bg-red-500/20 text-red-400 rounded-full">
+                                                                Tắt
+                                                            </span>
+                                                        )}
+                                                     </div>
                                                 </div>
-                                                <p className="text-sm text-text-secondary">{template.subject}</p>
-                                                <p className="text-xs text-primary/70 mt-1 flex items-center gap-1">
-                                                    <Icon name="schedule" className="text-xs" />
+                                                <p className="text-xs sm:text-sm text-text-secondary truncate">{template.subject}</p>
+                                                <p className="text-[10px] sm:text-xs text-primary/70 mt-1 flex items-center gap-1">
+                                                    <Icon name="schedule" className="text-[10px] sm:text-xs" />
                                                     {getTriggerDescription(template)}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2">
                                             <button
                                                 onClick={() => handleTestSend(template.code)}
                                                 disabled={testSending === template.code}
-                                                className="p-2 hover:bg-surface-highlight rounded-lg transition-colors flex items-center justify-center"
+                                                className="p-1.5 sm:p-2 hover:bg-surface-highlight rounded-lg transition-colors flex items-center justify-center"
                                                 title="Gửi email test"
                                             >
-                                                <Icon name={testSending === template.code ? 'sync' : 'send'} className={`text-primary ${testSending === template.code ? 'animate-spin' : ''}`} />
+                                                <Icon name={testSending === template.code ? 'sync' : 'send'} className={`text-sm sm:text-base text-primary ${testSending === template.code ? 'animate-spin' : ''}`} />
                                             </button>
                                             <button
                                                 onClick={() => handleEdit(template)}
-                                                className="p-2 hover:bg-surface-highlight rounded-lg transition-colors flex items-center justify-center"
+                                                className="p-1.5 sm:p-2 hover:bg-surface-highlight rounded-lg transition-colors flex items-center justify-center"
                                                 title="Chỉnh sửa"
                                             >
-                                                <Icon name="edit" className="text-amber-400" />
+                                                <Icon name="edit" className="text-sm sm:text-base text-amber-400" />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(template.code)}
-                                                className="p-2 hover:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center"
+                                                className="p-1.5 sm:p-2 hover:bg-red-500/10 rounded-lg transition-colors flex items-center justify-center"
                                                 title="Xóa"
                                             >
-                                                <Icon name="delete" className="text-red-400" />
+                                                <Icon name="delete" className="text-sm sm:text-base text-red-400" />
                                             </button>
                                         </div>
                                     </div>

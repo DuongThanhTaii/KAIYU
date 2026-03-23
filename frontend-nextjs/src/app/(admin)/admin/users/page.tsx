@@ -180,6 +180,7 @@ export default function AdminUsersPage() {
             key: 'hskLevel',
             header: 'HSK',
             width: '80px',
+            hideOnMobile: true,
             render: (user: AdminUser) => (
                 <span className="px-2 py-1 text-xs font-bold rounded-full bg-primary/20 text-primary whitespace-nowrap">
                     HSK {user.hskLevel}
@@ -190,6 +191,7 @@ export default function AdminUsersPage() {
             key: 'streak',
             header: 'Streak',
             width: '80px',
+            hideOnMobile: true,
             render: (user: AdminUser) => (
                 <div className="flex items-center gap-1">
                     <Icon name="local_fire_department" className={`text-lg ${user.streak > 0 ? 'text-orange-400' : 'text-gray-500'
@@ -204,6 +206,7 @@ export default function AdminUsersPage() {
             key: '_count.userVocabulary',
             header: 'Từ vựng',
             width: '80px',
+            hideOnMobile: true,
             render: (user: AdminUser) => (
                 <span className="text-text-secondary">{user._count?.userVocabulary || 0}</span>
             ),
@@ -212,6 +215,7 @@ export default function AdminUsersPage() {
             key: 'isPremium',
             header: 'Premium',
             width: '90px',
+            hideOnMobile: true,
             render: (user: AdminUser) => (
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${user.isPremium
                     ? 'bg-purple-500/20 text-purple-400'
@@ -225,6 +229,7 @@ export default function AdminUsersPage() {
             key: 'createdAt',
             header: 'Ngày tạo',
             width: '100px',
+            hideOnMobile: true,
             render: (user: AdminUser) => (
                 <span className="text-text-secondary text-sm">{formatDate(user.createdAt)}</span>
             ),
@@ -268,57 +273,57 @@ export default function AdminUsersPage() {
     );
 
     return (
-        <AdminLayout title="Quản lý Users">
+        <AdminLayout title="Quản lý Users" showLogo={false}>
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{stats.total}</p>
-                            <p className="text-xs text-text-secondary">Tổng users</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.total}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Tổng users</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <Icon name="group" className="text-2xl text-blue-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="group" className="text-lg sm:text-2xl text-blue-400" />
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{stats.premium}</p>
-                            <p className="text-xs text-text-secondary">Premium</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.premium}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Premium</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                            <Icon name="workspace_premium" className="text-2xl text-purple-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="workspace_premium" className="text-lg sm:text-2xl text-purple-400" />
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{stats.admins}</p>
-                            <p className="text-xs text-text-secondary">Admins</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.admins}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Admins</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                            <Icon name="admin_panel_settings" className="text-2xl text-amber-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="admin_panel_settings" className="text-lg sm:text-2xl text-amber-400" />
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{stats.activeToday}</p>
-                            <p className="text-xs text-text-secondary">Hoạt động hôm nay</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.activeToday}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Hoạt động</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Icon name="person_check" className="text-2xl text-green-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="person_check" className="text-lg sm:text-2xl text-green-400" />
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Filters */}
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 mb-6">
                 <div className="flex-1 relative">
                     <Icon
                         name="search"
@@ -328,28 +333,30 @@ export default function AdminUsersPage() {
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Tìm kiếm theo tên hoặc email..."
-                        className="w-full pl-12 pr-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
+                        placeholder="Tìm kiếm..."
+                        className="w-full pl-12 pr-4 py-2 sm:py-3 bg-surface-dark border border-border-color rounded-xl text-sm sm:text-base text-text-base placeholder-text-secondary focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
                     />
                 </div>
-                <select
-                    value={filterRole}
-                    onChange={(e) => setFilterRole(e.target.value)}
-                    className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
-                >
-                    <option value="">Tất cả vai trò</option>
-                    <option value="admin">Admin</option>
-                    <option value="user">User</option>
-                </select>
-                <select
-                    value={filterPremium}
-                    onChange={(e) => setFilterPremium(e.target.value)}
-                    className="px-4 py-3 bg-surface-dark border border-border-color rounded-xl text-text-base focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
-                >
-                    <option value="">Tất cả gói</option>
-                    <option value="true">Premium</option>
-                    <option value="false">Free</option>
-                </select>
+                <div className="flex items-center gap-2">
+                    <select
+                        value={filterRole}
+                        onChange={(e) => setFilterRole(e.target.value)}
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-3 bg-surface-dark border border-border-color rounded-xl text-xs sm:text-base text-text-base focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
+                    >
+                        <option value="">Tất cả vai trò</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                    </select>
+                    <select
+                        value={filterPremium}
+                        onChange={(e) => setFilterPremium(e.target.value)}
+                        className="flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-3 bg-surface-dark border border-border-color rounded-xl text-xs sm:text-base text-text-base focus:outline-none focus:border-amber-500 transition-colors shadow-sm"
+                    >
+                        <option value="">Tất cả gói</option>
+                        <option value="true">Premium</option>
+                        <option value="false">Free</option>
+                    </select>
+                </div>
             </div>
 
             {/* Data Table */}

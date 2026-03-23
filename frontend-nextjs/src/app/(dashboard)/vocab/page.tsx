@@ -3,17 +3,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import Card from '@/components/common/Card';
-import Icon from '@/components/common/Icon';
-import Badge from '@/components/common/Badge';
-import Button from '@/components/common/Button';
+import { Icon, Badge, Button, Card, ConfirmDialog } from '@/components/common';
 import SpeakerButton from '@/components/common/SpeakerButton';
-import ConfirmDialog from '@/components/common/ConfirmDialog';
 import { userVocabularyApi, type UserVocabulary, type UserVocabularyStats } from '@/services/userVocabularyApi';
 import { vocabularyFoldersApi, type VocabularyFolder } from '@/services/vocabularyFoldersApi';
 import { vocabularyApi, type ExampleSentence as ExampleSentenceType } from '@/services/vocabularyApi';
 import { POS_COLORS } from '@/constants/vocabulary';
 import { renderGroupedPinyin, renderFormattedMeaning, highlightWord } from '@/utils/chinese';
+import { useAuth } from '@/contexts/AuthContext';
 
 // Removed local renderFormattedMeaning as it's now imported from @/utils/chinese
 
@@ -351,229 +348,142 @@ export default function VocabNotebookPage() {
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6">
-                    <Card variant="default" hover className="group relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+                    <Card variant="default" hover className="group relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm p-3 md:p-6">
+                        <div className="flex justify-between items-start mb-2 md:mb-4">
+                            <div className="size-8 md:size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Icon name="dataset" size="sm" />
                             </div>
                         </div>
-                        <p className="text-text-secondary text-xs font-bold uppercase tracking-wider mb-1">Tổng số từ</p>
-                        <p className="text-text-base text-3xl font-black mt-1 tracking-tight">{stats?.total || 0}</p>
+                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Tổng số từ</p>
+                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{stats?.total || 0}</p>
                     </Card>
 
-                    <Card variant="default" hover className="group relative overflow-hidden bg-blue-500/5 border-blue-500/20 shadow-sm">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="size-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Card variant="default" hover className="group relative overflow-hidden bg-blue-500/5 border-blue-500/20 shadow-sm p-3 md:p-6">
+                        <div className="flex justify-between items-start mb-2 md:mb-4">
+                            <div className="size-8 md:size-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Icon name="fiber_new" size="sm" />
                             </div>
                         </div>
-                        <p className="text-text-secondary text-xs font-bold uppercase tracking-wider mb-1">Từ mới</p>
-                        <p className="text-text-base text-3xl font-black mt-1 tracking-tight">{stats?.new || 0}</p>
+                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Từ mới</p>
+                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{stats?.new || 0}</p>
                     </Card>
 
-                    <Card variant="default" hover className="group relative overflow-hidden bg-orange-500/5 border-orange-500/20 shadow-sm">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="size-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Card variant="default" hover className="group relative overflow-hidden bg-orange-500/5 border-orange-500/20 shadow-sm p-3 md:p-6">
+                        <div className="flex justify-between items-start mb-2 md:mb-4">
+                            <div className="size-8 md:size-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Icon name="history_edu" size="sm" />
                             </div>
                         </div>
-                        <p className="text-text-secondary text-xs font-bold uppercase tracking-wider mb-1">Cần ôn tập</p>
-                        <p className="text-text-base text-3xl font-black mt-1 tracking-tight">{(stats?.learning || 0) + (stats?.review || 0)}</p>
+                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Cần ôn tập</p>
+                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{(stats?.learning || 0) + (stats?.review || 0)}</p>
                     </Card>
 
-                    <Card variant="default" hover className="group relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <Card variant="default" hover className="group relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm p-3 md:p-6">
+                        <div className="flex justify-between items-start mb-2 md:mb-4">
+                            <div className="size-8 md:size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Icon name="verified" size="sm" />
                             </div>
                         </div>
-                        <p className="text-text-secondary text-xs font-bold uppercase tracking-wider mb-1">Đã học</p>
-                        <p className="text-text-base text-3xl font-black mt-1 tracking-tight">{stats?.mastered || 0}</p>
+                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Đã học</p>
+                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{stats?.mastered || 0}</p>
                     </Card>
                 </div>
 
                 {/* Action Bar */}
-                <Card variant="default" padding="sm" className="flex flex-col xl:flex-row gap-4 justify-between items-start xl:items-center">
+                <Card variant="default" padding="sm" className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
                     {/* Folder Dropdown & Search & Filters */}
-                    <div className="flex flex-wrap items-center gap-2 px-2">
-                        {/* Folder Dropdown */}
-                        <div className="relative">
-                            <button
-                                onClick={() => setShowFolderDropdown(!showFolderDropdown)}
-                                className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-black transition-all border shadow-sm ${selectedFolderId
-                                    ? 'bg-primary/10 text-primary border-primary/30'
-                                    : 'bg-surface-highlight text-text-base border-border-color/50 hover:border-primary/50'
-                                    }`}
-                            >
-                                <Icon name="folder" size="sm" />
-                                <span className="max-w-24 truncate">{selectedFolderName}</span>
-                                <Icon name={showFolderDropdown ? 'expand_less' : 'expand_more'} size="sm" />
-                            </button>
+                    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 px-1 md:px-2">
+                        <div className="flex items-center gap-2 w-full sm:w-auto">
+                            {/* Folder Dropdown */}
+                            <div className="relative flex-1 sm:flex-initial">
+                                <button
+                                    onClick={() => setShowFolderDropdown(!showFolderDropdown)}
+                                    className={`w-full flex items-center justify-between sm:justify-start gap-2 px-4 md:px-5 py-2.5 rounded-full text-sm font-black transition-all border shadow-sm ${selectedFolderId
+                                        ? 'bg-primary/10 text-primary border-primary/30'
+                                        : 'bg-surface-highlight text-text-base border-border-color/50 hover:border-primary/50'
+                                        }`}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Icon name="folder" size="sm" />
+                                        <span className="max-w-24 truncate">{selectedFolderName}</span>
+                                    </div>
+                                    <Icon name={showFolderDropdown ? 'expand_less' : 'expand_more'} size="sm" />
+                                </button>
 
-                            {/* Folder Dropdown Panel */}
-                            {showFolderDropdown && (
-                                <>
-                                    {/* Backdrop */}
-                                    <div
-                                        className="fixed inset-0 z-40"
-                                        onClick={() => setShowFolderDropdown(false)}
-                                    />
-
-                                    {/* Dropdown Menu */}
-                                    <div className="absolute top-full left-0 mt-2 w-72 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
-                                        {/* Header */}
-                                        <div className="p-3 border-b border-border-color flex items-center justify-between bg-surface-highlight/20">
-                                            <span className="text-sm font-black text-text-base">Thư mục</span>
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setIsCreatingFolder(!isCreatingFolder);
-                                                }}
-                                                className="p-1 text-text-secondary hover:text-primary rounded-full transition-colors border border-transparent hover:border-border-color"
-                                            >
-                                                <Icon name="add" size="sm" />
-                                            </button>
-                                        </div>
-
-                                        {/* Create folder form */}
-                                        {isCreatingFolder && (
-                                            <div className="p-3 border-b border-border-color flex gap-2 bg-blue-50/30 dark:bg-surface-highlight/20">
-                                                <input
-                                                    type="text"
-                                                    placeholder="Tên thư mục..."
-                                                    value={newFolderName}
-                                                    onChange={(e) => setNewFolderName(e.target.value)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
-                                                    className="flex-1 bg-surface-highlight border border-border-color/60 rounded-lg px-3 py-1.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:border-primary shadow-inner"
-                                                    autoFocus
-                                                />
-                                                <button
-                                                    onClick={handleCreateFolder}
-                                                    className="p-1.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover inline-flex items-center justify-center shadow-sm"
-                                                >
-                                                    <Icon name="check" size="sm" />
+                                {showFolderDropdown && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setShowFolderDropdown(false)} />
+                                        <div className="absolute top-full left-0 mt-2 w-72 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
+                                            <div className="p-3 border-b border-border-color flex items-center justify-between bg-surface-highlight/20">
+                                                <span className="text-sm font-black text-text-base">Thư mục</span>
+                                                <button onClick={(e) => { e.stopPropagation(); setIsCreatingFolder(!isCreatingFolder); }} className="p-1 text-text-secondary hover:text-primary rounded-full transition-colors border border-transparent hover:border-border-color">
+                                                    <Icon name="add" size="sm" />
                                                 </button>
                                             </div>
-                                        )}
-
-                                        {/* Folder List */}
-                                        <div className="max-h-64 overflow-y-auto p-2 space-y-1">
-                                            <button
-                                                onClick={() => {
-                                                    setSelectedFolderId(null);
-                                                    setShowFolderDropdown(false);
-                                                }}
-                                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${selectedFolderId === null
-                                                    ? 'bg-primary/10 text-primary font-black shadow-sm ring-1 ring-primary/20'
-                                                    : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
-                                                    }`}
-                                            >
-                                                <Icon name="list" size="sm" />
-                                                <span className="font-medium flex-1">Tất cả từ vựng</span>
-                                                <span className="text-xs bg-surface-highlight px-2 py-0.5 rounded-full">
-                                                    {stats?.total || 0}
-                                                </span>
-                                            </button>
-
-                                            {folders.map((folder) => (
-                                                <div
-                                                    key={folder.id}
-                                                    onDragOver={(e) => handleDragOver(e, folder.id)}
-                                                    onDragLeave={() => setDragOverFolderId(null)}
-                                                    onDrop={(e) => handleDrop(e, folder.id)}
-                                                    className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${selectedFolderId === folder.id
-                                                        ? 'bg-primary/20 text-primary'
-                                                        : dragOverFolderId === folder.id
-                                                            ? 'bg-primary/30 text-primary ring-2 ring-primary/50'
-                                                            : 'text-text-secondary hover:bg-surface-highlight hover:text-white'
-                                                        }`}
-                                                >
-                                                    {renamingFolderId === folder.id ? (
-                                                        <div className="flex-1 flex items-center gap-2">
-                                                            <input
-                                                                type="text"
-                                                                value={renameFolderValue}
-                                                                onChange={(e) => setRenameFolderValue(e.target.value)}
-                                                                onKeyDown={(e) => {
-                                                                    if (e.key === 'Enter') handleRenameFolder(folder.id);
-                                                                    if (e.key === 'Escape') setRenamingFolderId(null);
-                                                                }}
-                                                                onBlur={() => handleRenameFolder(folder.id)}
-                                                                className="flex-1 bg-surface-highlight border border-primary rounded-lg px-2 py-1.5 text-sm text-text-base font-bold focus:outline-none shadow-inner"
-                                                                autoFocus
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedFolderId(folder.id);
-                                                                    setShowFolderDropdown(false);
-                                                                }}
-                                                                className="flex-1 flex items-center gap-3 text-left"
-                                                            >
-                                                                <Icon name={folder.icon || 'folder'} size="sm" />
-                                                                <span className="font-medium truncate flex-1">{folder.name}</span>
-                                                                <span className="text-xs bg-surface-highlight px-2 py-0.5 rounded-full">
-                                                                    {folder._count?.vocabulary || 0}
-                                                                </span>
-                                                            </button>
-                                                            {!folder.isDefault && (
-                                                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            setRenamingFolderId(folder.id);
-                                                                            setRenameFolderValue(folder.name);
-                                                                        }}
-                                                                        className="p-1 text-text-secondary hover:text-primary inline-flex items-center justify-center"
-                                                                        title="Đổi tên"
-                                                                    >
-                                                                        <Icon name="edit" size="sm" />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            handleDeleteFolder(folder.id);
-                                                                        }}
-                                                                        className="p-1 text-text-secondary hover:text-red-400 inline-flex items-center justify-center"
-                                                                        title="Xóa"
-                                                                    >
-                                                                        <Icon name="close" size="sm" />
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </>
-                                                    )}
+                                            {isCreatingFolder && (
+                                                <div className="p-3 border-b border-border-color flex gap-2 bg-blue-50/30 dark:bg-surface-highlight/20">
+                                                    <input type="text" placeholder="Tên thư mục..." value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()} className="flex-1 bg-surface-highlight border border-border-color/60 rounded-lg px-3 py-1.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:border-primary shadow-inner" autoFocus />
+                                                    <button onClick={handleCreateFolder} className="p-1.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover inline-flex items-center justify-center shadow-sm">
+                                                        <Icon name="check" size="sm" />
+                                                    </button>
                                                 </div>
-                                            ))}
+                                            )}
+                                            <div className="max-h-64 overflow-y-auto p-2 space-y-1">
+                                                <button onClick={() => { setSelectedFolderId(null); setShowFolderDropdown(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${selectedFolderId === null ? 'bg-primary/10 text-primary font-black shadow-sm ring-1 ring-primary/20' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}>
+                                                    <Icon name="list" size="sm" />
+                                                    <span className="font-medium flex-1">Tất cả từ vựng</span>
+                                                    <span className="text-xs bg-surface-highlight px-2 py-0.5 rounded-full">{stats?.total || 0}</span>
+                                                </button>
+                                                {folders.map((folder) => (
+                                                    <div key={folder.id} onDragOver={(e) => handleDragOver(e, folder.id)} onDragLeave={() => setDragOverFolderId(null)} onDrop={(e) => handleDrop(e, folder.id)} className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${selectedFolderId === folder.id ? 'bg-primary/20 text-primary' : dragOverFolderId === folder.id ? 'bg-primary/30 text-primary ring-2 ring-primary/50' : 'text-text-secondary hover:bg-surface-highlight hover:text-white'}`}>
+                                                        {renamingFolderId === folder.id ? (
+                                                            <div className="flex-1 flex items-center gap-2">
+                                                                <input type="text" value={renameFolderValue} onChange={(e) => setRenameFolderValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(folder.id); if (e.key === 'Escape') setRenamingFolderId(null); }} onBlur={() => handleRenameFolder(folder.id)} className="flex-1 bg-surface-highlight border border-primary rounded-lg px-2 py-1.5 text-sm text-text-base font-bold focus:outline-none shadow-inner" autoFocus />
+                                                            </div>
+                                                        ) : (
+                                                            <>
+                                                                <button onClick={() => { setSelectedFolderId(folder.id); setShowFolderDropdown(false); }} className="flex-1 flex items-center gap-3 text-left">
+                                                                    <Icon name={folder.icon || 'folder'} size="sm" />
+                                                                    <span className="font-medium truncate flex-1">{folder.name}</span>
+                                                                    <span className="text-xs bg-surface-highlight px-2 py-0.5 rounded-full">{folder._count?.vocabulary || 0}</span>
+                                                                </button>
+                                                                {!folder.isDefault && (
+                                                                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
+                                                                        <button onClick={(e) => { e.stopPropagation(); setRenamingFolderId(folder.id); setRenameFolderValue(folder.name); }} className="p-1 text-text-secondary hover:text-primary inline-flex items-center justify-center" title="Đổi tên"><Icon name="edit" size="sm" /></button>
+                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-1 text-text-secondary hover:text-red-400 inline-flex items-center justify-center" title="Xóa"><Icon name="close" size="sm" /></button>
+                                                                    </div>
+                                                                )}
+                                                            </>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
-                                </>
-                            )}
+                                    </>
+                                )}
+                            </div>
+                            <div className="hidden sm:block h-6 w-px bg-border-color" />
                         </div>
 
-                        <div className="h-6 w-px bg-border-color" />
-
                         {/* Search */}
-                        <div className="relative group">
+                        <div className="relative group flex-1 min-w-0 w-full sm:w-auto">
                             <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors" size="sm" />
                             <input
                                 type="text"
                                 placeholder="Tìm kiếm từ vựng..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="bg-surface-highlight border border-border-color/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/50 w-48 md:w-64 transition-all shadow-sm"
+                                className="bg-surface-highlight border border-border-color/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/50 w-full sm:w-48 md:w-64 transition-all shadow-sm"
                             />
                         </div>
 
-                        <div className="h-6 w-px bg-border-color" />
+                        <div className="hidden sm:block h-6 w-px bg-border-color" />
 
                         <select
                             value={proficiencyFilter}
                             onChange={(e) => setProficiencyFilter(e.target.value)}
-                            className="bg-surface-highlight border border-border-color/50 rounded-full px-5 py-2.5 text-text-secondary text-sm font-bold focus:outline-none focus:border-primary shadow-sm hover:border-primary/50 transition-colors"
+                            className="flex-1 sm:flex-initial bg-surface-highlight border border-border-color/50 rounded-full px-5 py-2.5 text-text-secondary text-sm font-bold focus:outline-none focus:border-primary shadow-sm hover:border-primary/50 transition-colors"
                         >
                             <option value="">Tất cả trạng thái</option>
                             <option value="new">Mới</option>
@@ -584,24 +494,24 @@ export default function VocabNotebookPage() {
                     </div>
 
                     {/* Controls */}
-                    <div className="flex items-center gap-3 px-2">
+                    <div className="flex items-center justify-center sm:justify-end gap-3 px-2">
                         {/* View Toggle */}
-                        <div className="flex items-center bg-surface-highlight rounded-full p-1 border border-border-color/60 shadow-inner">
+                        <div className="flex items-center bg-surface-highlight rounded-full p-1 border border-border-color/60 shadow-inner w-full sm:w-auto">
                             <button
                                 onClick={() => setViewMode('table')}
-                                className={`p-2 px-5 rounded-full flex items-center gap-2 text-sm font-black transition-all ${viewMode === 'table' ? 'bg-primary text-on-primary shadow-md' : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
+                                className={`flex-1 sm:flex-initial p-2 px-4 md:px-5 rounded-full flex items-center justify-center gap-2 text-sm font-black transition-all ${viewMode === 'table' ? 'bg-primary text-on-primary shadow-md' : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
                                     }`}
                             >
                                 <Icon name="table_rows" size="sm" />
-                                <span className="hidden sm:inline">Table</span>
+                                <span className="hidden xs:inline">Table</span>
                             </button>
                             <button
                                 onClick={() => setViewMode('grid')}
-                                className={`p-2 px-5 rounded-full flex items-center gap-2 text-sm font-black transition-all ${viewMode === 'grid' ? 'bg-primary text-on-primary shadow-md' : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
+                                className={`flex-1 sm:flex-initial p-2 px-4 md:px-5 rounded-full flex items-center justify-center gap-2 text-sm font-black transition-all ${viewMode === 'grid' ? 'bg-primary text-on-primary shadow-md' : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
                                     }`}
                             >
                                 <Icon name="grid_view" size="sm" />
-                                <span className="hidden sm:inline">Grid</span>
+                                <span className="hidden xs:inline">Grid</span>
                             </button>
                         </div>
                     </div>
@@ -646,87 +556,93 @@ export default function VocabNotebookPage() {
                             {/* Batch Action Bar */}
                             {selectedIds.length > 0 && (
                                 <div className="p-3 bg-primary/10 border-b border-primary/20 flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm font-black text-text-base">
-                                            Đã chọn <span className="text-primary font-bold">{selectedIds.length}</span> từ
-                                        </span>
-                                        <button
-                                            onClick={() => setSelectedIds([])}
-                                            className="text-xs text-text-secondary hover:text-text-base font-black transition-colors"
-                                        >
-                                            Bỏ chọn
-                                        </button>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => {
-                                                setConfirmDialog({
-                                                    isOpen: true,
-                                                    title: 'Xóa nhiều từ vựng?',
-                                                    message: `Bạn có chắc muốn xóa ${selectedIds.length} từ đã chọn khỏi sổ từ vựng?`,
-                                                    variant: 'danger',
-                                                    onConfirm: async () => {
-                                                        const idsToDelete = [...selectedIds];
-                                                        setSelectedIds([]);
-                                                        setConfirmDialog(prev => ({ ...prev, isOpen: false }));
-                                                        setIsLoading(true);
-                                                        try {
-                                                            await Promise.all(idsToDelete.map(id => userVocabularyApi.remove(id)));
-                                                            fetchVocabulary();
-                                                            fetchStats();
-                                                        } catch (err) {
-                                                            console.error('Failed to batch delete:', err);
-                                                            alert('Có lỗi xảy ra khi xóa một số từ.');
-                                                        } finally {
-                                                            setIsLoading(false);
-                                                        }
-                                                    }
-                                                });
-                                            }}
-                                            className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-sm font-medium transition-all"
-                                        >
-                                            <Icon name="delete" size="sm" />
-                                            Xóa tất cả
-                                        </button>
-                                        <div className="relative">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-black text-text-base">
+                                                Đã chọn <span className="text-primary">{selectedIds.length}</span>
+                                            </span>
                                             <button
-                                                onClick={() => setShowMoveDropdown(!showMoveDropdown)}
-                                                disabled={isMoving}
-                                                className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-medium hover:bg-primary-hover disabled:opacity-50"
+                                                onClick={() => setSelectedIds([])}
+                                                className="text-[10px] uppercase font-black text-text-secondary hover:text-primary transition-colors px-2 py-1 rounded-md hover:bg-primary/5"
                                             >
-                                                {isMoving ? (
-                                                    <Icon name="sync" className="animate-spin" size="sm" />
-                                                ) : (
-                                                    <Icon name="drive_file_move" size="sm" />
-                                                )}
-                                                Di chuyển vào thư mục
+                                                Bỏ chọn
                                             </button>
-                                            {showMoveDropdown && (
-                                                <>
-                                                    <div className="fixed inset-0 z-40" onClick={() => setShowMoveDropdown(false)} />
-                                                    <div className="absolute right-0 top-full mt-2 w-56 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
-                                                        <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
-                                                            <button
-                                                                onClick={() => handleBatchMove(null)}
-                                                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-highlight hover:text-text-base font-bold rounded-lg transition-colors"
-                                                            >
-                                                                <Icon name="folder_off" size="sm" />
-                                                                Bỏ khỏi thư mục
-                                                            </button>
-                                                            {folders.map(folder => (
+                                        </div>
+
+                                        <div className="h-4 w-px bg-border-color/40 hidden sm:block" />
+
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setConfirmDialog({
+                                                        isOpen: true,
+                                                        title: 'Xóa từ vựng?',
+                                                        message: `Xóa ${selectedIds.length} từ đã chọn?`,
+                                                        variant: 'danger',
+                                                        onConfirm: async () => {
+                                                            const idsToDelete = [...selectedIds];
+                                                            setSelectedIds([]);
+                                                            setConfirmDialog(prev => ({ ...prev, isOpen: false }));
+                                                            setIsLoading(true);
+                                                            try {
+                                                                await Promise.all(idsToDelete.map(id => userVocabularyApi.remove(id)));
+                                                                fetchVocabulary();
+                                                                fetchStats();
+                                                            } catch (err) {
+                                                                console.error('Failed to batch delete:', err);
+                                                            } finally {
+                                                                setIsLoading(false);
+                                                            }
+                                                        }
+                                                    });
+                                                }}
+                                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-xs font-bold transition-all"
+                                            >
+                                                <Icon name="delete" size="sm" />
+                                                <span className="hidden xs:inline">Xóa</span>
+                                            </button>
+
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowMoveDropdown(!showMoveDropdown)}
+                                                    disabled={isMoving}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-xs font-bold transition-all disabled:opacity-50"
+                                                >
+                                                    {isMoving ? (
+                                                        <Icon name="sync" className="animate-spin" size="sm" />
+                                                    ) : (
+                                                        <Icon name="folder" size="sm" />
+                                                    )}
+                                                    <span className="hidden xs:inline">Thư mục</span>
+                                                </button>
+
+                                                {showMoveDropdown && (
+                                                    <>
+                                                        <div className="fixed inset-0 z-40" onClick={() => setShowMoveDropdown(false)} />
+                                                        <div className="absolute left-0 top-full mt-2 w-56 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
+                                                            <div className="p-2 space-y-1 max-h-48 overflow-y-auto">
                                                                 <button
-                                                                    key={folder.id}
-                                                                    onClick={() => handleBatchMove(folder.id)}
-                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-secondary hover:bg-surface-highlight hover:text-text-base font-bold rounded-lg transition-colors"
+                                                                    onClick={() => handleBatchMove(null)}
+                                                                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:bg-surface-highlight hover:text-text-base font-bold rounded-lg transition-colors"
                                                                 >
-                                                                    <Icon name={folder.icon || 'folder'} size="sm" />
-                                                                    {folder.name}
+                                                                    <Icon name="folder_off" size="sm" />
+                                                                    Bỏ khỏi thư mục
                                                                 </button>
-                                                            ))}
+                                                                {folders.map(folder => (
+                                                                    <button
+                                                                        key={folder.id}
+                                                                        onClick={() => handleBatchMove(folder.id)}
+                                                                        className="w-full flex items-center gap-2 px-3 py-2 text-xs text-text-secondary hover:bg-surface-highlight hover:text-text-base font-bold rounded-lg transition-colors"
+                                                                    >
+                                                                        <Icon name={folder.icon || 'folder'} size="sm" />
+                                                                        {folder.name}
+                                                                    </button>
+                                                                ))}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </>
-                                            )}
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -752,14 +668,14 @@ export default function VocabNotebookPage() {
                                             </div>
                                             <div className="text-[11px] text-text-secondary text-center line-clamp-2 font-bold leading-tight mb-2 min-h-[2.4rem] flex flex-col justify-center">
                                                 {(item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').includes('1.') ? (
-                                                    (item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').split(/(?=\d+\.)/).slice(0, 2).map((part, i) => (
+                                                    (item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').split(/\d+\.\s*/).filter(Boolean).slice(0, 2).map((part, i) => (
                                                         <span key={i} className="block truncate max-w-full">
                                                             {renderFormattedMeaning(part)}
                                                         </span>
                                                     ))
                                                 ) : (
                                                     <span className="line-clamp-2">
-                                                        {item.vocabulary.meaningVi || item.vocabulary.meaningEn}
+                                                        {renderFormattedMeaning(item.vocabulary.meaningVi || item.vocabulary.meaningEn)}
                                                     </span>
                                                 )}
                                             </div>
@@ -772,103 +688,165 @@ export default function VocabNotebookPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="border-b border-border-color/60 text-text-base text-[10px] uppercase font-black tracking-widest bg-surface-highlight/40">
-                                                <th className="px-6 py-4 w-10">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={selectedIds.length === vocabulary.length && vocabulary.length > 0}
-                                                        onChange={toggleSelectAll}
-                                                        className="checkbox-theme rounded border-border-color/50 text-primary focus:ring-primary/20"
-                                                    />
-                                                </th>
-                                                <th className="px-6 py-4">Từ</th>
-                                                <th className="px-6 py-4">Nghĩa</th>
-                                                <th className="px-6 py-4 hidden md:table-cell">HSK</th>
-                                                <th className="px-6 py-4 hidden lg:table-cell">Trạng thái</th>
-                                                <th className="px-6 py-4 text-center w-28">Thao tác</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-border-color">
-                                            {vocabulary.map((item) => (
-                                                <tr
-                                                    key={item.id}
-                                                    onClick={() => setSelectedWord(item)}
-                                                    draggable
-                                                    onDragStart={(e) => handleDragStart(e, item.id)}
-                                                    onDragEnd={handleDragEnd}
-                                                    className={`group hover:bg-white/[0.02] transition-colors cursor-pointer ${selectedWord?.id === item.id ? 'bg-surface-highlight/30 border-l-4 border-l-primary' : ''
-                                                        } ${draggedItemId === item.id ? 'opacity-50' : ''} ${selectedIds.includes(item.id) ? 'bg-primary/5' : ''
-                                                        }`}
-                                                >
-                                                    <td className="px-6 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                                <>
+                                    {/* Table View - Hidden on mobile, shown on md+ */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-border-color/60 text-text-base text-[10px] uppercase font-black tracking-widest bg-surface-highlight/40">
+                                                    <th className="px-4 lg:px-6 py-4 w-10">
                                                         <input
                                                             type="checkbox"
-                                                            checked={selectedIds.includes(item.id)}
-                                                            onChange={() => toggleSelect(item.id)}
+                                                            checked={selectedIds.length === vocabulary.length && vocabulary.length > 0}
+                                                            onChange={toggleSelectAll}
                                                             className="checkbox-theme rounded border-border-color/50 text-primary focus:ring-primary/20"
                                                         />
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="flex flex-col">
-                                                            <div className={`text-xl font-chinese font-black group-hover:text-primary transition-colors ${selectedWord?.id === item.id ? 'text-primary' : 'text-text-base'}`} lang="zh-CN">
+                                                    </th>
+                                                    <th className="px-4 lg:px-6 py-4">Từ</th>
+                                                    <th className="px-4 lg:px-6 py-4">Nghĩa</th>
+                                                    <th className="px-4 lg:px-6 py-4 hidden lg:table-cell">HSK</th>
+                                                    <th className="px-4 lg:px-6 py-4 hidden xl:table-cell">Trạng thái</th>
+                                                    <th className="px-4 lg:px-6 py-4 text-center w-28">Thao tác</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-border-color">
+                                                {vocabulary.map((item) => (
+                                                    <tr
+                                                        key={item.id}
+                                                        onClick={() => setSelectedWord(item)}
+                                                        draggable
+                                                        onDragStart={(e) => handleDragStart(e, item.id)}
+                                                        onDragEnd={handleDragEnd}
+                                                        className={`group hover:bg-white/[0.02] transition-colors cursor-pointer ${selectedWord?.id === item.id ? 'bg-surface-highlight/30 border-l-4 border-l-primary' : ''
+                                                            } ${draggedItemId === item.id ? 'opacity-50' : ''} ${selectedIds.includes(item.id) ? 'bg-primary/5' : ''
+                                                            }`}
+                                                    >
+                                                        <td className="px-4 lg:px-6 py-4 w-10" onClick={(e) => e.stopPropagation()}>
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={selectedIds.includes(item.id)}
+                                                                onChange={() => toggleSelect(item.id)}
+                                                                className="checkbox-theme rounded border-border-color/50 text-primary focus:ring-primary/20"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 lg:px-6 py-4">
+                                                            <div className="flex flex-col">
+                                                                <div className={`text-xl font-chinese font-black group-hover:text-primary transition-colors ${selectedWord?.id === item.id ? 'text-primary' : 'text-text-base'}`} lang="zh-CN">
+                                                                    {item.vocabulary.hanzi}
+                                                                </div>
+                                                                <div className="text-xs text-primary font-pinyin font-black tracking-tight">{item.vocabulary.pinyin}</div>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 lg:px-6 py-4">
+                                                            <div className="space-y-1 max-w-xs lg:max-w-md">
+                                                                {(item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').includes('1.') ? (
+                                                                    (item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').split(/\d+\.\s*/).filter(Boolean).slice(0, 2).map((part, i) => (
+                                                                        <p key={i} className="text-sm font-bold text-text-secondary leading-normal truncate">
+                                                                            {renderFormattedMeaning(part)}
+                                                                        </p>
+                                                                    ))
+                                                                ) : (
+                                                                    <p className="text-text-base text-sm font-bold leading-normal truncate">
+                                                                        {renderFormattedMeaning(item.vocabulary.meaningVi || item.vocabulary.meaningEn)}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-4 lg:px-6 py-4 hidden lg:table-cell">
+                                                            <Badge variant="hsk" hskLevel={item.vocabulary.hskLevel} className="whitespace-nowrap">HSK {item.vocabulary.hskLevel}</Badge>
+                                                        </td>
+                                                        <td className="px-4 lg:px-6 py-4 hidden xl:table-cell">
+                                                            <span className={`text-xs font-bold whitespace-nowrap ${getProficiencyColor(item.proficiency).split(' ')[1]}`}>
+                                                                {getProficiencyLabel(item.proficiency)}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-4 lg:px-6 py-4 text-center">
+                                                            <div className="flex items-center justify-center gap-1">
+                                                                <SpeakerButton
+                                                                    text={item.vocabulary.hanzi}
+                                                                    size="sm"
+                                                                />
+                                                                <button
+                                                                    className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors inline-flex items-center justify-center"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDelete(item.id);
+                                                                    }}
+                                                                    disabled={isDeleting === item.id}
+                                                                >
+                                                                    {isDeleting === item.id ? (
+                                                                        <Icon name="sync" className="animate-spin" size="sm" />
+                                                                    ) : (
+                                                                        <Icon name="delete" size="sm" />
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Mobile Card List View - Shown only on mobile when viewMode is table */}
+                                    <div className="md:hidden divide-y divide-border-color/60">
+                                        {vocabulary.map((item) => (
+                                            <div
+                                                key={item.id}
+                                                onClick={() => setSelectedWord(item)}
+                                                className={`p-4 flex gap-4 items-start active:bg-surface-highlight/20 transition-colors ${selectedWord?.id === item.id ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : ''}`}
+                                            >
+                                                <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.includes(item.id)}
+                                                        onChange={() => toggleSelect(item.id)}
+                                                        className="checkbox-theme rounded border-border-color/50 text-primary focus:ring-primary/20 size-5"
+                                                    />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between gap-2 mb-1">
+                                                        <div>
+                                                            <div className="text-2xl font-chinese font-black text-text-base leading-tight" lang="zh-CN">
                                                                 {item.vocabulary.hanzi}
                                                             </div>
-                                                            <div className="text-xs text-primary font-pinyin font-black tracking-tight">{item.vocabulary.pinyin}</div>
+                                                            <div className="text-sm text-primary font-pinyin font-black tracking-tight">
+                                                                {item.vocabulary.pinyin}
+                                                            </div>
                                                         </div>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <div className="space-y-1 max-w-md">
-                                                            {(item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').includes('1.') ? (
-                                                                (item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').split(/(?=\d+\.)/).map((part, i) => (
-                                                                    <p key={i} className="text-sm font-bold text-text-secondary leading-normal">
-                                                                        {renderFormattedMeaning(part)}
-                                                                    </p>
-                                                                ))
-                                                            ) : (
-                                                                <p className="text-text-base text-sm font-bold leading-normal">
-                                                                    {item.vocabulary.meaningVi || item.vocabulary.meaningEn}
-                                                                </p>
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden md:table-cell">
-                                                        <Badge variant="hsk" hskLevel={item.vocabulary.hskLevel} className="whitespace-nowrap">HSK {item.vocabulary.hskLevel}</Badge>
-                                                    </td>
-                                                    <td className="px-6 py-4 hidden lg:table-cell">
-                                                        <span className={`text-xs font-bold whitespace-nowrap ${getProficiencyColor(item.proficiency).split(' ')[1]}`}>
+                                                        <Badge variant="hsk" hskLevel={item.vocabulary.hskLevel} className="text-[10px] shrink-0">
+                                                            HSK {item.vocabulary.hskLevel}
+                                                        </Badge>
+                                                    </div>
+                                                    <div className="space-y-1.5 mt-2">
+                                                        {(item.vocabulary.meaningVi || item.vocabulary.meaningEn || '').split(/\d+\.\s*|\n/).filter(Boolean).map((line, idx) => (
+                                                            <div key={idx} className="text-sm font-bold leading-snug flex items-start gap-2">
+                                                                <div className="flex-1 text-text-secondary">
+                                                                    {renderFormattedMeaning(line)}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                    <div className="mt-3 flex items-center justify-between">
+                                                        <span className={`text-[10px] uppercase font-black tracking-wider ${getProficiencyColor(item.proficiency).replace('bg-', 'text-')}`}>
                                                             {getProficiencyLabel(item.proficiency)}
                                                         </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <div className="flex items-center justify-center gap-1">
-                                                            <SpeakerButton
-                                                                text={item.vocabulary.hanzi}
-                                                                size="sm"
-                                                            />
+                                                        <div className="flex items-center gap-1">
+                                                            <SpeakerButton text={item.vocabulary.hanzi} size="sm" />
                                                             <button
-                                                                className="p-2 text-text-secondary hover:text-red-400 hover:bg-red-400/10 rounded-full transition-colors inline-flex items-center justify-center"
-                                                                onClick={(e) => {
-                                                                    e.stopPropagation();
-                                                                    handleDelete(item.id);
-                                                                }}
-                                                                disabled={isDeleting === item.id}
+                                                                onClick={(e) => { e.stopPropagation(); handleDelete(item.id); }}
+                                                                className="size-8 flex items-center justify-center text-text-secondary hover:text-red-400 hover:bg-red-500/10 rounded-full transition-all"
+                                                                title="Xóa"
                                                             >
-                                                                {isDeleting === item.id ? (
-                                                                    <Icon name="sync" className="animate-spin" size="md" />
-                                                                ) : (
-                                                                    <Icon name="delete" size="md" />
-                                                                )}
+                                                                <Icon name="delete" size="sm" />
                                                             </button>
                                                         </div>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
                             )}
 
                             {/* Pagination */}
@@ -955,14 +933,14 @@ export default function VocabNotebookPage() {
                                     <h3 className="text-amber-600 dark:text-text-secondary text-[10px] uppercase font-black tracking-[0.2em] mb-1">Định nghĩa & Nghĩa</h3>
                                     <div className="space-y-2">
                                         {(selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn || '').includes('1.') ? (
-                                            (selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn || '').split(/(?=\d+\.)/).map((part, i) => (
+                                            (selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn || '').split(/\d+\.\s*/).filter(Boolean).map((part, i) => (
                                                 <p key={i} className="text-lg font-bold text-text-base leading-relaxed">
                                                     {renderFormattedMeaning(part)}
                                                 </p>
                                             ))
                                         ) : (
                                             <p className="text-text-base text-xl font-bold leading-relaxed">
-                                                {selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn}
+                                                {renderFormattedMeaning(selectedWord.vocabulary.meaningVi || selectedWord.vocabulary.meaningEn)}
                                             </p>
                                         )}
                                     </div>

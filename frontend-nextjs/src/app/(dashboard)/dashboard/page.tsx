@@ -214,7 +214,7 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* 2. SRS Review Today */}
-                    <Card variant="default" hover className="relative overflow-hidden group bg-orange-500/5 border-orange-500/20 shadow-sm">
+                    <Card variant="default" hover className="relative overflow-hidden group bg-orange-500/5 border-orange-500/20 shadow-sm p-4 md:p-6" padding="none">
                         <div className="absolute -right-4 -top-4 text-surface-highlight opacity-20 group-hover:opacity-30 transition-opacity transform rotate-12">
                             <Icon name="style" size="xl" className="text-[100px]" />
                         </div>
@@ -225,10 +225,10 @@ export default function DashboardPage() {
                                 </div>
                                 <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">Ôn tập SRS</span>
                             </div>
-                            <h3 className="text-4xl font-black text-text-base mb-1">
+                            <h3 className="text-3xl md:text-4xl font-black text-text-base mb-1">
                                 {flashcardStats?.dueToday || 0}
                             </h3>
-                            <p className="text-text-secondary font-bold">Từ cần ôn hôm nay</p>
+                            <p className="text-text-secondary font-bold text-sm md:text-base">Từ cần ôn hôm nay</p>
                         </div>
                         <div className="mt-8">
                             <Button
@@ -244,7 +244,7 @@ export default function DashboardPage() {
 
                     {/* 3. Vocab Stats (Tall Pillar) */}
                     <Card variant="default" padding="none" className="row-span-2 flex flex-col overflow-hidden bg-blue-500/5 border-blue-500/20 shadow-sm">
-                        <div className="p-6 border-b border-border-color">
+                        <div className="p-4 md:p-6 border-b border-border-color">
                             <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-2">
                                     <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400 flex items-center justify-center">
@@ -253,26 +253,26 @@ export default function DashboardPage() {
                                     <span className="text-xs font-bold uppercase tracking-wider text-text-secondary">Từ vựng</span>
                                 </div>
                                 <Badge variant="secondary" size="sm" className="whitespace-nowrap">
-                                    +{vocabStats?.savedThisWeek || 0} tuần này
+                                    +{vocabStats?.savedThisWeek || 0}
                                 </Badge>
                             </div>
                         </div>
-                        <div className="flex-1 p-4 flex flex-col gap-4">
-                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
-                                <span className="text-text-secondary font-bold">Tổng từ đã lưu</span>
-                                <span className="text-2xl font-black text-text-base">{vocabStats?.total || 0}</span>
+                        <div className="flex-1 p-3 md:p-4 flex flex-col gap-3 md:gap-4">
+                            <div className="flex items-center justify-between p-3 md:p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold text-sm md:text-base">Tổng đã lưu</span>
+                                <span className="text-xl md:text-2xl font-black text-text-base">{vocabStats?.total || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
-                                <span className="text-text-secondary font-bold">Thành thạo</span>
-                                <span className="text-2xl font-bold text-primary">{vocabStats?.mastered || 0}</span>
+                            <div className="flex items-center justify-between p-3 md:p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold text-sm md:text-base">Thành thạo</span>
+                                <span className="text-xl md:text-2xl font-bold text-primary">{vocabStats?.mastered || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
-                                <span className="text-text-secondary font-bold">Đang học</span>
-                                <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{vocabStats?.learning || 0}</span>
+                            <div className="flex items-center justify-between p-3 md:p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold text-sm md:text-base">Đang học</span>
+                                <span className="text-xl md:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{vocabStats?.learning || 0}</span>
                             </div>
-                            <div className="flex items-center justify-between p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
-                                <span className="text-text-secondary font-bold">Cần ôn</span>
-                                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">{(vocabStats?.review || 0) + (vocabStats?.new || 0)}</span>
+                            <div className="flex items-center justify-between p-3 md:p-4 bg-surface-dark/50 rounded-xl border border-blue-500/10 shadow-sm">
+                                <span className="text-text-secondary font-bold text-sm md:text-base">Cần ôn</span>
+                                <span className="text-xl md:text-2xl font-bold text-orange-600 dark:text-orange-400">{(vocabStats?.review || 0) + (vocabStats?.new || 0)}</span>
                             </div>
                         </div>
                         <div className="p-4 border-t border-border-color">
@@ -280,13 +280,13 @@ export default function DashboardPage() {
                                 className="w-full text-sm font-bold text-text-secondary hover:text-text-base text-center"
                                 onClick={() => router.push('/vocab')}
                             >
-                                Xem tất cả từ vựng
+                                Xem tất cả
                             </button>
                         </div>
                     </Card>
 
                     {/* 4. Progress Chart */}
-                    <Card variant="default" className="col-span-1 md:col-span-2 xl:col-span-2">
+                    <Card variant="default" className="col-span-1 md:col-span-2 xl:col-span-2 p-4 md:p-6" padding="none">
                         <div className="flex items-center justify-between mb-6">
                             <div>
                                 <h3 className="text-lg font-black text-text-base">Hoạt động học tập</h3>
@@ -295,7 +295,7 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Simple Bar Chart */}
-                        <div className="flex-1 flex items-end justify-between gap-2 h-32 md:h-40 px-2">
+                        <div className="flex-1 flex items-end justify-between gap-1.5 md:gap-2 h-32 md:h-40 px-1 md:px-2">
                             {weeklyProgress?.days?.map((dayData, i) => {
                                 const maxMinutes = Math.max(
                                     ...(weeklyProgress?.days?.map(d => (d.vocabularySaved || 0) + (d.reviewsCompleted || 0)) || [1]),
@@ -332,8 +332,8 @@ export default function DashboardPage() {
                     </Card>
 
                     {/* 5. Daily Goal Circle */}
-                    <Card variant="default" className="flex flex-col justify-center items-center relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm">
-                        <div className="relative size-32 mb-4">
+                    <Card variant="default" className="flex flex-col justify-center items-center relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm p-6" padding="none">
+                        <div className="relative size-28 md:size-32 mb-4">
                             <svg className="size-full -rotate-90" viewBox="0 0 36 36">
                                 <path
                                     className="text-surface-highlight"
@@ -354,12 +354,12 @@ export default function DashboardPage() {
                                 />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-3xl font-bold text-text-base">{dailyGoalPercent}<span className="text-sm align-top">%</span></span>
+                                <span className="text-2xl md:text-3xl font-bold text-text-base">{dailyGoalPercent}<span className="text-sm align-top">%</span></span>
                             </div>
                         </div>
                         <div className="text-center relative z-10">
-                            <h4 className="text-text-base font-bold text-lg">Mục tiêu hôm nay</h4>
-                            <p className="text-text-secondary text-sm">
+                            <h4 className="text-text-base font-bold text-base md:text-lg">Mục tiêu hôm nay</h4>
+                            <p className="text-text-secondary text-xs md:text-sm">
                                 {minutesStudied}/{user?.dailyGoalMinutes || 30} phút
                             </p>
                         </div>
@@ -379,33 +379,57 @@ export default function DashboardPage() {
                                 <p className="text-text-secondary">Chưa có thành tựu nào. Hãy tiếp tục học để đạt được!</p>
                             </div>
                         ) : (
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm text-left">
-                                    <thead className="text-xs text-text-secondary uppercase bg-background-dark/50">
-                                        <tr>
-                                            <th className="px-6 py-4 font-bold">Huy hiệu</th>
-                                            <th className="px-6 py-4 font-bold">Mô tả</th>
-                                            <th className="px-6 py-4 font-bold">Ngày đạt</th>
-                                            <th className="px-6 py-4 font-bold text-right">XP</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-border-color">
-                                        {achievements.slice(0, 5).map((item) => (
-                                            <tr key={item.id} className="hover:bg-surface-highlight/50 transition-colors">
-                                                <td className="px-6 py-4 font-medium text-text-base flex items-center gap-3">
-                                                    <div className={`size-8 rounded-full bg-${item.iconColor?.replace('text-', '')}/20 flex items-center justify-center ${item.iconColor || 'text-primary'}`}>
-                                                        <Icon name={item.icon || 'emoji_events'} size="md" />
-                                                    </div>
-                                                    {item.title}
-                                                </td>
-                                                <td className="px-6 py-4 text-text-secondary">{item.description}</td>
-                                                <td className="px-6 py-4 text-text-secondary">{formatDate(item.earnedAt)}</td>
-                                                <td className="px-6 py-4 text-right font-bold text-primary">+{item.xpReward} XP</td>
+                            <>
+                                {/* Desktop Table View */}
+                                <div className="hidden md:block overflow-x-auto">
+                                    <table className="w-full text-sm text-left">
+                                        <thead className="text-xs text-text-secondary uppercase bg-background-dark/50">
+                                            <tr>
+                                                <th className="px-6 py-4 font-bold">Huy hiệu</th>
+                                                <th className="px-6 py-4 font-bold">Mô tả</th>
+                                                <th className="px-6 py-4 font-bold">Ngày đạt</th>
+                                                <th className="px-6 py-4 font-bold text-right">XP</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                        </thead>
+                                        <tbody className="divide-y divide-border-color">
+                                            {achievements.slice(0, 5).map((item) => (
+                                                <tr key={item.id} className="hover:bg-surface-highlight/50 transition-colors">
+                                                    <td className="px-6 py-4 font-medium text-text-base flex items-center gap-3">
+                                                        <div className={`size-8 rounded-full bg-${item.iconColor?.replace('text-', '')}/20 flex items-center justify-center ${item.iconColor || 'text-primary'}`}>
+                                                            <Icon name={item.icon || 'emoji_events'} size="md" />
+                                                        </div>
+                                                        {item.title}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-text-secondary">{item.description}</td>
+                                                    <td className="px-6 py-4 text-text-secondary">{formatDate(item.earnedAt)}</td>
+                                                    <td className="px-6 py-4 text-right font-bold text-primary">+{item.xpReward} XP</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Mobile Card View */}
+                                <div className="md:hidden flex flex-col divide-y divide-border-color">
+                                    {achievements.slice(0, 5).map((item) => (
+                                        <div key={item.id} className="p-4 flex flex-col gap-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`size-8 rounded-full bg-${item.iconColor?.replace('text-', '')}/20 flex items-center justify-center ${item.iconColor || 'text-primary'}`}>
+                                                        <Icon name={item.icon || 'emoji_events'} size="sm" />
+                                                    </div>
+                                                    <span className="font-bold text-text-base">{item.title}</span>
+                                                </div>
+                                                <span className="text-xs font-bold text-primary">+{item.xpReward} XP</span>
+                                            </div>
+                                            <p className="text-xs text-text-secondary">{item.description}</p>
+                                            <div className="flex justify-between items-center mt-1">
+                                                <span className="text-[10px] text-text-secondary font-medium uppercase tracking-wider">{formatDate(item.earnedAt)}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </>
                         )}
                     </Card>
                 </div>

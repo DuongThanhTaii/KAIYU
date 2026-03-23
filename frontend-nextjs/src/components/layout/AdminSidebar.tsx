@@ -76,7 +76,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                                 </div>
                                 <div className="flex flex-col leading-none">
                                     <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
-                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-text-secondary uppercase">ADMIN PANEL</span>
+                                    <span className="text-[7px] font-semibold tracking-[0.15em] text-text-muted uppercase">ADMIN PANEL</span>
                                 </div>
                             </div>
                         )}
@@ -146,7 +146,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
 
             {/* Mobile/Tablet Sidebar */}
             <aside
-                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-30 transition-all duration-300 ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
+                className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-background-dark p-4 justify-between z-50 transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
             >
                 <div className="flex flex-col gap-8">
@@ -164,7 +164,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                             </div>
                             <div className="flex flex-col leading-none">
                                 <span className="font-extrabold text-base tracking-widest text-text-base uppercase">KAIYU</span>
-                                <span className="text-[7px] font-semibold tracking-[0.15em] text-text-secondary uppercase">ADMIN PANEL</span>
+                                <span className="text-[7px] font-semibold tracking-[0.15em] text-text-muted uppercase">ADMIN PANEL</span>
                             </div>
                         </div>
                     </div>

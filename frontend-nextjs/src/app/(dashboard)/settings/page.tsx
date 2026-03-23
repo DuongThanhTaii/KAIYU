@@ -120,15 +120,15 @@ export default function SettingsPage() {
 
     return (
         <DashboardLayout>
-            <div className="max-w-2xl mx-auto p-6">
-                <div className="flex items-center gap-4 mb-8">
+            <div className="max-w-2xl mx-auto px-4 py-6 sm:p-6">
+                <div className="flex items-center gap-3 mb-6 sm:mb-8">
                     <button
                         onClick={() => router.back()}
-                        className="p-2 rounded-lg hover:bg-surface-highlight transition-colors"
+                        className="p-2 -ml-2 rounded-xl hover:bg-surface-highlight transition-colors"
                     >
                         <Icon name="arrow_back" className="text-text-secondary" />
                     </button>
-                    <h1 className="text-2xl font-bold text-text-base">Cài đặt</h1>
+                    <h1 className="text-xl sm:text-2xl font-bold text-text-base mb-0 uppercase tracking-wider opacity-80">Cài đặt</h1>
                 </div>
 
                 {/* Settings Success Message */}
@@ -139,7 +139,7 @@ export default function SettingsPage() {
                 )}
 
                 {/* Learning Settings */}
-                <div className="bg-surface-dark rounded-3xl border border-border-color p-8 mb-6 shadow-sm transition-colors">
+                <div className="bg-surface-dark rounded-3xl border border-border-color p-6 sm:p-8 mb-6 shadow-sm transition-colors">
                     <h2 className="text-lg font-bold text-text-base mb-6 flex items-center gap-2">
                         <Icon name="school" className="text-primary" />
                         Học tập
@@ -193,7 +193,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Appearance Settings */}
-                <div className="bg-surface-dark rounded-3xl border border-border-color p-8 mb-6 shadow-sm transition-colors">
+                <div className="bg-surface-dark rounded-3xl border border-border-color p-6 sm:p-8 mb-6 shadow-sm transition-colors">
                     <h2 className="text-lg font-bold text-text-base mb-6 flex items-center gap-2">
                         <Icon name="palette" className="text-primary" />
                         Giao diện
@@ -233,7 +233,7 @@ export default function SettingsPage() {
                             <label className="block text-sm font-medium text-text-secondary mb-3">
                                 Màu chủ đạo {themeMode === 'light' && <span className="text-[10px] font-normal ml-2">(Chỉ dành cho chế độ tối)</span>}
                             </label>
-                            <div className="grid grid-cols-5 gap-3">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                                 {presets.map((preset) => (
                                     <button
                                         key={preset.id}
@@ -255,19 +255,19 @@ export default function SettingsPage() {
                                 ))}
                             </div>
                             {/* Custom Primary Color */}
-                            <div className="flex items-center gap-4 mt-4">
-                                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg cursor-pointer relative">
+                            <div className="flex items-center gap-3 mt-4 p-3 bg-background-dark/50 rounded-2xl border border-border-color/30">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-primary/20 shadow-lg cursor-pointer relative shrink-0">
                                     <input
                                         type="color"
                                         value={currentPrimaryColor}
                                         onChange={(e) => setCustomColor(e.target.value)}
-                                        className="absolute inset-0 w-14 h-14 -m-3 cursor-pointer"
+                                        className="absolute inset-0 w-20 h-20 -m-5 cursor-pointer"
                                         title="Chọn màu chủ đạo tùy ý"
                                     />
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-text-base text-sm font-medium">Màu tùy chỉnh</p>
-                                    <p className="text-text-secondary text-xs uppercase">{currentPrimaryColor}</p>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-text-base text-sm font-bold truncate">Màu tùy chỉnh</p>
+                                    <p className="text-text-secondary text-[10px] uppercase font-mono">{currentPrimaryColor}</p>
                                 </div>
                             </div>
                         </div>
@@ -277,7 +277,7 @@ export default function SettingsPage() {
                             <label className="block text-sm font-medium text-text-secondary mb-3">
                                 Màu nền {themeMode === 'light' && <span className="text-[10px] font-normal ml-2">(Chỉ dành cho chế độ tối)</span>}
                             </label>
-                            <div className="grid grid-cols-5 gap-3">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
                                 {backgroundPresets.map((preset) => (
                                     <button
                                         key={preset.id}
@@ -299,19 +299,19 @@ export default function SettingsPage() {
                                 ))}
                             </div>
                             {/* Custom Background Color */}
-                            <div className="flex items-center gap-4 mt-4">
-                                <div className="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/20 shadow-lg cursor-pointer relative">
+                            <div className="flex items-center gap-3 mt-4 p-3 bg-background-dark/50 rounded-2xl border border-border-color/30">
+                                <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-primary/20 shadow-lg cursor-pointer relative shrink-0">
                                     <input
                                         type="color"
                                         value={currentBackgroundColor}
                                         onChange={(e) => setCustomBackgroundColor(e.target.value)}
-                                        className="absolute inset-0 w-14 h-14 -m-3 cursor-pointer"
+                                        className="absolute inset-0 w-20 h-20 -m-5 cursor-pointer"
                                         title="Chọn màu nền tùy ý"
                                     />
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-text-base text-sm font-medium">Màu tùy chỉnh</p>
-                                    <p className="text-text-secondary text-xs uppercase">{currentBackgroundColor}</p>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-text-base text-sm font-bold truncate">Màu tùy chỉnh</p>
+                                    <p className="text-text-secondary text-[10px] uppercase font-mono">{currentBackgroundColor}</p>
                                 </div>
                             </div>
                         </div>
@@ -327,7 +327,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Account Settings */}
-                <div className="bg-surface-dark rounded-3xl border border-border-color p-8 mb-6 shadow-sm transition-colors">
+                <div className="bg-surface-dark rounded-3xl border border-border-color p-6 sm:p-8 mb-6 shadow-sm transition-colors">
                     <h2 className="text-lg font-bold text-text-base mb-6 flex items-center gap-2">
                         <Icon name="person" className="text-primary" />
                         Tài khoản
@@ -360,7 +360,7 @@ export default function SettingsPage() {
                             </div>
 
                             {showPasswordForm && (
-                                <form onSubmit={handleChangePassword} className="space-y-4 mt-6 p-6 bg-background-dark rounded-2xl border border-border-color/50">
+                                <form onSubmit={handleChangePassword} className="space-y-4 mt-6 p-4 sm:p-6 bg-background-dark rounded-2xl border border-border-color/50">
                                     {passwordError && (
                                         <div className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
                                             <p className="text-sm text-red-400">{passwordError}</p>
@@ -415,7 +415,7 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Danger Zone */}
-                <div className="bg-red-500/5 dark:bg-surface-dark rounded-3xl border border-red-500/20 p-8 shadow-sm">
+                <div className="bg-red-500/5 dark:bg-surface-dark rounded-3xl border border-red-500/20 p-6 sm:p-8 shadow-sm">
                     <h2 className="text-lg font-bold text-red-500 mb-6 flex items-center gap-2">
                         <Icon name="dangerous" />
                         Vùng nguy hiểm

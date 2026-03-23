@@ -15,8 +15,9 @@
   --color-surface-highlight: #1e3045;
   --color-border-color: #1e3045;
   --color-text-base: #FFFFFF;
-   --color-text-secondary: #95b5c6;
-   --texture-filter: invert(0);
+  --color-text-secondary: #95b5c6;
+  --color-text-muted: #64748b;
+  --texture-filter: invert(0);
   --texture-mix-blend: soft-light;
     --texture-opacity: 0.3;
   --hero-overlay: linear-gradient(to top, rgba(15, 23, 36, 0.95), rgba(15, 23, 36, 0.4), transparent);
@@ -51,7 +52,8 @@
   --color-surface-highlight: #f1f5f9;
   --color-border-color: #d1d9e1;
   --color-text-base: #000000;
-  --color-text-secondary: #0c1220;
+  --color-text-secondary: #000000;
+  --color-text-muted: #64748b;
   --color-on-primary: #ffffff;
   --hero-overlay: linear-gradient(75deg, rgba(255, 255, 255, 0.92) 0%, rgba(255, 255, 255, 0.6) 40%, transparent 100%);
   --texture-filter: invert(1);

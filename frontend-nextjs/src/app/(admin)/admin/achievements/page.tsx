@@ -180,14 +180,16 @@ export default function AdminAchievementsPage() {
     return (
         <AdminLayout
             title="Quản lý Achievements"
+            showLogo={false}
             actions={
                 <button
                     onClick={handleOpenCreate}
                     disabled={isSaving}
-                    className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-bold rounded-lg hover:from-amber-400 hover:to-orange-400 transition-colors disabled:opacity-50 text-xs sm:text-sm"
                 >
-                    <Icon name="add" />
-                    Thêm Achievement
+                    <Icon name="add" className="text-sm sm:text-base" />
+                    <span className="hidden xs:inline">Thêm Achievement</span>
+                    <span className="xs:hidden">Thêm</span>
                 </button>
             }
         >
@@ -205,52 +207,52 @@ export default function AdminAchievementsPage() {
             )}
 
             {/* Stats */}
-            <div className="grid grid-cols-4 gap-4 mb-6">
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{achievements.length}</p>
-                            <p className="text-xs text-text-secondary">Tổng achievements</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{achievements.length}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Tổng achievements</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-yellow-500/10 flex items-center justify-center">
-                            <Icon name="emoji_events" className="text-2xl text-yellow-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="emoji_events" className="text-lg sm:text-2xl text-yellow-400" />
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{totalEarned.toLocaleString()}</p>
-                            <p className="text-xs text-text-secondary">Lần đạt được</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{totalEarned.toLocaleString()}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Lần đạt được</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-green-500/10 flex items-center justify-center">
-                            <Icon name="celebration" className="text-2xl text-green-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="celebration" className="text-lg sm:text-2xl text-green-400" />
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">{totalXPAwarded.toLocaleString()}</p>
-                            <p className="text-xs text-text-secondary">XP đã trao</p>
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{totalXPAwarded.toLocaleString()}</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">XP đã trao</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Icon name="auto_awesome" className="text-2xl text-primary" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                            <Icon name="auto_awesome" className="text-lg sm:text-2xl text-primary" />
                         </div>
                     </div>
                 </div>
-                <div className="p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
+                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
                     <div className="flex items-center justify-between">
-                        <div>
-                            <p className="text-2xl font-bold text-text-base">
+                        <div className="min-w-0">
+                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">
                                 {achievements.length > 0
                                     ? Math.round(totalEarned / achievements.length)
                                     : 0}
                             </p>
-                            <p className="text-xs text-text-secondary">Trung bình/achievement</p>
+                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Trung bình/achieve</p>
                         </div>
-                        <div className="p-3 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                            <Icon name="analytics" className="text-2xl text-purple-400" />
+                        <div className="size-8 sm:size-12 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
+                            <Icon name="analytics" className="text-lg sm:text-2xl text-purple-400" />
                         </div>
                     </div>
                 </div>
@@ -261,13 +263,13 @@ export default function AdminAchievementsPage() {
                 {achievements.map((achievement) => (
                     <div
                         key={achievement.id}
-                        className="bg-surface-dark rounded-xl border border-border-color p-6 hover:border-amber-500/30 transition-colors group shadow-sm"
+                        className="bg-surface-dark rounded-xl border border-border-color p-4 sm:p-6 hover:border-amber-500/30 transition-colors group shadow-sm"
                     >
                         <div className="flex items-start justify-between mb-4">
-                            <div className={`p-4 rounded-xl flex items-center justify-center ${getColorBg(achievement.iconColor || 'text-yellow-400')}`}>
+                            <div className={`p-3 sm:p-4 rounded-xl flex items-center justify-center ${getColorBg(achievement.iconColor || 'text-yellow-400')}`}>
                                 <Icon
                                     name={achievement.icon || 'emoji_events'}
-                                    className={`text-3xl ${achievement.iconColor || 'text-yellow-400'}`}
+                                    className={`text-2xl sm:text-3xl ${achievement.iconColor || 'text-yellow-400'}`}
                                 />
                             </div>
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -286,8 +288,8 @@ export default function AdminAchievementsPage() {
                             </div>
                         </div>
 
-                        <h3 className="text-lg font-bold text-text-base mb-1">{achievement.title}</h3>
-                        <p className="text-sm text-text-secondary mb-4 line-clamp-2">
+                        <h3 className="text-base sm:text-lg font-bold text-text-base mb-1">{achievement.title}</h3>
+                        <p className="text-xs sm:text-sm text-text-secondary mb-4 line-clamp-2">
                             {achievement.description}
                         </p>
 

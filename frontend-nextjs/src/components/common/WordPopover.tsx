@@ -144,18 +144,36 @@ export function WordPopover({
         }
     }, [lookupResult, examples, isLoading, activePanel, enrichedData]);
 
-    // Calculate position - popup appears ABOVE the character
+    // Calculate position - popup appears ABOVE the character by default
     const getAdjustedPosition = () => {
-        const padding = 16;
+        const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+        if (isMobile) return { x: 0, y: 0, width: 0, isBelow: false }; // Handled by CSS on mobile
+
+        const padding = 20; 
+        const currentPopupWidth = POPUP_WIDTH;
         const actualHeight = popupHeight || 400;
+        
         let y = position.y - actualHeight - ARROW_HEIGHT - GAP;
-        if (y < padding) y = padding;
-        let x = position.x - POPUP_WIDTH / 2;
-        if (x < padding) x = padding;
-        if (x + POPUP_WIDTH > window.innerWidth - padding) {
-            x = window.innerWidth - POPUP_WIDTH - padding;
+        let isBelow = false;
+
+        if (y < padding) {
+            const textHeight = 40; 
+            y = position.y + textHeight + GAP;
+            isBelow = true;
         }
-        return { x, y };
+        
+        if (y + actualHeight > window.innerHeight - padding) {
+            if (isBelow) {
+                 y = Math.max(padding, window.innerHeight - actualHeight - padding);
+            }
+        }
+
+        let x = position.x - currentPopupWidth / 2;
+        if (x < padding) x = padding;
+        if (x + currentPopupWidth > window.innerWidth - padding) {
+            x = window.innerWidth - currentPopupWidth - padding;
+        }
+        return { x, y, width: currentPopupWidth, isBelow };
     };
 
     const adjustedPos = getAdjustedPosition();
@@ -511,17 +529,38 @@ export function WordPopover({
     // Find matching token from current subtitle for "not found" fallback
     const matchingToken = currentSubtitleTokens?.find(t => t.hanzi === word);
 
+    const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+
     return (
-        <div
-            ref={popoverRef}
-            className="fixed z-50 transition-opacity duration-200"
-            style={{
-                left: adjustedPos.x,
-                top: adjustedPos.y,
-                width: POPUP_WIDTH,
-                opacity: isPositioned ? 1 : 0,
-            }}
-        >
+        <>
+            {/* Mobile Overlay */}
+            {isMobile && isPositioned && (
+                <div 
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] animate-in fade-in duration-300" 
+                    onClick={onClose}
+                />
+            )}
+            
+            <div
+                ref={popoverRef}
+                className={`flex flex-col z-[70] transition-all duration-300 ease-out ${
+                    isMobile 
+                        ? `fixed bottom-0 left-0 right-0 bg-background-dark rounded-t-[2.5rem] shadow-[0_-20px_50px_rgba(0,0,0,0.5)] transform translate-y-0 max-h-[85vh] ${isPositioned ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`
+                        : 'fixed opacity-100'
+                }`}
+                style={!isMobile ? {
+                    left: adjustedPos.x,
+                    top: adjustedPos.y,
+                    width: adjustedPos.width,
+                    opacity: isPositioned ? 1 : 0,
+                } : {}}
+            >
+                {/* Mobile Handle */}
+                {isMobile && (
+                    <div className="w-full flex justify-center py-3">
+                        <div className="w-12 h-1.5 bg-text-secondary/20 rounded-full" />
+                    </div>
+                )}
             {/* XP Animation */}
             {showXpAnimation && (
                 <div className="absolute -top-8 left-1/2 -translate-x-1/2 animate-bounce">
@@ -554,8 +593,8 @@ export function WordPopover({
                                 {/* Top Bento Row: Hanzi + Actions */}
                                 <div className="flex items-start justify-between gap-6">
                                     <div className="min-w-0 flex-1">
-                                        {/* Large Hanzi - Guaranteed Single Line */}
-                                        <h2 className={`font-bold text-text-base font-chinese leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis ${word.length > 4 ? 'text-4xl' : 'text-5xl'}`} lang="zh-CN">
+                                        {/* Large Hanzi */}
+                                        <h2 className={`font-bold text-text-base font-chinese leading-[1.1] whitespace-nowrap overflow-hidden text-ellipsis ${word.length > 4 ? 'text-3xl md:text-4xl' : 'text-4xl md:text-5xl'}`} lang="zh-CN">
                                             {word}
                                         </h2>
                                         
@@ -1611,18 +1650,26 @@ export function WordPopover({
             )}
         </div>
 
-            {/* Arrow pointing down */}
-            <div
-                className="absolute"
-                style={{
-                    left: Math.max(24, Math.min(POPUP_WIDTH - 24, arrowLeft)),
-                    transform: 'translateX(-50%)',
-                    bottom: -ARROW_HEIGHT,
-                }}
-            >
-                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-l-transparent border-r-transparent border-t-[10px] border-t-surface-dark" />
-            </div>
+            {!isMobile && (
+                <div
+                    className="absolute"
+                    style={{
+                        left: Math.max(24, Math.min(adjustedPos.width - 24, arrowLeft)),
+                        transform: 'translateX(-50%)',
+                        ...(adjustedPos.isBelow 
+                            ? { top: -ARROW_HEIGHT } 
+                            : { bottom: -ARROW_HEIGHT })
+                    }}
+                >
+                    <div className={`w-0 h-0 border-l-[10px] border-r-[10px] border-l-transparent border-r-transparent ${
+                        adjustedPos.isBelow 
+                            ? 'border-b-[10px] border-b-surface-dark' 
+                            : 'border-t-[10px] border-t-surface-dark'
+                    }`} />
+                </div>
+            )}
         </div>
+        </>
     );
 }
 

@@ -22,7 +22,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
     subtitle,
 }) => {
     return (
-        <div className="bg-surface-dark rounded-xl border border-border-color p-6 hover:border-primary/50 transition-colors shadow-sm">
+        <div className="bg-surface-dark rounded-xl border border-border-color p-4 sm:p-6 hover:border-primary/50 transition-colors shadow-sm">
             <div className="flex items-start justify-between">
                 <div className="flex-1">
                     <p className="text-sm font-medium text-text-secondary mb-1">{title}</p>
