@@ -323,6 +323,13 @@ export function segmentHanziWithPinyin(hanzi: string, pinyin: string): ParsedTok
     const tokens: ParsedToken[] = [];
     if (!hanzi || !pinyin) return tokens;
 
+    const normalizePinyinWord = (text: string): string =>
+        text
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9vü]/g, '');
+
     // Split pinyin by spaces (one or more)
     const pinyinWords = pinyin.trim().split(/\s+/);
     const hanziChars = hanzi.trim().split('');
@@ -394,6 +401,22 @@ export function segmentHanziWithPinyin(hanzi: string, pinyin: string): ParsedTok
             
             tokenHanzi += char;
             charsTaken++;
+            hanziIndex++;
+        }
+
+        // Handle erhua words: zhèr => 这儿, nàr => 那儿, etc.
+        const normalizedPinyin = normalizePinyinWord(pWord);
+        const isErhuaWord =
+            normalizedPinyin.length > 1 &&
+            normalizedPinyin.endsWith('r') &&
+            normalizedPinyin !== 'er';
+
+        if (
+            isErhuaWord &&
+            hanziIndex < hanziChars.length &&
+            hanziChars[hanziIndex] === '儿'
+        ) {
+            tokenHanzi += '儿';
             hanziIndex++;
         }
 

@@ -15,7 +15,10 @@ import { progressApi } from "@/services/progressApi";
 import { watchTimeTracker } from "@/services/watchTimeTracker";
 import YouTubePlayer, { type YouTubePlayerHandle } from "@/components/video/YouTubePlayer";
 import ShadowModeOverlay from "@/components/common/ShadowModeOverlay";
-import { renderGroupedPinyin } from "@/utils/chinese";
+import {
+    renderGroupedPinyin,
+    getInteractiveHanziSegments,
+} from "@/utils/chinese";
 
 // Helper function to extract YouTube video ID
 const getYouTubeId = (url: string): string | null => {
@@ -63,11 +66,6 @@ export default function VideoPlayerPage() {
     const subtitleItemRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
-
-    // Intl Segmenter for Chinese word segmentation
-    const segmenter = typeof Intl !== 'undefined' && (Intl as any).Segmenter 
-        ? new (Intl as any).Segmenter('zh-CN', { granularity: 'word' }) 
-        : null;
 
     // Sidebar tab state
     const [activeTab, setActiveTab] = useState<SidebarTab>('subtitles');
@@ -416,6 +414,19 @@ export default function VideoPlayerPage() {
     const currentSubtitleIndex = subtitles.findIndex(
         (sub) => currentTime >= sub.startTime && currentTime <= sub.endTime
     );
+    const currentSubtitleInteractiveSegments = currentSubtitle
+        ? getInteractiveHanziSegments(
+            currentSubtitle.hanzi || '',
+            currentSubtitle.pinyin,
+            currentSubtitle.tokens,
+        )
+        : [];
+    const currentSubtitleTokenContext = currentSubtitleInteractiveSegments.map(
+        (segment) => ({
+            hanzi: segment.segment,
+            pinyin: segment.pinyin,
+        }),
+    );
 
     // Save current sentence to notes
     const saveSentenceToNotes = useCallback(async () => {
@@ -623,12 +634,9 @@ export default function VideoPlayerPage() {
                                     </p>
                                 )}
 
-                                 {/* Chinese Hanzi Tier - Interactive via Tokens or Intl Segmenter */}
+                                 {/* Chinese Hanzi Tier - Interactive via normalized segments */}
                                 <p className="text-text-base text-3xl md:text-4xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
-                                    {((currentSubtitle.tokens && currentSubtitle.tokens.length > 0
-                                        ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
-                                        : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))) as any[]
-                                    ).map((seg: { segment: string }, i: number) => {
+                                    {currentSubtitleInteractiveSegments.map((seg: { segment: string }, i: number) => {
                                         const word = seg.segment;
                                         // Render pure whitespace/punctuation without interaction
                                         if (!word.trim()) {
@@ -1112,7 +1120,7 @@ export default function VideoPlayerPage() {
                         videoUrl={video?.videoUrl}
                         // Segmentation: auto-reload subtitles + token meanings
                         onSubtitlesUpdated={refreshSubtitles}
-                        currentSubtitleTokens={currentSubtitle?.tokens}
+                        currentSubtitleTokens={currentSubtitleTokenContext}
                     />
                 )
             }
