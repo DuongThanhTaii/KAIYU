@@ -115,13 +115,14 @@ export class WordEnrichmentService {
 
         const result: EnrichedWordData = { hanzi };
 
-        // Fetch all data in parallel for performance
-        const [strokeData, decomposition, mnemonic, relatedWords] = await Promise.all([
+        // Only fetch static data, skip AI generation for mnemonics and related words
+        const [strokeData, decomposition] = await Promise.all([
             this.getStrokeData(hanzi).catch(() => undefined),
             this.getDecomposition(hanzi).catch(() => undefined),
-            pinyin && meaning ? this.generateMnemonic(hanzi, pinyin, meaning).catch(() => undefined) : undefined,
-            pinyin && meaning ? this.generateRelatedWords(hanzi, pinyin, meaning).catch(() => undefined) : undefined,
         ]);
+
+        const mnemonic = undefined;
+        const relatedWords = undefined;
 
         result.strokeData = strokeData;
         result.decomposition = decomposition;

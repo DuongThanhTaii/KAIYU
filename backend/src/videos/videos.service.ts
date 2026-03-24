@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpStreakService } from '../xp-streak/xp-streak.service';
 import { CreateVideoDto, UpdateVideoDto, VideoQueryDto } from './dto';
-import { parseSubtitleFile, tokenizeChinese } from './subtitle-parser.js';
+import { parseSubtitleFile, tokenizeChinese, segmentHanziWithPinyin, ParsedToken } from './subtitle-parser.js';
 
 @Injectable()
 export class VideosService {
@@ -266,20 +266,62 @@ export class VideosService {
                 sequenceOrder: sub.sequenceOrder,
             }));
 
-            // Batch create all subtitles at once
-            await this.prisma.subtitle.createMany({
+            // 1. Create all subtitles and get their IDs
+            // Use createManyAndReturn which is available in Prisma 5.14.0+
+            const createdSubtitles = await (this.prisma.subtitle as any).createManyAndReturn({
                 data: subtitleData,
             });
-            console.log('Created subtitles count:', subtitleData.length);
+            console.log('Created subtitles count:', createdSubtitles.length);
 
-            // Skip token creation for now to avoid timeout
-            // Tokens can be created on-demand when viewing subtitles
+            // 2. Generate tokens for each subtitle
+            const allTokens: any[] = [];
+            
+            for (let i = 0; i < parsedSubtitles.length; i++) {
+                const sub = parsedSubtitles[i];
+                const dbSub = createdSubtitles[i];
+                
+                if (!dbSub) continue;
+
+                let tokens: ParsedToken[] = [];
+                
+                if (sub.hanzi && sub.pinyin) {
+                    // Use pinyin-based segmentation
+                    tokens = segmentHanziWithPinyin(sub.hanzi, sub.pinyin);
+                } else if (sub.hanzi) {
+                    // Fallback to character-level if pinyin is missing
+                    tokens = tokenizeChinese(sub.hanzi);
+                }
+
+                // Map to DB structure
+                const tokenData = tokens.map(t => ({
+                    subtitleId: dbSub.id,
+                    hanzi: t.hanzi,
+                    pinyin: t.pinyin || '',
+                    position: t.position,
+                }));
+                
+                allTokens.push(...tokenData);
+            }
+
+            // 3. Batch create all tokens
+            if (allTokens.length > 0) {
+                // Split into chunks of 1000 to avoid database parameter limits
+                const chunkSize = 1000;
+                for (let i = 0; i < allTokens.length; i += chunkSize) {
+                    const chunk = allTokens.slice(i, i + chunkSize);
+                    await this.prisma.subtitleToken.createMany({
+                        data: chunk,
+                    });
+                }
+                console.log('Created tokens count:', allTokens.length);
+            }
 
             // Update video subtitle count and languages
             await this.prisma.video.update({
                 where: { id: videoId },
                 data: {
                     subtitleLanguages: ['zh', 'vi'],
+                    vocabCount: allTokens.length, // Update vocab count with token count
                 },
             });
 

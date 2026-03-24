@@ -56,10 +56,13 @@ export default function VideoPlayerPage() {
     const [currentTime, setCurrentTime] = useState(0);
     const [savedPosition, setSavedPosition] = useState<number>(0); // Saved watch position in seconds
     const [selectedWord, setSelectedWord] = useState<string | null>(null);
+    const [wasPlayingBeforePopover, setWasPlayingBeforePopover] = useState(false);
     const youtubePlayerRef = useRef<YouTubePlayerHandle>(null);
     const nativeVideoRef = useRef<HTMLVideoElement>(null);
     const subtitleListRef = useRef<HTMLDivElement>(null);
     const subtitleItemRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [duration, setDuration] = useState(0);
 
     // Intl Segmenter for Chinese word segmentation
     const segmenter = typeof Intl !== 'undefined' && (Intl as any).Segmenter 
@@ -83,6 +86,7 @@ export default function VideoPlayerPage() {
     // Popover state
     const [popoverWord, setPopoverWord] = useState<string | null>(null);
     const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
+    const [popoverSubtitle, setPopoverSubtitle] = useState<any>(null);
 
     // Multi-character selection state (Legacy - removed drag dependencies since words are now natively grouped via Segmenter)
 
@@ -162,10 +166,28 @@ export default function VideoPlayerPage() {
 
     // Handle seeking to a specific time (for subtitle click)
     const handleSeekTo = useCallback((seconds: number) => {
+        setCurrentTime(seconds);
         if (youtubePlayerRef.current) {
             youtubePlayerRef.current.seekTo(seconds);
         } else if (nativeVideoRef.current) {
             nativeVideoRef.current.currentTime = seconds;
+        }
+    }, []);
+
+    // Playback control for shortcuts and internal logic
+    const handlePause = useCallback(() => {
+        if (youtubePlayerRef.current) {
+            youtubePlayerRef.current.pause();
+        } else if (nativeVideoRef.current) {
+            nativeVideoRef.current.pause();
+        }
+    }, []);
+
+    const handlePlay = useCallback(() => {
+        if (youtubePlayerRef.current) {
+            youtubePlayerRef.current.play();
+        } else if (nativeVideoRef.current) {
+            nativeVideoRef.current.play();
         }
     }, []);
 
@@ -429,6 +451,7 @@ export default function VideoPlayerPage() {
     const handlePopoverClose = () => {
         setPopoverWord(null);
         setSelectedWord(null);
+        setPopoverSubtitle(null);
         // Refresh vocabulary list if on vocabulary tab
         if (activeTab === 'vocabulary') {
             userVocabularyApi.getAll({ sourceVideoId: videoId, limit: 100 })
@@ -539,35 +562,49 @@ export default function VideoPlayerPage() {
                 {/* Left Column: Video & Interactive Subtitle */}
                 <div className="flex-1 lg:flex-[2] flex flex-col gap-4 overflow-hidden pb-0">
                     {/* Video Player - constrained height */}
-                    <div className="relative w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-border-color" style={{ maxHeight: '60vh', aspectRatio: '16/9' }}>
+                    <div className="relative w-full bg-black rounded-2xl overflow-hidden shadow-2xl border border-border-color group" style={{ maxHeight: '60vh', aspectRatio: '16/9' }}>
                         {video.videoUrl ? (
-                            video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
-                                <YouTubePlayer
-                                    ref={youtubePlayerRef}
-                                    videoId={getYouTubeId(video.videoUrl) || ''}
-                                    onTimeUpdate={handleTimeUpdate}
-                                    onReady={() => {
-                                        if (savedPosition > 0 && youtubePlayerRef.current) {
-                                            youtubePlayerRef.current.seekTo(savedPosition);
-                                        }
-                                    }}
-                                    onPlay={() => {
-                                        watchTimeTracker.startTracking(videoId, video.title);
-                                    }}
-                                    onPause={() => {
-                                        watchTimeTracker.pauseTracking();
-                                    }}
-                                    className="w-full h-full"
-                                />
-                            ) : (
-                                <video
-                                    ref={nativeVideoRef}
-                                    src={video.videoUrl}
-                                    controls
-                                    className="w-full h-full object-contain"
-                                    onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
-                                />
-                            )
+                            <>
+                                {video.videoUrl.includes('youtube.com') || video.videoUrl.includes('youtu.be') ? (
+                                    <YouTubePlayer
+                                        ref={youtubePlayerRef}
+                                        videoId={getYouTubeId(video.videoUrl) || ''}
+                                        onTimeUpdate={handleTimeUpdate}
+                                        onStateChange={(state) => {
+                                            setIsPlaying(state === 1); // 1 = YT.PlayerState.PLAYING
+                                            if (state === 1) {
+                                                watchTimeTracker.startTracking(videoId, video.title);
+                                            } else if (state === 2) {
+                                                watchTimeTracker.pauseTracking();
+                                            }
+                                        }}
+                                        onReady={() => {
+                                            if (savedPosition > 0 && youtubePlayerRef.current) {
+                                                youtubePlayerRef.current.seekTo(savedPosition);
+                                            }
+                                            setDuration(video.durationSeconds || 0);
+                                        }}
+                                        className="w-full h-full"
+                                    />
+                                ) : (
+                                    <video
+                                        ref={nativeVideoRef}
+                                        src={video.videoUrl}
+                                        controls
+                                        className="w-full h-full object-contain"
+                                        onTimeUpdate={(e) => setCurrentTime(e.currentTarget.currentTime)}
+                                        onPlay={() => {
+                                            setIsPlaying(true);
+                                            watchTimeTracker.startTracking(videoId, video.title);
+                                        }}
+                                        onPause={() => {
+                                            setIsPlaying(false);
+                                            watchTimeTracker.pauseTracking();
+                                        }}
+                                        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+                                    />
+                                )}
+                            </>
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-text-secondary">
                                 <Icon name="videocam_off" size="xl" />
@@ -587,7 +624,7 @@ export default function VideoPlayerPage() {
                                 )}
 
                                  {/* Chinese Hanzi Tier - Interactive via Tokens or Intl Segmenter */}
-                                <p className="text-text-base text-2xl md:text-3xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
+                                <p className="text-text-base text-3xl md:text-4xl font-bold tracking-tight leading-normal flex flex-wrap justify-center font-chinese select-none" lang="zh-CN">
                                     {((currentSubtitle.tokens && currentSubtitle.tokens.length > 0
                                         ? currentSubtitle.tokens.map(t => ({ segment: t.hanzi }))
                                         : (segmenter ? Array.from(segmenter.segment(currentSubtitle.hanzi || '')) : (currentSubtitle.hanzi || '').split('').map(c => ({ segment: c })))) as any[]
@@ -604,8 +641,15 @@ export default function VideoPlayerPage() {
                                                     e.stopPropagation();
                                                     const rect = (e.target as HTMLElement).getBoundingClientRect();
                                                     setPopoverPosition({ x: rect.left + rect.width / 2, y: rect.top });
+                                                    setPopoverSubtitle(currentSubtitle);
                                                     setPopoverWord(word);
                                                     setSelectedWord(word);
+                                                    
+                                                    // Pause video when clicking a word (only if it's the first word click)
+                                                    if (!popoverWord && isPlaying) {
+                                                        setWasPlayingBeforePopover(true);
+                                                        handlePause();
+                                                    }
                                                 }}
                                                 className={`cursor-pointer transition-all hover:text-primary hover:underline hover:decoration-2 hover:underline-offset-4 ${selectedWord === word
                                                     ? "text-primary underline decoration-2 underline-offset-4"
@@ -1050,12 +1094,20 @@ export default function VideoPlayerPage() {
                     <WordPopover
                         word={popoverWord}
                         position={popoverPosition}
-                        onClose={handlePopoverClose}
+                        onClose={() => {
+                            handlePopoverClose();
+                            // Resume if it was playing before
+                            if (wasPlayingBeforePopover) {
+                                handlePlay();
+                                setWasPlayingBeforePopover(false);
+                            }
+                        }}
                         sourceVideoId={videoId}
                         // Context for SRS flashcard enhancement
                         sourceTimestamp={currentSubtitle ? Number(currentSubtitle.startTime) : undefined}
-                        sourceSentence={currentSubtitle?.hanzi}
-                        sourcePinyin={currentSubtitle?.pinyin}
+                        sourceSentence={popoverSubtitle?.hanzi || currentSubtitle?.hanzi}
+                        sourcePinyin={popoverSubtitle?.pinyin || currentSubtitle?.pinyin}
+                        sourceSubtitle={popoverSubtitle || currentSubtitle}
                         // Video URL for thumbnail capture
                         videoUrl={video?.videoUrl}
                         // Segmentation: auto-reload subtitles + token meanings

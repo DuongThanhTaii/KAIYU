@@ -87,27 +87,38 @@ function parseVttTimestamp(timestamp: string): number {
 }
 
 /**
- * Check if text contains Vietnamese-specific characters
- * Vietnamese has unique diacritics not found in Pinyin
- */
-function isVietnamese(text: string): boolean {
-    // Vietnamese-specific characters with unique diacritics
-    const vietnamesePattern = /[àáảãạăằắẳẵặâầấẩẫậèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵđ]/i;
-    return vietnamesePattern.test(text);
-}
-
-/**
  * Check if text looks like Pinyin (romanized Chinese with tone marks or numbers)
  */
 function isPinyin(text: string): boolean {
-    // Pinyin tone marks
-    const pinyinTonePattern = /[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/;
+    if (!text) return false;
+    
+    // Pinyin tone marks (standard tones 1-4)
+    // āáǎà ēéěè īíǐì ōóǒò ūúǔù ǖǘǚǜ
+    const pinyinTonePattern = /[āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]/i;
     // Or pinyin with tone numbers (ni3 hao3)
-    const pinyinNumberPattern = /[a-z]+[1-4]/i;
-    // Contains mostly latin alphabet
-    const isLatin = /^[a-zA-Zāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s,.\-'!?]+$/;
+    const pinyinNumberPattern = /[a-z]+[1-5]/i;
+    
+    // Check if it's primarily Latin-based with tone marks OR tone numbers
+    const hasPinyinMarks = pinyinTonePattern.test(text) || pinyinNumberPattern.test(text);
+    
+    // Strict Latin check including punctuation and common pinyin characters
+    // Vietnamese HAS MANY characters NOT in this set (hook tones, dot tones, tilde, unique letters)
+    const mostlyLatin = /^[a-zA-Z0-9āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ\s,.\-'!?\"\[\]()|]+$/i.test(text);
+    
+    // Heuristic: Pinyin rarely has many words without any marks if it's a long sentence
+    // Vietnamese often has words like "cung", "la", "va", "cho" without marks
+    
+    return hasPinyinMarks && mostlyLatin;
+}
 
-    return (pinyinTonePattern.test(text) || pinyinNumberPattern.test(text)) && isLatin.test(text);
+/**
+ * Check if text contains uniquely Vietnamese characters
+ */
+function isVietnamese(text: string): boolean {
+    if (!text) return false;
+    // Uniquely Vietnamese characters (not shared with Pinyin)
+    const uniqueVNPattern = /[ảãạăằắẳẵặâầấẩẫậẻẽẹêềếểễệỉĩịỏõọôồốổỗộơờớởỡợủũụưừứửữựỳýỷỹỵđ]/i;
+    return uniqueVNPattern.test(text);
 }
 
 /**
@@ -148,63 +159,38 @@ export function parseSrt(content: string): ParsedSubtitle[] {
         const endTime = parseSrtTimestamp(timeMatch[2]);
 
         // Remaining lines: content
-        // Check if single line with pipe separator (from frontend)
-        if (lines.length === 3 && lines[2].includes('|')) {
-            const parts = lines[2].split('|').map(p => p.trim());
-            const hanzi = parts[0] || '';
-            const pinyin = parts[1] || undefined;
-            const meaningVi = parts[2] || undefined;
+        // Order is usually: Chinese (Hanzi), Pinyin, Vietnamese (Translation)
+        // But some files might skip Pinyin or have multi-line translations
+        
+        const contentLines = lines.slice(2).map(l => l.trim()).filter(l => l !== '');
+        if (contentLines.length === 0) continue;
 
-            if (hanzi) {
-                subtitles.push({
-                    sequenceOrder,
-                    startTime,
-                    endTime,
-                    hanzi,
-                    pinyin,
-                    meaningVi,
-                });
-            }
-            continue;
-        }
-
-        // Line 3 (index 2) is always Chinese (hanzi)
-        const hanzi = lines[2]?.trim() || '';
-
+        let hanzi = contentLines[0];
         let pinyin: string | undefined;
-        let meaningVi: string | undefined;
+        const meanings: string[] = [];
 
-        if (lines.length === 4) {
-            // Only 2 text lines: Chinese + one other
-            const secondLine = lines[3]?.trim();
-            if (secondLine) {
-                if (isVietnamese(secondLine)) {
-                    // It's Vietnamese, no pinyin
-                    meaningVi = secondLine;
-                } else if (isPinyin(secondLine)) {
-                    // It's Pinyin, no Vietnamese
+        // Check if the first line is the combined format: Hanzi | Pinyin | Translation
+        if (hanzi.includes('|')) {
+            const parts = hanzi.split('|').map(p => p.trim());
+            hanzi = parts[0];
+            if (parts.length > 1) pinyin = parts[1];
+            if (parts.length > 2) meanings.push(parts[2]);
+            // Any additional lines are also meanings
+            meanings.push(...contentLines.slice(1));
+        } else {
+            // Standard format: Line 1 Hanzi, Line 2 Pinyin (optional), Line 3+ Translation
+            if (contentLines.length > 1) {
+                const secondLine = contentLines[1];
+                if (isPinyin(secondLine) && !isVietnamese(secondLine)) {
                     pinyin = secondLine;
+                    meanings.push(...contentLines.slice(2));
                 } else {
-                    // Default: assume it's Vietnamese if not clearly pinyin
-                    meaningVi = secondLine;
+                    meanings.push(...contentLines.slice(1));
                 }
             }
-        } else if (lines.length >= 5) {
-            // 3 text lines: Chinese + Pinyin + Vietnamese
-            const line3 = lines[3]?.trim();
-            const line4 = lines[4]?.trim();
-
-            // Auto-detect the order
-            if (isVietnamese(line3)) {
-                // Line 3 is Vietnamese, line 4 might be pinyin or additional info
-                meaningVi = line3;
-                pinyin = isPinyin(line4 || '') ? line4 : undefined;
-            } else {
-                // Standard order: Pinyin then Vietnamese
-                pinyin = line3;
-                meaningVi = line4;
-            }
         }
+
+        const meaningVi = meanings.length > 0 ? meanings.join(' ') : undefined;
 
         if (hanzi) {
             subtitles.push({
@@ -302,6 +288,140 @@ export function parseSubtitleFile(content: string, filename: string): ParsedSubt
 }
 
 /**
+ * Count syllables in a pinyin word
+ * Rule: A contiguous block of vowels (possibly with tone marks) = 1 syllable
+ */
+export function countSyllables(pinyinWord: string): number {
+    if (!pinyinWord) return 0;
+    
+    // Normalize: remove tone numbers and handle punctuation
+    // Also treat 'v' as 'ü' (common in pinyin input)
+    const cleanWord = pinyinWord.replace(/[0-9]/g, '').replace(/[.,!?;:()\[\]{}'"]/g, '');
+    
+    // Vowels including tone-marked ones and 'v'/'V'
+    // āáǎà ēéěè īíǐì ōóǒò ūúǔù ǖǘǚǜ
+    const vowelPattern = /[aeiouüvāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+/gi;
+    
+    // Handle apostrophes as syllable separators (e.g., xi'an)
+    // Actually, splitting by apostrophe First might be better
+    const parts = cleanWord.split("'");
+    let total = 0;
+    for (const part of parts) {
+        const matches = part.match(vowelPattern);
+        total += matches ? matches.length : 0;
+    }
+    
+    return total;
+}
+
+/**
+ * Segment Chinese text based on Pinyin spacing
+ * Each pinyin word separated by space corresponds to N hanzi characters 
+ * where N is the number of syllables in that pinyin word.
+ */
+export function segmentHanziWithPinyin(hanzi: string, pinyin: string): ParsedToken[] {
+    const tokens: ParsedToken[] = [];
+    if (!hanzi || !pinyin) return tokens;
+
+    // Split pinyin by spaces (one or more)
+    const pinyinWords = pinyin.trim().split(/\s+/);
+    const hanziChars = hanzi.trim().split('');
+    
+    let hanziIndex = 0;
+    let position = 0;
+
+    for (const pWord of pinyinWords) {
+        if (hanziIndex >= hanziChars.length) break;
+
+        const syllableCount = countSyllables(pWord);
+        
+        // Skip leading non-Chinese characters in Hanzi for this pinyin word
+        // Unless this pinyin word itself is punctuation/non-Chinese
+        if (syllableCount > 0) {
+            while (hanziIndex < hanziChars.length && !/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(hanziChars[hanziIndex])) {
+                const char = hanziChars[hanziIndex];
+                if (char.trim() || char === ' ') {
+                    tokens.push({
+                        position: position++,
+                        hanzi: char,
+                    });
+                }
+                hanziIndex++;
+            }
+        }
+
+        // If it's not a pinyin word (e.g. punctuation or English)
+        if (syllableCount === 0) {
+            // Find an exact match in Hanzi if possible, or just take current char if not Chinese
+            if (hanziChars[hanziIndex] && !/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(hanziChars[hanziIndex])) {
+                tokens.push({
+                    position: position++,
+                    hanzi: hanziChars[hanziIndex],
+                    pinyin: pWord,
+                });
+                hanziIndex++;
+            } else if (pWord.match(/[.,!?;:()\[\]'"]/)) {
+                // If it's punctuation in pinyin but currently at Chinese char in Hanzi,
+                // just add the punctuation as its own token without consuming Hanzi
+                tokens.push({
+                    position: position++,
+                    hanzi: pWord,
+                    pinyin: pWord,
+                });
+            }
+            continue;
+        }
+
+        // Take N characters from Hanzi where N is syllableCount
+        let tokenHanzi = '';
+        let charsTaken = 0;
+        
+        while (charsTaken < syllableCount && hanziIndex < hanziChars.length) {
+            const char = hanziChars[hanziIndex];
+            
+            // If we hit non-Chinese char while still needing more hanzi for this pinyin word,
+            // we treat the non-Chinese char as a separate token and CONTINUE looking for hanzi
+            if (!/[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/.test(char)) {
+                if (char.trim()) {
+                    tokens.push({
+                        position: position++,
+                        hanzi: char,
+                    });
+                }
+                hanziIndex++;
+                continue;
+            }
+            
+            tokenHanzi += char;
+            charsTaken++;
+            hanziIndex++;
+        }
+
+        if (tokenHanzi) {
+            tokens.push({
+                position: position++,
+                hanzi: tokenHanzi,
+                pinyin: pWord,
+            });
+        }
+    }
+
+    // Capture remaining Hanzi characters if any
+    while (hanziIndex < hanziChars.length) {
+        const char = hanziChars[hanziIndex];
+        if (char.trim() || char === ' ') {
+            tokens.push({
+                position: position++,
+                hanzi: char,
+            });
+        }
+        hanziIndex++;
+    }
+
+    return tokens;
+}
+
+/**
  * Simple Chinese tokenizer
  * Splits Chinese text into individual characters/words
  * For production, use a proper NLP library like jieba
@@ -336,6 +456,8 @@ export const subtitleParser = {
     parseVtt,
     parseSubtitleFile,
     tokenizeChinese,
+    countSyllables,
+    segmentHanziWithPinyin,
 };
 
 export default subtitleParser;

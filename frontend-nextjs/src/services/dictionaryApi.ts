@@ -2,6 +2,7 @@ import api from './api';
 
 export interface DictionaryEntry {
     id?: string;
+    hanzi: string;
     pinyin: string;
     pinyinDisplay: string;
     definitions?: string[];

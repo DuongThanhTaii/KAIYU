@@ -9,9 +9,12 @@ interface ModalProps {
     onClose: () => void;
     title: string;
     children: React.ReactNode;
-    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+    size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | 'full';
     footer?: React.ReactNode;
     compact?: boolean;
+    bodyClassName?: string;
+    headerClassName?: string;
+    footerClassName?: string;
 }
 
 const Modal: React.FC<ModalProps> = ({
@@ -22,6 +25,9 @@ const Modal: React.FC<ModalProps> = ({
     size = 'md',
     footer,
     compact = false,
+    bodyClassName = '',
+    headerClassName = '',
+    footerClassName = '',
 }) => {
     const modalRef = useRef<HTMLDivElement>(null);
     const [mounted, setMounted] = useState(false);
@@ -56,6 +62,10 @@ const Modal: React.FC<ModalProps> = ({
         lg: 'max-w-2xl',
         xl: 'max-w-4xl',
         '2xl': 'max-w-6xl',
+        '3xl': 'max-w-7xl',
+        '4xl': 'max-w-[90vw]',
+        '5xl': 'max-w-[95vw]',
+        full: 'max-w-full m-2',
     };
 
     const modalContent = (
@@ -69,11 +79,11 @@ const Modal: React.FC<ModalProps> = ({
             {/* Modal Content */}
             <div
                 ref={modalRef}
-                className={`relative w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col bg-surface-dark rounded-2xl border border-border-color shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200 overflow-hidden`}
+                className={`relative w-full ${sizeClasses[size]} max-h-[96vh] flex flex-col bg-surface-dark rounded-2xl border border-border-color shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-200 overflow-hidden`}
             >
                 {/* Header */}
-                <div className={`flex items-center justify-between px-6 border-b border-border-color shrink-0 ${compact ? 'py-2' : 'py-4'}`}>
-                    <h2 className={`${compact ? 'text-base' : 'text-lg'} font-bold text-text-base`}>{title}</h2>
+                <div className={`flex items-center justify-between px-6 border-b border-border-color shrink-0 ${compact ? 'py-2' : 'py-4'} ${headerClassName}`}>
+                    <h2 className={`${compact ? 'text-base' : 'text-lg'} font-bold text-text-base line-clamp-1`}>{title}</h2>
                     <button
                         onClick={onClose}
                         className="p-2 rounded-lg hover:bg-surface-highlight transition-colors text-text-secondary hover:text-text-base inline-flex items-center justify-center cursor-pointer"
@@ -83,13 +93,13 @@ const Modal: React.FC<ModalProps> = ({
                 </div>
 
                 {/* Body */}
-                <div className={`px-6 max-h-[92vh] overflow-y-auto custom-scrollbar pr-4 ${compact ? 'py-2' : 'py-4'}`}>
+                <div className={`flex-1 overflow-y-auto custom-scrollbar ${compact ? 'p-2' : 'p-6'} ${bodyClassName}`}>
                     {children}
                 </div>
 
                 {/* Footer */}
                 {footer && (
-                    <div className="px-6 py-4 border-t border-border-color flex items-center justify-end gap-3">
+                    <div className={`px-6 py-4 border-t border-border-color flex items-center justify-end gap-3 shrink-0 ${footerClassName}`}>
                         {footer}
                     </div>
                 )}

@@ -42,6 +42,7 @@ export interface LookupResult {
     // New fields for centralized system
     source: 'db' | 'ai';
     isSystemWord: boolean;
+    id?: string;
     // For multi-character breakdown
     allEntries?: DictionaryEntry[];
 }
@@ -87,7 +88,7 @@ export class CustomDictionaryService {
             strokeCount: vocab.strokeCount,
             partOfSpeech: vocab.partOfSpeech,
             hskLevel: vocab.hskLevel,
-            examples: vocab.examples as any[] || [],
+            examples: this.splitCompoundExamples(vocab.examples as any[] || []),
             synonyms: vocab.synonyms as any[] || [],
             antonyms: vocab.antonyms as any[] || [],
             mnemonic: vocab.mnemonic,
@@ -118,33 +119,6 @@ export class CustomDictionaryService {
                 };
             }
 
-            // Level 2: Character-by-character breakdown (for multi-char input)
-            if (hanzi.length >= 2) {
-                const chars = hanzi.split('');
-                const charResults = await Promise.all(
-                    chars.map(char =>
-                        this.prisma.vocabulary.findUnique({ where: { hanzi: char } })
-                    )
-                );
-
-                const validResults = charResults.filter(Boolean).map(v => this.transformToEntry(v));
-
-                if (validResults.length > 0) {
-                    const combinedPinyin = validResults.map(e => e.pinyin).join(' ');
-                    const combinedMeaning = validResults.map(e => e.meaningVi).join('; ');
-
-                    return {
-                        hanzi,
-                        pinyin: combinedPinyin,
-                        pinyinDisplay: combinedPinyin,
-                        meaningVi: combinedMeaning,
-                        found: true,
-                        source: 'db',
-                        isSystemWord: true,
-                        allEntries: validResults,
-                    };
-                }
-            }
 
             // Level 3: Fuzzy search by pinyin
             if (contextPinyin) {
@@ -167,14 +141,13 @@ export class CustomDictionaryService {
                 }
             }
 
-            // === STEP 2: Not found in DB - Use AI fallback ===
-            console.log(`[Dictionary] "${hanzi}" not found in DB, using AI fallback`);
-            return await this.generateWithAI(hanzi);
+            // === STEP 2: Not found in DB ===
+            console.log(`[Dictionary] "${hanzi}" not found in DB`);
+            return this.createNotFoundResult(hanzi);
 
         } catch (error) {
             console.error('CustomDictionary lookup error:', error);
-            // Return AI fallback on error too
-            return await this.generateWithAI(hanzi);
+            return this.createNotFoundResult(hanzi);
         }
     }
 
@@ -300,7 +273,7 @@ Nếu không phải từ tiếng Trung hợp lệ, trả về: {"error": true}`;
             pinyinDisplay: '',
             meaningVi: '',
             found: false,
-            source: 'ai',
+            source: 'db',
             isSystemWord: false,
         };
     }
@@ -370,7 +343,7 @@ Nếu không phải từ tiếng Trung hợp lệ, trả về: {"error": true}`;
             });
 
             if (vocab?.examples && Array.isArray(vocab.examples)) {
-                return vocab.examples as any[];
+                return this.splitCompoundExamples(vocab.examples as any[]);
             }
 
             return [];
@@ -428,6 +401,40 @@ Nếu không phải từ tiếng Trung hợp lệ, trả về: {"error": true}`;
             console.error('CustomDictionary getEnrichedData error:', error);
             return { hanzi, isSystemWord: false };
         }
+    }
+
+    /**
+     * Split merged examples into individual ones if they share a common separator
+     */
+    private splitCompoundExamples(examples: any[]): any[] {
+        if (!examples || !Array.isArray(examples)) return [];
+
+        const result: any[] = [];
+        for (const ex of examples) {
+            const chinese = (ex.chinese || '').trim();
+            const pinyin = (ex.pinyin || '').trim();
+            const vietnamese = (ex.vietnamese || ex.translation || '').trim();
+
+            // Split by punctuation followed by space (lookbehind)
+            const cParts = chinese.split(/(?<=[.。?!！？;；])\s+/).filter(Boolean);
+            const pParts = pinyin.split(/(?<=[.。?!！？;；])\s+/).filter(Boolean);
+            const vParts = vietnamese.split(/(?<=[.。?!！？;；])\s+/).filter(Boolean);
+
+            // Only split if alignment matches perfectly across sessions
+            if (cParts.length > 1 && cParts.length === pParts.length && cParts.length === vParts.length) {
+                for (let i = 0; i < cParts.length; i++) {
+                    result.push({
+                        chinese: cParts[i],
+                        pinyin: pParts[i],
+                        vietnamese: vParts[i]
+                    });
+                }
+            } else {
+                // If only one field has multiple parts or alignment is off, keep as a single block
+                result.push(ex);
+            }
+        }
+        return result;
     }
 
     /**

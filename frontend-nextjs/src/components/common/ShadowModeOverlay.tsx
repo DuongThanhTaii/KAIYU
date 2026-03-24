@@ -149,7 +149,7 @@ const ShadowModeOverlay: React.FC<ShadowModeOverlayProps> = ({
                         {currentPinyin && (
                             <p className="text-primary text-lg mb-2 font-pinyin tracking-tight">{currentPinyin}</p>
                         )}
-                        <p className="text-white text-3xl font-bold font-chinese mb-3 tracking-tight" lang="zh-CN">
+                        <p className="text-white text-4xl font-bold font-chinese mb-3 tracking-tight" lang="zh-CN">
                             {currentText}
                         </p>
                         {meaningVi && (

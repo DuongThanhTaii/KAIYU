@@ -64,6 +64,7 @@ interface YouTubePlayerProps {
     onReady?: () => void;
     onPlay?: () => void;
     onPause?: () => void;
+    onStateChange?: (state: number) => void;
     className?: string;
 }
 
@@ -76,6 +77,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
     onReady,
     onPlay,
     onPause,
+    onStateChange,
     className = '',
 }, ref) => {
     const [playerId] = useState(() => `youtube-player-${++playerIdCounter}`);
@@ -86,6 +88,7 @@ const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
     const onReadyRef = useRef(onReady);
     const onPlayRef = useRef(onPlay);
     const onPauseRef = useRef(onPause);
+    const onStateChangeRef = useRef(onStateChange);
 
     // Update refs when callbacks change
     useEffect(() => {
@@ -93,7 +96,8 @@ const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
         onReadyRef.current = onReady;
         onPlayRef.current = onPlay;
         onPauseRef.current = onPause;
-    }, [onTimeUpdate, onReady, onPlay, onPause]);
+        onStateChangeRef.current = onStateChange;
+    }, [onTimeUpdate, onReady, onPlay, onPause, onStateChange]);
 
     // Expose seekTo and playback rate methods to parent
     useImperativeHandle(ref, () => ({
@@ -206,6 +210,8 @@ const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
                     rel: 0,
                     enablejsapi: 1,
                     origin: window.location.origin,
+                    controls: 1,
+                    disablekb: 0,
                 },
                 events: {
                     onReady: () => {
@@ -226,6 +232,11 @@ const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
                         }, 100);
                     },
                     onStateChange: (event: { data: number }) => {
+                        // Notify parent of state change
+                        if (onStateChangeRef.current) {
+                            onStateChangeRef.current(event.data);
+                        }
+
                         // When video is playing, ensure interval is running
                         if (window.YT && event.data === window.YT.PlayerState.PLAYING) {
                             if (onPlayRef.current) onPlayRef.current();
