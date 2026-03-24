@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useMemo,
-} from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/layout/AdminLayout";
 import DataTable from "@/components/admin/DataTable";
@@ -904,7 +898,7 @@ export default function AdminVideosPage() {
     </>
   );
 
-  const unifiedFilterOptions = useMemo(() => {
+  const unifiedFilterOptions = (() => {
     const hskOptions = [1, 2, 3, 4, 5, 6].map((level) => ({
       value: `hsk:${level}`,
       label: `HSK ${level}`,
@@ -926,9 +920,9 @@ export default function AdminVideosPage() {
       ...hskOptions,
       ...categoryOptionsList,
     ];
-  }, [categoryOptions]);
+  })();
 
-  const filteredVideos = useMemo(() => {
+  const filteredVideos = (() => {
     const keyword = searchKeyword.trim().toLocaleLowerCase("vi-VN");
 
     return videos.filter((video) => {
@@ -963,7 +957,7 @@ export default function AdminVideosPage() {
 
       return true;
     });
-  }, [videos, searchKeyword, activeFilter]);
+  })();
 
   return (
     <AdminLayout
