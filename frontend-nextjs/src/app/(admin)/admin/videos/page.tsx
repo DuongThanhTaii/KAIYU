@@ -67,6 +67,31 @@ const mergeCategoryOptions = (
   return merged;
 };
 
+const toSafeNumber = (value: unknown, fallback = 0): number => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return fallback;
+};
+
+const normalizeVideo = (video: Video): Video => ({
+  ...video,
+  title: typeof video.title === "string" ? video.title : "",
+  description: typeof video.description === "string" ? video.description : "",
+  category: typeof video.category === "string" ? video.category : "",
+  videoUrl: typeof video.videoUrl === "string" ? video.videoUrl : "",
+  thumbnailUrl:
+    typeof video.thumbnailUrl === "string" ? video.thumbnailUrl : "",
+  durationSeconds: toSafeNumber(video.durationSeconds, 0),
+  hskLevel: toSafeNumber(video.hskLevel, 1),
+  viewCount: toSafeNumber(video.viewCount, 0),
+  subtitleLanguages: Array.isArray(video.subtitleLanguages)
+    ? video.subtitleLanguages
+    : [],
+});
+
 // Helper to group Pinyin syllables to match Hanzi word segmentation
 const renderGroupedPinyin = (hanzi: string, pinyin: string, tokens?: any[]) => {
   if (!pinyin) return pinyin;
@@ -175,18 +200,19 @@ export default function AdminVideosPage() {
     setError(null);
     try {
       const response = await videoApi.getAllAdmin({ page, limit: 10 });
-      setVideos(response.data);
+      const normalizedVideos = (response.data || []).map(normalizeVideo);
+      setVideos(normalizedVideos);
       setPagination({
-        page: response.meta.page,
-        limit: response.meta.limit,
-        total: response.meta.total,
-        totalPages: response.meta.totalPages,
+        page: toSafeNumber(response.meta?.page, page),
+        limit: toSafeNumber(response.meta?.limit, 10),
+        total: toSafeNumber(response.meta?.total, 0),
+        totalPages: toSafeNumber(response.meta?.totalPages, 0),
       });
       setCategoryOptions((prev) =>
         mergeCategoryOptions(
           DEFAULT_VIDEO_CATEGORIES,
           prev,
-          response.data.map((v) => v.category),
+          normalizedVideos.map((v) => v.category),
         ),
       );
     } catch (err) {
@@ -786,7 +812,7 @@ export default function AdminVideosPage() {
       hideOnMobile: true,
       render: (video: Video) => (
         <span className="text-text-secondary">
-          {video.viewCount.toLocaleString()}
+          {toSafeNumber(video.viewCount, 0).toLocaleString("vi-VN")}
         </span>
       ),
     },
@@ -909,7 +935,8 @@ export default function AdminVideosPage() {
       const matchesKeyword =
         !keyword ||
         [video.title, video.description || "", video.category || ""].some(
-          (field) => field.toLocaleLowerCase("vi-VN").includes(keyword),
+          (field) =>
+            String(field).toLocaleLowerCase("vi-VN").includes(keyword),
         );
 
       if (!matchesKeyword) return false;

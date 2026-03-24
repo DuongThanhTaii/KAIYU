@@ -56,7 +56,7 @@ const scaleImage = (file: File, maxSize: number = 200): Promise<string> => {
 
 export default function ProfilePage() {
     const router = useRouter();
-    const { user, updateProfile, logout, error, clearError } = useAuth();
+    const { user, isAuthenticated, isLoading, updateProfile, logout, error, clearError } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         name: user?.name || '',
@@ -79,8 +79,15 @@ export default function ProfilePage() {
     }, []);
 
     useEffect(() => {
-        fetchVocabStats();
-    }, [fetchVocabStats]);
+        if (!isLoading && !isAuthenticated) {
+            router.replace('/login');
+            return;
+        }
+
+        if (isAuthenticated) {
+            fetchVocabStats();
+        }
+    }, [fetchVocabStats, isAuthenticated, isLoading, router]);
 
     // Update form data when user changes
     useEffect(() => {
@@ -92,7 +99,18 @@ export default function ProfilePage() {
         }
     }, [user]);
 
-    if (!user) {
+    if (isLoading) {
+        return (
+            <div className="min-h-screen bg-background-dark flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                    <p className="text-text-secondary">Dang tai ho so...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isAuthenticated || !user) {
         return null;
     }
 
