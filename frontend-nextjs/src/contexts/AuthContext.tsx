@@ -61,7 +61,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
                     try {
                         const profile = await authApi.getProfile();
                         setUser(profile);
-                    } catch {
+                    } catch (err: any) {
+                        if (err?.status === 304) {
+                            const cachedUser = authApi.getStoredUser();
+                            if (cachedUser) {
+                                setUser(cachedUser);
+                                return;
+                            }
+                        }
                         // Token invalid, clear it
                         tokenManager.clearAuth();
                     }
