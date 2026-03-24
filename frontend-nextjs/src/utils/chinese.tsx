@@ -9,6 +9,171 @@ export const segmenter =
     ? new Intl.Segmenter("zh-CN", { granularity: "word" })
     : null;
 
+const CHINESE_CHAR_RE = /[\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]/;
+
+export interface InteractiveHanziSegment {
+  segment: string;
+  pinyin?: string;
+}
+
+const normalizePinyinWord = (text: string): string => {
+  if (!text) return "";
+  return text
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9vü]/g, "");
+};
+
+const countSyllables = (pinyinWord: string): number => {
+  if (!pinyinWord) return 0;
+
+  const cleanWord = pinyinWord
+    .replace(/[0-9]/g, "")
+    .replace(/[.,!?;:()\[\]{}"']/g, "");
+  const vowelPattern = /[aeiouüvāáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜ]+/gi;
+
+  const parts = cleanWord.split("'");
+  let total = 0;
+  for (const part of parts) {
+    const matches = part.match(vowelPattern);
+    total += matches ? matches.length : 0;
+  }
+
+  return total;
+};
+
+const splitPinyinWords = (pinyin: string): string[] =>
+  pinyin
+    .replace(/([,.;!?，。！？、])/g, " $1 ")
+    .split(/\s+/)
+    .filter((s) => s.trim() !== "");
+
+const looksLikeSuspiciousErhuaShift = (tokens: any[]): boolean => {
+  return tokens.some((token) => {
+    if (!token || token.hanzi !== "儿" || !token.pinyin) return false;
+    const normalized = normalizePinyinWord(String(token.pinyin));
+    return normalized !== "er" && normalized !== "r";
+  });
+};
+
+const deriveSegmentsFromPinyin = (
+  hanzi: string,
+  pinyin: string,
+): InteractiveHanziSegment[] => {
+  const segments: InteractiveHanziSegment[] = [];
+  if (!hanzi) return segments;
+
+  const pinyinWords = splitPinyinWords(pinyin || "");
+  const hanziChars = Array.from(hanzi.trim());
+  let hanziIndex = 0;
+
+  for (const pWord of pinyinWords) {
+    if (hanziIndex >= hanziChars.length) break;
+
+    const syllableCount = countSyllables(pWord);
+
+    if (syllableCount > 0) {
+      while (
+        hanziIndex < hanziChars.length &&
+        !CHINESE_CHAR_RE.test(hanziChars[hanziIndex])
+      ) {
+        const char = hanziChars[hanziIndex];
+        if (char.trim() || char === " ") {
+          segments.push({ segment: char });
+        }
+        hanziIndex++;
+      }
+    }
+
+    if (syllableCount === 0) {
+      if (
+        hanziChars[hanziIndex] &&
+        !CHINESE_CHAR_RE.test(hanziChars[hanziIndex])
+      ) {
+        segments.push({ segment: hanziChars[hanziIndex], pinyin: pWord });
+        hanziIndex++;
+      } else {
+        segments.push({ segment: pWord, pinyin: pWord });
+      }
+      continue;
+    }
+
+    let tokenHanzi = "";
+    let charsTaken = 0;
+
+    while (charsTaken < syllableCount && hanziIndex < hanziChars.length) {
+      const char = hanziChars[hanziIndex];
+      if (!CHINESE_CHAR_RE.test(char)) {
+        if (char.trim()) {
+          segments.push({ segment: char });
+        }
+        hanziIndex++;
+        continue;
+      }
+
+      tokenHanzi += char;
+      charsTaken++;
+      hanziIndex++;
+    }
+
+    // Handle erhua words: zhèr => 这儿, nàr => 那儿, etc.
+    const normalizedPinyin = normalizePinyinWord(pWord);
+    const isErhuaWord =
+      normalizedPinyin.length > 1 &&
+      normalizedPinyin.endsWith("r") &&
+      normalizedPinyin !== "er";
+
+    if (
+      isErhuaWord &&
+      hanziIndex < hanziChars.length &&
+      hanziChars[hanziIndex] === "儿"
+    ) {
+      tokenHanzi += "儿";
+      hanziIndex++;
+    }
+
+    if (tokenHanzi) {
+      segments.push({ segment: tokenHanzi, pinyin: pWord });
+    }
+  }
+
+  while (hanziIndex < hanziChars.length) {
+    const char = hanziChars[hanziIndex];
+    if (char.trim() || char === " ") {
+      segments.push({ segment: char });
+    }
+    hanziIndex++;
+  }
+
+  return segments;
+};
+
+export const getInteractiveHanziSegments = (
+  hanzi: string,
+  pinyin?: string,
+  tokens?: any[],
+): InteractiveHanziSegment[] => {
+  if (tokens && tokens.length > 0 && !looksLikeSuspiciousErhuaShift(tokens)) {
+    return tokens.map((t) => ({
+      segment: t?.hanzi || "",
+      pinyin: t?.pinyin || t?.pinyinDisplay || undefined,
+    }));
+  }
+
+  if (pinyin) {
+    return deriveSegmentsFromPinyin(hanzi || "", pinyin);
+  }
+
+  if (segmenter && hanzi) {
+    return Array.from(segmenter.segment(hanzi)).map((seg) => ({
+      segment: seg.segment,
+    }));
+  }
+
+  return (hanzi || "").split("").map((segment) => ({ segment }));
+};
+
 /**
  * Helper to group Pinyin syllables to match Hanzi word segmentation
  * Syllables of a single word will be joined without spaces.
@@ -21,85 +186,9 @@ export const renderGroupedPinyin = (
 ) => {
   if (!pinyin) return pinyin;
 
-  // IF explicit tokens exist (admin re-segmented), use their pinyin directly
-  if (tokens && tokens.length > 0) {
-    return tokens
-      .map((t) => t.pinyin || t.pinyinDisplay || "")
-      .join(" ")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  if (!segmenter || !hanzi) return pinyin;
-
-  // Split pinyin into syllables, but separate punctuation first to avoid "ba!" being one syllable
-  const syllables = pinyin
-    .replace(/([,.;!?，。！？])/g, " $1 ")
-    .split(/\s+/)
-    .filter((s) => s.trim() !== "");
-  const segments = Array.from(segmenter.segment(hanzi));
-  const groupedPinyin: string[] = [];
-  let syllableIndex = 0;
-
-  // Punctuation normalization for matching
-  const normalizePunc = (s: string) =>
-    s
-      .replace(/[，。！？、,.;!? ]/g, (m) => {
-        const map: any = {
-          "，": ",",
-          "。": ".",
-          "！": "!",
-          "？": "?",
-          "、": ",",
-          " ": "",
-        };
-        return map[m] || m;
-      })
-      .trim();
-
-  for (const seg of segments) {
-    const word = seg.segment;
-    const charCount = word.length;
-
-    if (seg.isWordLike) {
-      // Take n syllables corresponding to the word's character count
-      if (syllableIndex < syllables.length) {
-        // Peek ahead: if the symbols in the pinyin are actually punctuation that matches
-        // the START of this word (weird but possible), skip them?
-        // Usually it's character matching.
-        const wordPinyin = syllables
-          .slice(syllableIndex, syllableIndex + charCount)
-          .join("");
-        if (wordPinyin) {
-          groupedPinyin.push(wordPinyin);
-        }
-        syllableIndex += charCount;
-      }
-    } else {
-      // For punctuation/whitespace
-      const cleanWord = word.trim();
-      if (cleanWord === "") {
-        // Internal space in Hanzi - keep as a potential indicator but we'll join later
-      } else {
-        // Punctuation like "," or "!"
-        // If the next syllable in our Pinyin matches this punctuation, consume it to avoid duplicates
-        const currentSyllable = syllables[syllableIndex];
-        if (
-          currentSyllable &&
-          normalizePunc(currentSyllable) === normalizePunc(word)
-        ) {
-          syllableIndex++;
-        }
-        groupedPinyin.push(word);
-      }
-    }
-  }
-
-  // Append any leftover syllables to ensure no data loss
-  if (syllableIndex < syllables.length) {
-    const leftovers = syllables.slice(syllableIndex).join(" ");
-    if (leftovers) groupedPinyin.push(leftovers);
-  }
+  const groupedPinyin = getInteractiveHanziSegments(hanzi, pinyin, tokens)
+    .map((seg) => seg.pinyin || seg.segment)
+    .filter((part) => part && part.trim().length > 0);
 
   // Join with space and then clean up spaces before punctuation
   return groupedPinyin
