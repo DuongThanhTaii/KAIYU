@@ -77,7 +77,18 @@ export const authApi = {
      * Get current user profile
      */
     async getProfile(): Promise<User> {
-        const response = await api.get<User>('/auth/me');
+        const response = await api.get<User>('/auth/me', {
+            validateStatus: (status) => (status >= 200 && status < 300) || status === 304,
+        });
+
+        if (response.status === 304) {
+            const cachedUser = tokenManager.getUser();
+            if (cachedUser) {
+                return cachedUser;
+            }
+            throw new Error('Profile cache returned 304 but no cached user is available');
+        }
+
         tokenManager.setUser(response.data);
         return response.data;
     },
