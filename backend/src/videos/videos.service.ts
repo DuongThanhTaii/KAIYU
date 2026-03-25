@@ -217,7 +217,10 @@ export class VideosService {
     async getCategories() {
         const result = await this.prisma.video.groupBy({
             by: ['category'],
-            where: { isPublished: true },
+            where: { 
+                isPublished: true,
+                category: { not: null, notIn: [''] }
+            },
             _count: { id: true },
         });
 

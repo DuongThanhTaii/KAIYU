@@ -17,43 +17,43 @@ const StatsCard: React.FC<StatsCardProps> = ({
     title,
     value,
     icon,
-    iconColor = 'text-primary',
     trend,
     subtitle,
 }) => {
     return (
-        <div className="bg-surface-dark rounded-xl border border-border-color p-4 sm:p-6 hover:border-primary/50 transition-colors shadow-sm">
-            <div className="flex items-start justify-between">
-                <div className="flex-1">
-                    <p className="text-sm font-medium text-text-secondary mb-1">{title}</p>
-                    <p className="text-3xl font-bold text-text-base mb-1">
-                        {typeof value === 'number' ? value.toLocaleString() : value}
-                    </p>
-                    {trend && (
-                        <div className="flex items-center gap-1">
-                            <Icon
-                                name={trend.isPositive ? 'trending_up' : 'trending_down'}
-                                className={`text-sm ${trend.isPositive ? 'text-green-400' : 'text-red-400'
-                                    }`}
-                            />
-                            <span
-                                className={`text-xs font-medium ${trend.isPositive ? 'text-green-400' : 'text-red-400'
-                                    }`}
-                            >
-                                {trend.isPositive ? '+' : ''}
-                                {trend.value}%
-                            </span>
-                            <span className="text-xs text-text-secondary">so với tháng trước</span>
-                        </div>
-                    )}
-                    {subtitle && (
-                        <p className="text-xs text-text-secondary mt-1">{subtitle}</p>
-                    )}
+        <div className="bg-surface-dark rounded-2xl border border-border-color p-5 hover:border-primary/30 transition-all duration-300 shadow-sm relative overflow-hidden group">
+            {/* Subtle Background Icon Decoration */}
+            <div className="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.08] transition-all duration-500 pointer-events-none rotate-12">
+                <Icon name={icon} className="text-[100px]" />
+            </div>
+
+            <div className="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-secondary mb-1">{title}</p>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-3xl font-black text-text-base tracking-tight">
+                            {typeof value === 'number' ? value.toLocaleString() : value}
+                        </h3>
+                        {trend && (
+                            <div className={`flex items-center gap-0.5 text-[10px] font-black px-1.5 py-0.5 rounded-md ${trend.isPositive ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'
+                                }`}>
+                                <span className="text-[8px]">{trend.isPositive ? '▲' : '▼'}</span>
+                                <span>{trend.value}%</span>
+                            </div>
+                        )}
+                    </div>
                 </div>
-                <div
-                    className={`p-3 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ${iconColor}`}
-                >
-                    <Icon name={icon} className="text-2xl" />
+
+                <div className="mt-3">
+                    {subtitle ? (
+                        <p className="text-[10px] font-bold text-text-secondary opacity-60">
+                            {subtitle}
+                        </p>
+                    ) : trend ? (
+                        <p className="text-[9px] font-bold text-text-secondary/40 uppercase tracking-tighter">
+                            so với tháng trước
+                        </p>
+                    ) : null}
                 </div>
             </div>
         </div>

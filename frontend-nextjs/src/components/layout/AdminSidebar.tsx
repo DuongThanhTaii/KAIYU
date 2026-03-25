@@ -4,6 +4,7 @@ import React, { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 import Icon from '../common/Icon';
 
 interface NavItem {
@@ -36,6 +37,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
     setIsMobileOpen
 }) => {
     const pathname = usePathname();
+    const { user } = useAuth();
+
+    const displayName = user?.name || 'Admin User';
+    const displayRole = user?.role === 'admin' ? 'Super Admin' : (user?.role || 'Admin');
+    const initial = displayName.charAt(0).toUpperCase();
 
     const isActive = (path: string) => {
         if (path === '/admin') {
@@ -122,12 +128,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     {!isCollapsed && (
                         <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
                             <div className="flex items-center gap-3">
-                                <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-on-primary font-bold shadow-md shadow-amber-500/20">
-                                    A
+                                <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-on-primary font-bold shadow-md shadow-amber-500/20 overflow-hidden shrink-0">
+                                    {user?.avatarUrl ? (
+                                        <Image src={user.avatarUrl} alt={displayName} width={40} height={40} className="object-cover" />
+                                    ) : (
+                                        initial
+                                    )}
                                 </div>
-                                <div>
-                                    <p className="text-sm font-bold text-text-base">Admin User</p>
-                                    <p className="text-xs text-amber-500 font-medium">Super Admin</p>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-text-base truncate">{displayName}</p>
+                                    <p className="text-[10px] text-amber-500 font-medium uppercase tracking-wider">{displayRole}</p>
                                 </div>
                             </div>
                         </div>
@@ -200,12 +210,16 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({
                     </Link>
                     <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
                         <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-on-primary font-bold shadow-md shadow-amber-500/20">
-                                A
+                            <div className="size-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-on-primary font-bold shadow-md shadow-amber-500/20 overflow-hidden shrink-0">
+                                {user?.avatarUrl ? (
+                                    <Image src={user.avatarUrl} alt={displayName} width={40} height={40} className="object-cover" />
+                                ) : (
+                                    initial
+                                )}
                             </div>
-                            <div>
-                                <p className="text-sm font-bold text-text-base">Admin User</p>
-                                <p className="text-xs text-amber-500 dark:text-amber-400/70 font-medium">Super Admin</p>
+                            <div className="min-w-0">
+                                <p className="text-sm font-bold text-text-base truncate">{displayName}</p>
+                                <p className="text-[10px] text-amber-500 dark:text-amber-400/70 font-medium uppercase tracking-wider">{displayRole}</p>
                             </div>
                         </div>
                     </div>

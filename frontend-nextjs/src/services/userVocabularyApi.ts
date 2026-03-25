@@ -44,6 +44,7 @@ export interface UserVocabularyQuery {
     proficiency?: string;
     search?: string;
     sourceVideoId?: string;
+    hskLevel?: number;
 }
 
 export interface UserVocabularyStats {
@@ -91,6 +92,7 @@ export const userVocabularyApi = {
         if (query?.proficiency) params.append('proficiency', query.proficiency);
         if (query?.search) params.append('search', query.search);
         if (query?.sourceVideoId) params.append('sourceVideoId', query.sourceVideoId);
+        if (query?.hskLevel) params.append('hskLevel', query.hskLevel.toString());
 
         const response = await api.get<UserVocabularyListResponse>(`/user-vocabulary?${params.toString()}`);
         return response.data;

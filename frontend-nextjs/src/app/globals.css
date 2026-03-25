@@ -404,3 +404,9 @@ input[type="checkbox"].checkbox-theme:hover {
 .animate-success {
   animation: success-pop 0.5s ease-out;
 }
+
+/* Mask fade utility for horizontal scrolling */
+.mask-fade-right {
+  mask-image: linear-gradient(to right, black 85%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+}

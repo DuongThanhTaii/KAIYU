@@ -23,6 +23,9 @@ export default function VocabNotebookPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [proficiencyFilter, setProficiencyFilter] = useState<string>('');
+    const [activeHskFilter, setActiveHskFilter] = useState<number | null>(null);
+    const [showHskDropdown, setShowHskDropdown] = useState(false);
+    const [showStatusDropdown, setShowStatusDropdown] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
@@ -76,6 +79,7 @@ export default function VocabNotebookPage() {
                 limit: 20,
                 proficiency: proficiencyFilter || undefined,
                 search: debouncedSearchQuery || undefined,
+                hskLevel: activeHskFilter || undefined,
             });
             setVocabulary(response.data);
             setTotalPages(response.meta.totalPages);
@@ -86,7 +90,7 @@ export default function VocabNotebookPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage, proficiencyFilter, debouncedSearchQuery]); // Removed selectedWord to prevent refetch on selection change
+    }, [currentPage, proficiencyFilter, debouncedSearchQuery, activeHskFilter]); // Removed selectedWord to prevent refetch on selection change
 
     // Fetch stats
     const fetchStats = useCallback(async () => {
@@ -342,6 +346,24 @@ export default function VocabNotebookPage() {
         ? folders.find(f => f.id === selectedFolderId)?.name || 'Thư mục'
         : 'Tất cả từ vựng';
 
+    const hskLevels = [1, 2, 3, 4, 5, 6];
+    const hskColorMap: Record<number, { active: string; inactive: string }> = {
+        1: { active: 'bg-[var(--color-hsk1)] text-white border-[var(--color-hsk1)] shadow-[0_0_15px_rgba(37,99,235,0.4)]', inactive: 'border-[var(--color-hsk1)]/30 text-[var(--color-hsk1)] bg-[var(--color-hsk1)]/5 hover:bg-[var(--color-hsk1)]/10' },
+        2: { active: 'bg-[var(--color-hsk2)] text-white border-[var(--color-hsk2)] shadow-[0_0_15px_rgba(5,150,105,0.4)]', inactive: 'border-[var(--color-hsk2)]/30 text-[var(--color-hsk2)] bg-[var(--color-hsk2)]/5 hover:bg-[var(--color-hsk2)]/10' },
+        3: { active: 'bg-[var(--color-hsk3)] text-white border-[var(--color-hsk3)] shadow-[0_0_15px_rgba(217,119,6,0.4)]', inactive: 'border-[var(--color-hsk3)]/30 text-[var(--color-hsk3)] bg-[var(--color-hsk3)]/5 hover:bg-[var(--color-hsk3)]/10' },
+        4: { active: 'bg-[var(--color-hsk4)] text-white border-[var(--color-hsk4)] shadow-[0_0_15px_rgba(234,88,12,0.4)]', inactive: 'border-[var(--color-hsk4)]/30 text-[var(--color-hsk4)] bg-[var(--color-hsk4)]/5 hover:bg-[var(--color-hsk4)]/10' },
+        5: { active: 'bg-[var(--color-hsk5)] text-white border-[var(--color-hsk5)] shadow-[0_0_15px_rgba(147,51,234,0.4)]', inactive: 'border-[var(--color-hsk5)]/30 text-[var(--color-hsk5)] bg-[var(--color-hsk5)]/5 hover:bg-[var(--color-hsk5)]/10' },
+        6: { active: 'bg-[var(--color-hsk6)] text-white border-[var(--color-hsk6)] shadow-[0_0_15px_rgba(220,38,38,0.4)]', inactive: 'border-[var(--color-hsk6)]/30 text-[var(--color-hsk6)] bg-[var(--color-hsk6)]/5 hover:bg-[var(--color-hsk6)]/10' },
+    };
+
+    const resetFilters = () => {
+        setSearchQuery('');
+        setProficiencyFilter('');
+        setActiveHskFilter(null);
+        setSelectedFolderId(null);
+        setCurrentPage(1);
+    };
+
     return (
         <DashboardLayout>
             <div className="flex flex-col gap-8 pb-10">
@@ -355,183 +377,266 @@ export default function VocabNotebookPage() {
                     </div>
                 </div>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
-                    <Card variant="default" hover className="group relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm p-3 md:p-6">
-                        <div className="flex justify-between items-start mb-2 md:mb-4">
-                            <div className="size-8 md:size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Icon name="dataset" size="sm" />
-                            </div>
+                {/* Ultra-Minimal Stats Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-2">
+                    {[
+                        { label: 'Tổng số từ', value: stats?.total || 0, color: 'bg-primary' },
+                        { label: 'Từ mới', value: stats?.new || 0, color: 'bg-blue-500' },
+                        { label: 'Cần ôn tập', value: stats?.review || 0, color: 'bg-orange-500' },
+                        { label: 'Đã học', value: stats?.mastered || 0, color: 'bg-emerald-500' }
+                    ].map((item, idx) => (
+                        <div key={idx} className="bg-surface-highlight/30 p-4 pb-5 rounded-2xl border border-white/5 shadow-lg group relative overflow-hidden transition-all hover:bg-surface-highlight/40">
+                            {/* Accent Dot */}
+                            <div className={`absolute top-4 right-4 size-1.5 rounded-full ${item.color} opacity-40 group-hover:opacity-100 transition-opacity`} />
+                            
+                            <p className="text-[10px] md:text-[11px] font-black uppercase tracking-widest text-text-secondary/60 mb-2 truncate">
+                                {item.label}
+                            </p>
+                            <p className="text-3xl md:text-4xl font-black text-text-base tracking-tighter">
+                                {item.value}
+                            </p>
                         </div>
-                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Tổng số từ</p>
-                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{stats?.total || 0}</p>
-                    </Card>
-
-                    <Card variant="default" hover className="group relative overflow-hidden bg-blue-500/5 border-blue-500/20 shadow-sm p-3 md:p-6">
-                        <div className="flex justify-between items-start mb-2 md:mb-4">
-                            <div className="size-8 md:size-10 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Icon name="fiber_new" size="sm" />
-                            </div>
-                        </div>
-                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Từ mới</p>
-                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{stats?.new || 0}</p>
-                    </Card>
-
-                    <Card variant="default" hover className="group relative overflow-hidden bg-orange-500/5 border-orange-500/20 shadow-sm p-3 md:p-6">
-                        <div className="flex justify-between items-start mb-2 md:mb-4">
-                            <div className="size-8 md:size-10 rounded-full bg-orange-500/10 text-orange-500 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Icon name="history_edu" size="sm" />
-                            </div>
-                        </div>
-                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Cần ôn tập</p>
-                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{(stats?.learning || 0) + (stats?.review || 0)}</p>
-                    </Card>
-
-                    <Card variant="default" hover className="group relative overflow-hidden bg-primary/5 border-primary/20 shadow-sm p-3 md:p-6">
-                        <div className="flex justify-between items-start mb-2 md:mb-4">
-                            <div className="size-8 md:size-10 rounded-full bg-primary/10 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Icon name="verified" size="sm" />
-                            </div>
-                        </div>
-                        <p className="text-text-secondary text-[10px] md:text-xs font-bold uppercase tracking-wider mb-0.5 md:mb-1">Đã học</p>
-                        <p className="text-text-base text-2xl md:text-3xl font-black mt-0.5 md:mt-1 tracking-tight">{stats?.mastered || 0}</p>
-                    </Card>
+                    ))}
                 </div>
 
-                {/* Action Bar */}
-                <Card variant="default" padding="sm" className="flex flex-col lg:flex-row gap-4 justify-between items-stretch lg:items-center">
-                    {/* Folder Dropdown & Search & Filters */}
-                    <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 px-1 md:px-2">
-                        <div className="flex items-center gap-2 w-full sm:w-auto">
-                            {/* Folder Dropdown */}
-                            <div className="relative flex-1 sm:flex-initial">
-                                <button
-                                    onClick={() => setShowFolderDropdown(!showFolderDropdown)}
-                                    className={`w-full flex items-center justify-between sm:justify-start gap-2 px-4 md:px-5 py-2.5 rounded-full text-sm font-black transition-all border shadow-sm ${selectedFolderId
-                                        ? 'bg-primary/10 text-primary border-primary/30'
-                                        : 'bg-surface-highlight text-text-base border-border-color/50 hover:border-primary/50'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <Icon name="folder" size="sm" />
-                                        <span className="max-w-24 truncate">{selectedFolderName}</span>
-                                    </div>
-                                    <Icon name={showFolderDropdown ? 'expand_less' : 'expand_more'} size="sm" />
-                                </button>
+                {/* Action Bar - Balanced Pro Toolbar */}
+                <div className="bg-surface-highlight/30 p-3 md:p-4 rounded-2xl border border-white/5 shadow-xl flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center gap-2.5">
+                        {/* Folder Selection */}
+                        <div className="relative shrink-0">
+                            <button
+                                onClick={() => { setShowFolderDropdown(!showFolderDropdown); setShowHskDropdown(false); setShowStatusDropdown(false); }}
+                                className={`flex items-center gap-2 px-3.5 h-10 rounded-xl text-xs font-black transition-all border shadow-sm ${selectedFolderId
+                                    ? 'bg-primary/10 text-primary border-primary/30'
+                                    : 'bg-surface-dark text-text-base border-border-color hover:border-text-secondary'
+                                    }`}
+                            >
+                                <Icon name="folder" size="sm" />
+                                <span className="max-w-[100px] truncate">{selectedFolderName}</span>
+                                <Icon name={showFolderDropdown ? 'expand_less' : 'expand_more'} size="sm" />
+                            </button>
 
-                                {showFolderDropdown && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setShowFolderDropdown(false)} />
-                                        <div className="absolute top-full left-0 mt-2 w-72 bg-surface-dark rounded-xl border border-border-color shadow-xl z-50 overflow-hidden">
-                                            <div className="p-3 border-b border-border-color flex items-center justify-between bg-surface-highlight/20">
-                                                <span className="text-sm font-black text-text-base">Thư mục</span>
-                                                <button onClick={(e) => { e.stopPropagation(); setIsCreatingFolder(!isCreatingFolder); }} className="p-1 text-text-secondary hover:text-primary rounded-full transition-colors border border-transparent hover:border-border-color">
-                                                    <Icon name="add" size="sm" />
-                                                </button>
-                                            </div>
-                                            {isCreatingFolder && (
-                                                <div className="p-3 border-b border-border-color flex gap-2 bg-blue-50/30 dark:bg-surface-highlight/20">
-                                                    <input type="text" placeholder="Tên thư mục..." value={newFolderName} onChange={(e) => setNewFolderName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()} className="flex-1 bg-surface-highlight border border-border-color/60 rounded-lg px-3 py-1.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:border-primary shadow-inner" autoFocus />
-                                                    <button onClick={handleCreateFolder} className="p-1.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover inline-flex items-center justify-center shadow-sm">
-                                                        <Icon name="check" size="sm" />
-                                                    </button>
-                                                </div>
-                                            )}
-                                            <div className="max-h-64 overflow-y-auto p-2 space-y-1">
-                                                <button onClick={() => { setSelectedFolderId(null); setShowFolderDropdown(false); }} className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left transition-all ${selectedFolderId === null ? 'bg-primary/10 text-primary font-black shadow-sm ring-1 ring-primary/20' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}>
-                                                    <Icon name="list" size="sm" />
-                                                    <span className="font-medium flex-1">Tất cả từ vựng</span>
-                                                    <span className="text-xs bg-surface-highlight px-2 py-0.5 rounded-full">{stats?.total || 0}</span>
-                                                </button>
-                                                {folders.map((folder) => (
-                                                    <div key={folder.id} onDragOver={(e) => handleDragOver(e, folder.id)} onDragLeave={() => setDragOverFolderId(null)} onDrop={(e) => handleDrop(e, folder.id)} className={`group flex items-center gap-3 px-3 py-2 rounded-lg transition-all ${selectedFolderId === folder.id ? 'bg-primary/20 text-primary' : dragOverFolderId === folder.id ? 'bg-primary/30 text-primary ring-2 ring-primary/50' : 'text-text-secondary hover:bg-surface-highlight hover:text-white'}`}>
-                                                        {renamingFolderId === folder.id ? (
-                                                            <div className="flex-1 flex items-center gap-2">
-                                                                <input type="text" value={renameFolderValue} onChange={(e) => setRenameFolderValue(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') handleRenameFolder(folder.id); if (e.key === 'Escape') setRenamingFolderId(null); }} onBlur={() => handleRenameFolder(folder.id)} className="flex-1 bg-surface-highlight border border-primary rounded-lg px-2 py-1.5 text-sm text-text-base font-bold focus:outline-none shadow-inner" autoFocus />
-                                                            </div>
-                                                        ) : (
-                                                            <>
-                                                                <button onClick={() => { setSelectedFolderId(folder.id); setShowFolderDropdown(false); }} className="flex-1 flex items-center gap-3 text-left">
-                                                                    <Icon name={folder.icon || 'folder'} size="sm" />
-                                                                    <span className="font-medium truncate flex-1">{folder.name}</span>
-                                                                    <span className="text-xs bg-surface-highlight px-2 py-0.5 rounded-full">{folder._count?.vocabulary || 0}</span>
-                                                                </button>
-                                                                {!folder.isDefault && (
-                                                                    <div className="opacity-0 group-hover:opacity-100 flex items-center gap-1 transition-all">
-                                                                        <button onClick={(e) => { e.stopPropagation(); setRenamingFolderId(folder.id); setRenameFolderValue(folder.name); }} className="p-1 text-text-secondary hover:text-primary inline-flex items-center justify-center" title="Đổi tên"><Icon name="edit" size="sm" /></button>
-                                                                        <button onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }} className="p-1 text-text-secondary hover:text-red-400 inline-flex items-center justify-center" title="Xóa"><Icon name="close" size="sm" /></button>
-                                                                    </div>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
+                            {showFolderDropdown && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowFolderDropdown(false)} />
+                                    <div className="absolute top-full left-0 mt-2 w-64 bg-surface-dark rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden">
+                                        <div className="p-2 border-b border-border-color flex items-center justify-between bg-surface-highlight/20">
+                                            <span className="text-[10px] uppercase font-bold tracking-widest text-text-secondary pl-1">Thư mục</span>
+                                            <button onClick={(e) => { e.stopPropagation(); setIsCreatingFolder(!isCreatingFolder); }} className="p-1 text-text-secondary hover:text-primary transition-colors">
+                                                <Icon name="add" size="sm" />
+                                            </button>
                                         </div>
-                                    </>
-                                )}
-                            </div>
-                            <div className="hidden sm:block h-6 w-px bg-border-color" />
+                                        {isCreatingFolder && (
+                                            <div className="p-2 border-b border-border-color flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Tên..."
+                                                    value={newFolderName}
+                                                    onChange={(e) => setNewFolderName(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleCreateFolder()}
+                                                    className="flex-1 bg-surface-highlight border border-border-color/60 rounded-lg px-2 py-1 text-xs text-text-base font-bold placeholder-text-secondary focus:outline-none focus:border-primary shadow-inner"
+                                                    autoFocus
+                                                />
+                                                <button onClick={handleCreateFolder} className="p-1.5 bg-primary text-on-primary rounded-lg hover:bg-primary-hover shadow-sm">
+                                                    <Icon name="check" size="sm" />
+                                                </button>
+                                            </div>
+                                        )}
+                                        <div className="max-h-60 overflow-y-auto p-1.5 space-y-0.5">
+                                            <button
+                                                onClick={() => { setSelectedFolderId(null); setShowFolderDropdown(false); }}
+                                                className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-left transition-all ${selectedFolderId === null ? 'bg-primary/10 text-primary font-black' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}
+                                            >
+                                                <Icon name="list" size="sm" />
+                                                <span className="text-xs flex-1">Tất cả từ vựng</span>
+                                                <span className="text-[10px] bg-surface-highlight px-1.5 py-0.5 rounded-md">{stats?.total || 0}</span>
+                                            </button>
+                                            {folders.map((folder) => (
+                                                <div key={folder.id} className={`group flex items-center gap-2 px-2.5 py-1 rounded-lg transition-all ${selectedFolderId === folder.id ? 'bg-primary/10 text-primary shadow-sm' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}>
+                                                    {renamingFolderId === folder.id ? (
+                                                        <input
+                                                            type="text"
+                                                            value={renameFolderValue}
+                                                            onChange={(e) => setRenameFolderValue(e.target.value)}
+                                                            onKeyDown={(e) => {
+                                                                if (e.key === 'Enter') handleRenameFolder(folder.id);
+                                                                if (e.key === 'Escape') setRenamingFolderId(null);
+                                                            }}
+                                                            onBlur={() => handleRenameFolder(folder.id)}
+                                                            className="flex-1 bg-surface-highlight border border-primary rounded-lg px-2 py-1 text-[10px] text-text-base font-bold focus:outline-none shadow-inner"
+                                                            autoFocus
+                                                        />
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => { setSelectedFolderId(folder.id); setShowFolderDropdown(false); }}
+                                                                className="flex-1 flex items-center gap-2.5 text-left truncate py-1"
+                                                            >
+                                                                <Icon name={folder.icon || 'folder'} size="sm" />
+                                                                <span className="text-xs truncate flex-1 font-bold">{folder.name}</span>
+                                                                <span className="text-[10px] bg-surface-highlight px-1.5 py-0.5 rounded-md opacity-60 group-hover:opacity-100 transition-opacity">
+                                                                    {folder._count?.vocabulary || 0}
+                                                                </span>
+                                                            </button>
+                                                            {!folder.isDefault && (
+                                                                <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition-all">
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); setRenamingFolderId(folder.id); setRenameFolderValue(folder.name); }}
+                                                                        className="p-1 text-text-secondary hover:text-primary"
+                                                                        title="Đổi tên"
+                                                                    >
+                                                                        <Icon name="edit" size="sm" />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => { e.stopPropagation(); handleDeleteFolder(folder.id); }}
+                                                                        className="p-1 text-text-secondary hover:text-red-400"
+                                                                        title="Xóa"
+                                                                    >
+                                                                        <Icon name="close" size="sm" />
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
                         </div>
 
-                        {/* Search */}
-                        <div className="relative group flex-1 min-w-0 w-full sm:w-auto">
-                            <Icon name="search" className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors" size="sm" />
+                        {/* HSK Dropdown */}
+                        <div className="relative shrink-0">
+                            <button
+                                onClick={() => { setShowHskDropdown(!showHskDropdown); setShowFolderDropdown(false); setShowStatusDropdown(false); }}
+                                className={`flex items-center gap-2 px-3.5 h-10 rounded-xl text-xs font-black transition-all border shadow-sm ${activeHskFilter
+                                    ? hskColorMap[activeHskFilter].active
+                                    : 'bg-surface-dark text-text-base border-border-color hover:border-text-secondary'
+                                    }`}
+                            >
+                                <Icon name="filter_list" size="sm" />
+                                <span>{activeHskFilter ? `HSK ${activeHskFilter}` : 'Mọi HSK'}</span>
+                                <Icon name={showHskDropdown ? 'expand_less' : 'expand_more'} size="sm" />
+                            </button>
+
+                            {showHskDropdown && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowHskDropdown(false)} />
+                                    <div className="absolute top-full left-0 mt-2 w-48 bg-surface-dark rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden p-1.5 space-y-0.5">
+                                        <button
+                                            onClick={() => { setActiveHskFilter(null); setShowHskDropdown(false); }}
+                                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeHskFilter === null ? 'bg-primary/20 text-primary font-black' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}
+                                        >
+                                            <div className="w-2 h-2 rounded-full bg-text-secondary/30" />
+                                            Tất cả trình độ
+                                        </button>
+                                        {hskLevels.map((level) => (
+                                            <button
+                                                key={level}
+                                                onClick={() => { setActiveHskFilter(level); setShowHskDropdown(false); }}
+                                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${activeHskFilter === level ? 'bg-primary/20 text-primary font-black' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}
+                                            >
+                                                <div className={`w-2.5 h-2.5 rounded-full`} style={{ backgroundColor: `var(--color-hsk${level})` }} />
+                                                HSK {level}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Status Dropdown */}
+                        <div className="relative shrink-0">
+                            <button
+                                onClick={() => { setShowStatusDropdown(!showStatusDropdown); setShowFolderDropdown(false); setShowHskDropdown(false); }}
+                                className={`flex items-center gap-2 px-3.5 h-10 rounded-xl text-xs font-black transition-all border shadow-sm ${proficiencyFilter
+                                    ? 'bg-primary/10 text-primary border-primary/30'
+                                    : 'bg-surface-dark text-text-base border-border-color hover:border-text-secondary'
+                                    }`}
+                            >
+                                <span>{proficiencyFilter ? (
+                                    {
+                                        'new': 'Mới',
+                                        'learning': 'Đang học',
+                                        'review': 'Cần ôn',
+                                        'mastered': 'Đã học'
+                                    }[proficiencyFilter] || 'Trạng thái'
+                                ) : 'Trạng thái'}</span>
+                                <Icon name={showStatusDropdown ? 'expand_less' : 'expand_more'} size="sm" />
+                            </button>
+
+                            {showStatusDropdown && (
+                                <>
+                                    <div className="fixed inset-0 z-40" onClick={() => setShowStatusDropdown(false)} />
+                                    <div className="absolute top-full left-0 mt-2 w-48 bg-surface-dark rounded-xl border border-white/10 shadow-2xl z-50 overflow-hidden p-1.5 space-y-0.5">
+                                        <button
+                                            onClick={() => { setProficiencyFilter(''); setShowStatusDropdown(false); }}
+                                            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${proficiencyFilter === '' ? 'bg-primary/20 text-primary font-black' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}
+                                        >
+                                            Tất cả trạng thái
+                                        </button>
+                                        {[
+                                            { val: 'new', label: 'Mới' },
+                                            { val: 'learning', label: 'Đang học' },
+                                            { val: 'review', label: 'Cần ôn' },
+                                            { val: 'mastered', label: 'Đã học' }
+                                        ].map((status) => (
+                                            <button
+                                                key={status.val}
+                                                onClick={() => { setProficiencyFilter(status.val); setShowStatusDropdown(false); }}
+                                                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-bold transition-all ${proficiencyFilter === status.val ? 'bg-primary/20 text-primary font-black' : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'}`}
+                                            >
+                                                {status.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        {/* Search Bar - Flexible */}
+                        <div className="relative group flex-1 min-w-[200px]">
+                            <Icon name="search" className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-primary transition-colors" size="sm" />
                             <input
                                 type="text"
-                                placeholder="Tìm kiếm từ vựng..."
+                                placeholder="Tìm từ vựng..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                onPaste={(e) => {
-                                    const pasted = e.clipboardData.getData('text');
-                                    const normalized = normalizeSearchInput(pasted);
-                                    if (normalized !== pasted) {
-                                        e.preventDefault();
-                                        setSearchQuery(normalized);
-                                    }
-                                }}
-                                className="bg-surface-highlight border border-border-color/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/50 w-full sm:w-48 md:w-64 transition-all shadow-sm"
+                                className="bg-surface-dark border border-border-color rounded-xl pl-9 pr-4 h-10 text-xs text-text-base font-bold placeholder-text-secondary focus:outline-none focus:border-primary/40 w-full transition-all shadow-inner"
                             />
                         </div>
 
-                        <div className="hidden sm:block h-6 w-px bg-border-color" />
-
-                        <select
-                            value={proficiencyFilter}
-                            onChange={(e) => setProficiencyFilter(e.target.value)}
-                            className="flex-1 sm:flex-initial bg-surface-highlight border border-border-color/50 rounded-full px-5 py-2.5 text-text-secondary text-sm font-bold focus:outline-none focus:border-primary shadow-sm hover:border-primary/50 transition-colors"
-                        >
-                            <option value="">Tất cả trạng thái</option>
-                            <option value="new">Mới</option>
-                            <option value="learning">Đang học</option>
-                            <option value="review">Cần ôn</option>
-                            <option value="mastered">Đã học</option>
-                        </select>
-                    </div>
-
-                    {/* Controls */}
-                    <div className="flex items-center justify-center sm:justify-end gap-3 px-2">
-                        {/* View Toggle */}
-                        <div className="flex items-center bg-surface-highlight rounded-full p-1 border border-border-color/60 shadow-inner w-full sm:w-auto">
+                        {/* Reset & View Toggle */}
+                        <div className="flex items-center gap-2">
                             <button
-                                onClick={() => setViewMode('table')}
-                                className={`flex-1 sm:flex-initial p-2 px-4 md:px-5 rounded-full flex items-center justify-center gap-2 text-sm font-black transition-all ${viewMode === 'table' ? 'bg-primary text-on-primary shadow-md' : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
-                                    }`}
+                                onClick={resetFilters}
+                                className="h-10 px-3.5 rounded-xl bg-surface-dark border border-border-color hover:border-primary/40 text-text-secondary hover:text-primary transition-all font-black text-xs flex items-center gap-2 shadow-sm shrink-0"
+                                title="Đặt lại bộ lọc"
                             >
-                                <Icon name="table_rows" size="sm" />
-                                <span className="hidden xs:inline">Table</span>
+                                <Icon name="restart_alt" size="sm" />
+                                <span className="hidden sm:inline">Đặt lại</span>
                             </button>
-                            <button
-                                onClick={() => setViewMode('grid')}
-                                className={`flex-1 sm:flex-initial p-2 px-4 md:px-5 rounded-full flex items-center justify-center gap-2 text-sm font-black transition-all ${viewMode === 'grid' ? 'bg-primary text-on-primary shadow-md' : 'text-text-secondary hover:text-text-base hover:bg-surface-highlight'
-                                    }`}
-                            >
-                                <Icon name="grid_view" size="sm" />
-                                <span className="hidden xs:inline">Grid</span>
-                            </button>
+
+                            <div className="h-6 w-px bg-white/5 mx-1" />
+
+                            <div className="flex items-center bg-surface-dark rounded-xl p-1 border border-border-color shadow-inner shrink-0">
+                                <button
+                                    onClick={() => setViewMode('table')}
+                                    className={`p-1.5 px-3 rounded-lg flex items-center justify-center transition-all ${viewMode === 'table' ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'text-text-secondary hover:text-text-base'}`}
+                                >
+                                    <Icon name="table_rows" size="sm" />
+                                </button>
+                                <button
+                                    onClick={() => setViewMode('grid')}
+                                    className={`p-1.5 px-3 rounded-lg flex items-center justify-center transition-all ${viewMode === 'grid' ? 'bg-primary text-on-primary shadow-lg shadow-primary/20' : 'text-text-secondary hover:text-text-base'}`}
+                                >
+                                    <Icon name="grid_view" size="sm" />
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </Card>
+                </div>
 
                 {/* Error Message */}
                 {error && (
@@ -872,7 +977,7 @@ export default function VocabNotebookPage() {
                                         <button
                                             onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                             disabled={currentPage === 1}
-                                            className="p-2 rounded-full text-text-secondary hover:text-text-base hover:bg-surface-highlight border border-transparent hover:border-border-color transition-all disabled:opacity-30"
+                                            className="size-10 rounded-full flex items-center justify-center text-text-secondary hover:text-text-base hover:bg-surface-highlight border border-transparent hover:border-border-color transition-all disabled:opacity-30"
                                         >
                                             <Icon name="chevron_left" size="md" />
                                         </button>
@@ -895,7 +1000,7 @@ export default function VocabNotebookPage() {
                                         <button
                                             onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                             disabled={currentPage === totalPages}
-                                            className="p-2 rounded-full text-text-secondary hover:text-text-base hover:bg-surface-highlight border border-transparent hover:border-border-color transition-all disabled:opacity-30"
+                                            className="size-10 rounded-full flex items-center justify-center text-text-secondary hover:text-text-base hover:bg-surface-highlight border border-transparent hover:border-border-color transition-all disabled:opacity-30"
                                         >
                                             <Icon name="chevron_right" size="md" />
                                         </button>

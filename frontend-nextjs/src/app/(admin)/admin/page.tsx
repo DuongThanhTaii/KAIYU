@@ -35,6 +35,7 @@ export default function AdminDashboard() {
             setError(null);
             try {
                 const data = await getOverviewStats();
+                console.log('Dashboard stats:', data);
                 setStats(data);
                 setChartData(data.dailyActivity || []);
             } catch (err) {
@@ -104,7 +105,7 @@ export default function AdminDashboard() {
                     title="Tổng người dùng"
                     value={stats.users}
                     icon="group"
-                    trend={{ value: 12, isPositive: true }}
+                    trend={stats.userTrend}
                 />
                 <StatsCard
                     title="Tổng video"
@@ -116,7 +117,7 @@ export default function AdminDashboard() {
                     title="Từ vựng"
                     value={stats.vocabulary}
                     icon="translate"
-                    trend={{ value: 8, isPositive: true }}
+                    trend={stats.vocabTrend}
                 />
                 <StatsCard
                     title="Lượt học hôm nay"

@@ -16,7 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import YouTubePlayer, {
   type YouTubePlayerHandle,
 } from "@/components/video/YouTubePlayer";
-import { WordPopover, Icon } from "@/components/common";
+import { WordPopover, Icon, Badge } from "@/components/common";
 
 // Initialize native Chinese word segmenter
 const segmenter =
@@ -780,12 +780,12 @@ export default function AdminVideosPage() {
     {
       key: "hskLevel",
       header: "HSK",
-      width: "75px",
+      width: "90px",
       hideOnMobile: true,
       render: (video: Video) => (
-        <span className="px-2 py-1 text-xs font-bold rounded-full bg-primary/20 text-primary whitespace-nowrap">
+        <Badge variant="hsk" hskLevel={video.hskLevel} size="md">
           HSK {video.hskLevel}
-        </span>
+        </Badge>
       ),
     },
     {

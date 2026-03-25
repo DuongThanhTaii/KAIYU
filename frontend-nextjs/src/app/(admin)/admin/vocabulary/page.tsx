@@ -8,6 +8,7 @@ import DataTable from '@/components/admin/DataTable';
 import Modal from '@/components/admin/Modal';
 import Icon from '@/components/common/Icon';
 import SpeakerButton from '@/components/common/SpeakerButton';
+import Badge from '@/components/common/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     getAllVocabulary,
@@ -1075,17 +1076,12 @@ export default function AdminVocabularyPage() {
         {
             key: 'hskLevel',
             header: 'HSK',
-            width: '70px',
+            width: '90px',
             render: (vocab: Vocabulary) => (
                 <div className="flex justify-center">
-                    <span className={`px-2 py-0.5 text-[10px] font-black rounded-full border whitespace-nowrap ${
-                        vocab.hskLevel <= 2 ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                        vocab.hskLevel <= 4 ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                        vocab.hskLevel <= 6 ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                        'bg-purple-500/10 text-purple-400 border-purple-500/20'
-                    }`}>
+                    <Badge variant="hsk" hskLevel={vocab.hskLevel} size="md">
                         {vocab.hskLevel === 0 ? 'N/A' : vocab.hskLevel === 7 ? 'EXT' : `HSK ${vocab.hskLevel}`}
-                    </span>
+                    </Badge>
                 </div>
             ),
         },

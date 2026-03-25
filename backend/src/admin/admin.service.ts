@@ -49,36 +49,67 @@ export class AdminService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [userCount, videoCount, vocabCount, recentUsers, todayLearningCount] =
-      await Promise.all([
-        this.prisma.user.count(),
-        this.prisma.video.count(),
-        this.prisma.vocabulary.count(),
-        this.prisma.user.findMany({
-          orderBy: { createdAt: 'desc' },
-          take: 5,
-          select: { id: true, name: true, email: true, createdAt: true },
-        }),
-        // Count of flashcard reviews today
-        this.prisma.flashcardReview.count({
-          where: {
-            lastReviewAt: { gte: today },
-          },
-        }),
-      ]);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-    const publishedVideos = await this.prisma.video.count({
-      where: { isPublished: true },
-    });
+    const [
+      userCount,
+      videoCount,
+      vocabCount,
+      recentUsers,
+      todayLearningCount,
+      publishedVideos,
+      userCount30DaysAgo,
+      vocabCount30DaysAgo,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.video.count(),
+      this.prisma.vocabulary.count(),
+      this.prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, name: true, email: true, createdAt: true },
+      }),
+      // Count of flashcard reviews today
+      this.prisma.flashcardReview.count({
+        where: {
+          lastReviewAt: { gte: today },
+        },
+      }),
+      this.prisma.video.count({
+        where: { isPublished: true },
+      }),
+      // Trends: compare with 30 days ago
+      this.prisma.user.count({
+        where: { createdAt: { lt: thirtyDaysAgo } },
+      }),
+      this.prisma.vocabulary.count({
+        where: { createdAt: { lt: thirtyDaysAgo } },
+      }),
+    ]);
+
+    // Helper to calculate trend percentage
+    const calculateTrend = (current: number, previous: number) => {
+      if (previous === 0) return { value: current > 0 ? 100 : 0, isPositive: true };
+      const diff = current - previous;
+      const percent = Math.round((diff / previous) * 100);
+      return {
+        value: Math.abs(percent),
+        isPositive: percent >= 0,
+      };
+    };
 
     // Get daily activity for last 7 days
     const dailyActivity = await this.getDailyActivityStats(7);
 
     return {
       users: userCount,
+      userTrend: calculateTrend(userCount, userCount30DaysAgo),
       videos: videoCount,
       publishedVideos,
       vocabulary: vocabCount,
+      vocabTrend: calculateTrend(vocabCount, vocabCount30DaysAgo),
       recentUsers,
       todayLearningCount,
       dailyActivity,
@@ -698,7 +729,10 @@ export class AdminService {
     const where: any = {};
     if (role) where.role = role;
 
-    const [users, total] = await Promise.all([
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [users, total, premiumCount, adminCount, activeTodayCount] = await Promise.all([
       this.prisma.user.findMany({
         where,
         skip,
@@ -718,11 +752,24 @@ export class AdminService {
         },
       }),
       this.prisma.user.count({ where }),
+      this.prisma.user.count({ where: { isPremium: true } }),
+      this.prisma.user.count({ where: { role: 'admin' } }),
+      this.prisma.user.count({
+        where: {
+          lastActiveDate: { gte: today },
+        },
+      }),
     ]);
 
     return {
       data: users,
       meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+      stats: {
+        total,
+        premium: premiumCount,
+        admins: adminCount,
+        activeToday: activeTodayCount,
+      },
     };
   }
 

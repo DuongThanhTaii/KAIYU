@@ -44,8 +44,9 @@ export class UserVocabularyService {
         proficiency?: string;
         search?: string;
         sourceVideoId?: string;
+        hskLevel?: number;
     }) {
-        const { page = 1, limit = 20, proficiency, search, sourceVideoId } = query;
+        const { page = 1, limit = 20, proficiency, search, sourceVideoId, hskLevel } = query;
         const skip = (page - 1) * limit;
 
         const where: any = { userId };
@@ -56,6 +57,10 @@ export class UserVocabularyService {
 
         if (sourceVideoId) {
             where.sourceVideoId = sourceVideoId;
+        }
+
+        if (hskLevel) {
+            where.vocabulary = { hskLevel };
         }
 
         const candidates = this.buildSearchCandidates(search || '');

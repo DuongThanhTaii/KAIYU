@@ -137,11 +137,40 @@ export default function VideoLibraryPage() {
     };
 
     // Reset all filters
+    // Reset all filters
     const resetFilters = () => {
         setActiveHskFilter(null);
         setActiveCategory(null);
         setSearchQuery('');
         setCurrentPage(1);
+    };
+
+    // HSK Level color map for chips
+    const hskColorMap: Record<number, { active: string; inactive: string }> = {
+        1: { 
+            active: 'bg-[var(--color-hsk1)] text-white border-[var(--color-hsk1)] shadow-[0_0_15px_rgba(59,130,246,0.4)]', 
+            inactive: 'border-[var(--color-hsk1)]/30 text-[var(--color-hsk1)] bg-[var(--color-hsk1)]/5 hover:bg-[var(--color-hsk1)]/10' 
+        },
+        2: { 
+            active: 'bg-[var(--color-hsk2)] text-white border-[var(--color-hsk2)] shadow-[0_0_15px_rgba(16,185,129,0.4)]', 
+            inactive: 'border-[var(--color-hsk2)]/30 text-[var(--color-hsk2)] bg-[var(--color-hsk2)]/5 hover:bg-[var(--color-hsk2)]/10' 
+        },
+        3: { 
+            active: 'bg-[var(--color-hsk3)] text-white border-[var(--color-hsk3)] shadow-[0_0_15px_rgba(245,158,11,0.4)]', 
+            inactive: 'border-[var(--color-hsk3)]/30 text-[var(--color-hsk3)] bg-[var(--color-hsk3)]/5 hover:bg-[var(--color-hsk3)]/10' 
+        },
+        4: { 
+            active: 'bg-[var(--color-hsk4)] text-white border-[var(--color-hsk4)] shadow-[0_0_15px_rgba(249,115,22,0.4)]', 
+            inactive: 'border-[var(--color-hsk4)]/30 text-[var(--color-hsk4)] bg-[var(--color-hsk4)]/5 hover:bg-[var(--color-hsk4)]/10' 
+        },
+        5: { 
+            active: 'bg-[var(--color-hsk5)] text-white border-[var(--color-hsk5)] shadow-[0_0_15px_rgba(139,92,246,0.4)]', 
+            inactive: 'border-[var(--color-hsk5)]/30 text-[var(--color-hsk5)] bg-[var(--color-hsk5)]/5 hover:bg-[var(--color-hsk5)]/10' 
+        },
+        6: { 
+            active: 'bg-[var(--color-hsk6)] text-white border-[var(--color-hsk6)] shadow-[0_0_15px_rgba(239,68,68,0.4)]', 
+            inactive: 'border-[var(--color-hsk6)]/30 text-[var(--color-hsk6)] bg-[var(--color-hsk6)]/5 hover:bg-[var(--color-hsk6)]/10' 
+        },
     };
 
     return (
@@ -197,75 +226,91 @@ export default function VideoLibraryPage() {
                     </Link>
                 )}
 
-                {/* Filters Section */}
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <h3 className="text-xl font-bold text-text-base">Duyệt thư viện</h3>
-                        <button
-                            onClick={resetFilters}
-                            className="text-sm text-text-secondary hover:text-primary transition-colors font-medium"
-                        >
-                            Đặt lại bộ lọc
-                        </button>
-                    </div>
-
-                    {/* HSK Level Chips */}
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                        <button
-                            onClick={() => setActiveHskFilter(null)}
-                            className={`h-10 px-5 rounded-full text-sm font-black transition-all shadow-sm ${!activeHskFilter
-                                ? 'bg-primary text-on-primary border-2 border-primary scale-105'
-                                : 'bg-surface-dark hover:bg-surface-highlight text-text-base border-2 border-border-color'
-                                }`}
-                        >
-                            Tất cả
-                        </button>
-                        {hskLevels.map((level) => (
-                            <button
-                                key={level}
-                                onClick={() => setActiveHskFilter(activeHskFilter === level ? null : level)}
-                                className={`h-10 px-5 rounded-full text-sm font-black transition-all shadow-sm ${activeHskFilter === level
-                                    ? 'bg-primary text-on-primary border-2 border-primary scale-105'
-                                    : 'bg-surface-dark hover:bg-surface-highlight text-text-base border-2 border-border-color'
-                                    }`}
-                            >
-                                HSK {level}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Category & Filter Pills */}
-                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                        {/* Search Input */}
-                        <div className="relative shrink-0">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Icon name="search" size="sm" className="text-text-secondary" />
+                {/* Filters Section: Pro Toolbar Style */}
+                <div className="bg-surface-highlight/30 p-3 md:p-4 rounded-2xl border border-white/5 flex flex-col gap-3 shadow-lg">
+                    {/* Top Row: Search & Reset */}
+                    <div className="flex items-center gap-3">
+                        <div className="relative group flex-1">
+                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                                <Icon name="search" size="sm" className="text-text-secondary group-focus-within:text-primary transition-colors" />
                             </div>
                             <input
                                 type="text"
-                                placeholder="Tìm video..."
+                                placeholder="Tìm kiếm video hoặc nội dung..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="h-9 pl-9 pr-4 rounded-full bg-surface-dark border border-border-color text-text-base text-sm placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50 w-48 transition-colors"
+                                className="h-10 pl-10 pr-4 rounded-xl bg-surface-dark border border-border-color text-text-base text-sm placeholder-text-secondary focus:outline-none focus:border-primary/40 w-full transition-all shadow-inner font-bold"
                             />
                         </div>
 
-                        <div className="w-px h-8 bg-border-color shrink-0 self-center" />
+                        <button
+                            onClick={resetFilters}
+                            className="h-10 px-4 rounded-xl bg-surface-dark border border-border-color hover:border-text-secondary text-text-secondary hover:text-text-base transition-all font-bold text-xs flex items-center gap-2 shrink-0 shadow-sm"
+                            title="Đặt lại bộ lọc"
+                        >
+                            <Icon name="restart_alt" size="sm" />
+                            <span className="whitespace-nowrap">Đặt lại</span>
+                        </button>
+                    </div>
 
-                        {/* Category Pills */}
-                        {categories.map((cat) => (
+                    {/* Bottom Section: Combined Scroll for HSK & Categories */}
+                    <div className="flex flex-col gap-3">
+                        {/* HSK Rows */}
+                        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide mask-fade-right">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 whitespace-nowrap">HSK:</span>
                             <button
-                                key={cat.category}
-                                onClick={() => setActiveCategory(activeCategory === cat.category ? null : cat.category)}
-                                className={`flex items-center gap-2 h-9 px-4 rounded-full shrink-0 transition-all font-bold border-2 ${activeCategory === cat.category
-                                    ? 'bg-primary text-on-primary border-primary shadow-md'
-                                    : 'bg-surface-dark border-border-color hover:border-text-secondary text-text-base hover:bg-surface-highlight'
+                                onClick={() => setActiveHskFilter(null)}
+                                className={`h-8 px-3.5 rounded-lg text-[11px] font-black transition-all shadow-sm border ${!activeHskFilter
+                                    ? 'bg-primary text-on-primary border-primary scale-105 shadow-lg shadow-primary/20'
+                                    : 'bg-surface-dark hover:bg-surface-highlight text-text-base border-border-color'
                                     }`}
                             >
-                                <span className="text-sm">{cat.category}</span>
-                                <span className="text-xs opacity-70">({cat.count})</span>
+                                Tất cả
                             </button>
-                        ))}
+                            {hskLevels.map((level) => {
+                                const style = hskColorMap[level];
+                                const isActive = activeHskFilter === level;
+                                return (
+                                    <button
+                                        key={level}
+                                        onClick={() => setActiveHskFilter(isActive ? null : level)}
+                                        className={`h-8 px-3.5 rounded-lg text-[11px] font-black transition-all shadow-sm border shrink-0 ${isActive
+                                            ? `${style.active} scale-105`
+                                            : `${style.inactive}`
+                                            }`}
+                                    >
+                                        HSK {level}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Category Row */}
+                        <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide mask-fade-right">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary/40 whitespace-nowrap">Chủ đề:</span>
+                            <div className="flex gap-2 shrink-0">
+                                {categories.filter(c => c.category && c.category.trim()).map((cat) => (
+                                    <button
+                                        key={cat.category}
+                                        onClick={() => setActiveCategory(activeCategory === cat.category ? null : cat.category)}
+                                        className={`flex items-center gap-2 h-8 px-3 rounded-lg shrink-0 transition-all font-bold border ${activeCategory === cat.category
+                                            ? 'bg-primary text-on-primary border-primary shadow-md scale-105'
+                                            : 'bg-surface-dark border-border-color hover:border-text-secondary text-text-secondary hover:text-text-base hover:bg-surface-highlight'
+                                            }`}
+                                    >
+                                        <span className="text-[11px] whitespace-nowrap">{cat.category}</span>
+                                        {cat.count > 0 && (
+                                            <span className={`text-[9px] px-1 py-0.5 rounded-md ${activeCategory === cat.category
+                                                ? 'bg-white/20'
+                                                : 'bg-white/5 text-text-secondary/50'
+                                                }`}>
+                                                {cat.count}
+                                            </span>
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -388,7 +433,7 @@ export default function VideoLibraryPage() {
                             <button
                                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                 disabled={currentPage === 1}
-                                className="p-2 rounded-full text-text-secondary hover:text-text-base hover:bg-surface-highlight disabled:opacity-50 transition-colors"
+                                className="size-9 rounded-full flex items-center justify-center text-text-secondary hover:text-text-base hover:bg-surface-highlight border border-transparent hover:border-border-color transition-all disabled:opacity-30"
                             >
                                 <Icon name="chevron_left" size="md" />
                             </button>
@@ -411,7 +456,7 @@ export default function VideoLibraryPage() {
                             <button
                                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                 disabled={currentPage === totalPages}
-                                className="p-2 rounded-full text-text-secondary hover:text-text-base hover:bg-surface-highlight disabled:opacity-50 transition-colors"
+                                className="size-9 rounded-full flex items-center justify-center text-text-secondary hover:text-text-base hover:bg-surface-highlight border border-transparent hover:border-border-color transition-all disabled:opacity-30"
                             >
                                 <Icon name="chevron_right" size="md" />
                             </button>

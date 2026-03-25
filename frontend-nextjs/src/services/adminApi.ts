@@ -46,9 +46,11 @@ export interface PaginatedResponse<T> {
 
 export interface OverviewStats {
     users: number;
+    userTrend?: { value: number; isPositive: boolean };
     videos: number;
     publishedVideos: number;
     vocabulary: number;
+    vocabTrend?: { value: number; isPositive: boolean };
     recentUsers: {
         id: string;
         name: string;
@@ -308,17 +310,26 @@ export const deleteAllVocabulary = (): Promise<{ message: string; deleted: numbe
     });
 };
 
+export interface UserManagementResponse extends PaginatedResponse<AdminUser> {
+    stats: {
+        total: number;
+        premium: number;
+        admins: number;
+        activeToday: number;
+    };
+}
+
 // ============ User Management ============
 export const getAllUsers = (
     params: { page?: number; limit?: number; role?: string } = {}
-): Promise<PaginatedResponse<AdminUser>> => {
+): Promise<UserManagementResponse> => {
     const searchParams = new URLSearchParams();
     if (params.page) searchParams.set('page', String(params.page));
     if (params.limit) searchParams.set('limit', String(params.limit));
     if (params.role) searchParams.set('role', params.role);
 
     const query = searchParams.toString();
-    return apiRequest<PaginatedResponse<AdminUser>>(`/admin/users${query ? `?${query}` : ''}`);
+    return apiRequest<UserManagementResponse>(`/admin/users${query ? `?${query}` : ''}`);
 };
 
 export const updateUserRole = (

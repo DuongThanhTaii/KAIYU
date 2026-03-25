@@ -5,7 +5,9 @@ import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/layout/AdminLayout';
 import DataTable from '@/components/admin/DataTable';
 import Modal from '@/components/admin/Modal';
+import StatsCard from '@/components/admin/StatsCard';
 import Icon from '@/components/common/Icon';
+import Badge from '@/components/common/Badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllUsers, updateUserRole, deleteUser, type AdminUser } from '@/services/adminApi';
 
@@ -31,6 +33,12 @@ export default function AdminUsersPage() {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState<AdminUser | null>(null);
     const [newRole, setNewRole] = useState('');
     const [isSaving, setIsSaving] = useState(false);
+    const [serverStats, setServerStats] = useState({
+        total: 0,
+        premium: 0,
+        admins: 0,
+        activeToday: 0,
+    });
 
     // Auth check
     useEffect(() => {
@@ -47,6 +55,7 @@ export default function AdminUsersPage() {
         try {
             const response = await getAllUsers({ page, limit: 20, role: filterRole || undefined });
             setUsers(response.data);
+            setServerStats(response.stats);
             setPagination({
                 page: response.meta.page,
                 limit: response.meta.limit,
@@ -120,13 +129,7 @@ export default function AdminUsersPage() {
         return matchSearch && matchPremium;
     });
 
-    // Stats
-    const stats = {
-        total: pagination.total,
-        premium: users.filter(u => u.isPremium).length,
-        admins: users.filter(u => u.role === 'admin').length,
-        activeToday: users.length > 0 ? Math.floor(users.length * 0.3) : 0,
-    };
+    // Stats logic removed (now uses serverStats)
 
     // Show loading while checking auth
     if (authLoading || !isAuthenticated || user?.role !== 'admin') {
@@ -179,12 +182,12 @@ export default function AdminUsersPage() {
         {
             key: 'hskLevel',
             header: 'HSK',
-            width: '80px',
+            width: '95px',
             hideOnMobile: true,
             render: (user: AdminUser) => (
-                <span className="px-2 py-1 text-xs font-bold rounded-full bg-primary/20 text-primary whitespace-nowrap">
+                <Badge variant="hsk" hskLevel={user.hskLevel} size="md">
                     HSK {user.hskLevel}
-                </span>
+                </Badge>
             ),
         },
         {
@@ -275,51 +278,27 @@ export default function AdminUsersPage() {
     return (
         <AdminLayout title="Quản lý Users" showLogo={false}>
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
-                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.total}</p>
-                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Tổng users</p>
-                        </div>
-                        <div className="size-8 sm:size-12 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
-                            <Icon name="group" className="text-lg sm:text-2xl text-blue-400" />
-                        </div>
-                    </div>
-                </div>
-                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.premium}</p>
-                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Premium</p>
-                        </div>
-                        <div className="size-8 sm:size-12 rounded-lg bg-purple-500/10 flex items-center justify-center shrink-0">
-                            <Icon name="workspace_premium" className="text-lg sm:text-2xl text-purple-400" />
-                        </div>
-                    </div>
-                </div>
-                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.admins}</p>
-                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Admins</p>
-                        </div>
-                        <div className="size-8 sm:size-12 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
-                            <Icon name="admin_panel_settings" className="text-lg sm:text-2xl text-amber-400" />
-                        </div>
-                    </div>
-                </div>
-                <div className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color shadow-sm">
-                    <div className="flex items-center justify-between">
-                        <div className="min-w-0">
-                            <p className="text-xl sm:text-2xl font-bold text-text-base truncate">{stats.activeToday}</p>
-                            <p className="text-[10px] sm:text-xs text-text-secondary truncate">Hoạt động</p>
-                        </div>
-                        <div className="size-8 sm:size-12 rounded-lg bg-green-500/10 flex items-center justify-center shrink-0">
-                            <Icon name="person_check" className="text-lg sm:text-2xl text-green-400" />
-                        </div>
-                    </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                <StatsCard
+                    title="Tổng người dùng"
+                    value={serverStats.total}
+                    icon="group"
+                />
+                <StatsCard
+                    title="Premium"
+                    value={serverStats.premium}
+                    icon="workspace_premium"
+                />
+                <StatsCard
+                    title="Admins"
+                    value={serverStats.admins}
+                    icon="admin_panel_settings"
+                />
+                <StatsCard
+                    title="Hoạt động"
+                    value={serverStats.activeToday}
+                    icon="person_check"
+                />
             </div>
 
             {/* Filters */}

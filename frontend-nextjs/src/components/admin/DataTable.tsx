@@ -143,7 +143,7 @@ function DataTable<T extends { id: string | number }>({
                         <button
                             onClick={() => onPageChange?.(pagination.page - 1)}
                             disabled={pagination.page === 1}
-                            className="p-2 rounded-lg hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="size-10 rounded-full flex items-center justify-center hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Icon name="chevron_left" className="text-xl" />
                         </button>
@@ -174,7 +174,7 @@ function DataTable<T extends { id: string | number }>({
                         <button
                             onClick={() => onPageChange?.(pagination.page + 1)}
                             disabled={pagination.page === pagination.totalPages}
-                            className="p-2 rounded-lg hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="size-10 rounded-full flex items-center justify-center hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Icon name="chevron_right" className="text-xl" />
                         </button>
