@@ -99,11 +99,13 @@ export class AdminController {
         @Query('page') page?: number,
         @Query('limit') limit?: number,
         @Query('hskLevel') hskLevel?: number,
+        @Query('search') search?: string,
     ) {
         return this.adminService.getAllVocabulary({
             page: page ? Number(page) : undefined,
             limit: limit ? Number(limit) : undefined,
             hskLevel: hskLevel ? Number(hskLevel) : undefined,
+            search,
         });
     }
 

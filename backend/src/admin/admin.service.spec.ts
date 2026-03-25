@@ -243,4 +243,52 @@ describe('AdminService', () => {
       });
     });
   });
+
+  describe('getAllVocabulary', () => {
+    it('should match copied hanzi with surrounding punctuation', async () => {
+      mockPrisma.vocabulary.findMany.mockResolvedValue([
+        {
+          id: 'v1',
+          hanzi: '你好',
+          pinyin: 'nǐ hǎo',
+          meaningVi: 'xin chào',
+          meaningEn: 'hello',
+          hskLevel: 1,
+        },
+      ]);
+
+      const result = await service.getAllVocabulary({
+        page: 1,
+        limit: 50,
+        search: '「你好」',
+      });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].hanzi).toBe('你好');
+      expect(result.meta.total).toBe(1);
+    });
+
+    it('should match pinyin without tone marks', async () => {
+      mockPrisma.vocabulary.findMany.mockResolvedValue([
+        {
+          id: 'v2',
+          hanzi: '学习',
+          pinyin: 'xué xí',
+          meaningVi: 'học tập',
+          meaningEn: 'study',
+          hskLevel: 1,
+        },
+      ]);
+
+      const result = await service.getAllVocabulary({
+        page: 1,
+        limit: 50,
+        search: 'xue xi',
+      });
+
+      expect(result.data).toHaveLength(1);
+      expect(result.data[0].hanzi).toBe('学习');
+      expect(result.meta.total).toBe(1);
+    });
+  });
 });

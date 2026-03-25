@@ -21,6 +21,7 @@ export default function VocabNotebookPage() {
     const [selectedWord, setSelectedWord] = useState<UserVocabulary | null>(null);
     const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [proficiencyFilter, setProficiencyFilter] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,14 @@ export default function VocabNotebookPage() {
     const [dragOverFolderId, setDragOverFolderId] = useState<string | null>(null);
 
     // Fetch vocabulary
+    const normalizeSearchInput = (input: string) => {
+        return String(input || '')
+            .normalize('NFKC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    };
+
     const fetchVocabulary = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -66,7 +75,7 @@ export default function VocabNotebookPage() {
                 page: currentPage,
                 limit: 20,
                 proficiency: proficiencyFilter || undefined,
-                search: searchQuery || undefined,
+                search: debouncedSearchQuery || undefined,
             });
             setVocabulary(response.data);
             setTotalPages(response.meta.totalPages);
@@ -77,7 +86,7 @@ export default function VocabNotebookPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage, proficiencyFilter, searchQuery]); // Removed selectedWord to prevent refetch on selection change
+    }, [currentPage, proficiencyFilter, debouncedSearchQuery]); // Removed selectedWord to prevent refetch on selection change
 
     // Fetch stats
     const fetchStats = useCallback(async () => {
@@ -266,15 +275,14 @@ export default function VocabNotebookPage() {
         }
     };
 
-    // Handle search with debounce
+    // Handle search with debounce (without duplicate fetches)
     useEffect(() => {
         const timer = setTimeout(() => {
             setCurrentPage(1);
-            fetchVocabulary();
-        }, 300);
+            setDebouncedSearchQuery(normalizeSearchInput(searchQuery));
+        }, 250);
         return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [searchQuery, proficiencyFilter]);
+    }, [searchQuery]);
     
     // Fetch full examples when a word is selected
     useEffect(() => {
@@ -474,6 +482,14 @@ export default function VocabNotebookPage() {
                                 placeholder="Tìm kiếm từ vựng..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
+                                onPaste={(e) => {
+                                    const pasted = e.clipboardData.getData('text');
+                                    const normalized = normalizeSearchInput(pasted);
+                                    if (normalized !== pasted) {
+                                        e.preventDefault();
+                                        setSearchQuery(normalized);
+                                    }
+                                }}
                                 className="bg-surface-highlight border border-border-color/50 rounded-full pl-10 pr-4 py-2.5 text-sm text-text-base font-bold placeholder-text-secondary focus:outline-none focus:ring-1 focus:ring-primary/50 w-full sm:w-48 md:w-64 transition-all shadow-sm"
                             />
                         </div>

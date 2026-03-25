@@ -5,6 +5,39 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UserVocabularyService {
     constructor(private prisma: PrismaService) { }
 
+    private normalizeSearchInput(input: string): string {
+        return String(input || '')
+            .normalize('NFKC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    private stripEdgePunctuation(input: string): string {
+        if (!input) return '';
+        const edgePunctuation =
+            /^[\s\u3000.,!?;:'"`~@#$%^&*()_+\-=\[\]{}<>/\\|，。！？；：、（）【】《》〈〉「」『』“”‘’·…—]+|[\s\u3000.,!?;:'"`~@#$%^&*()_+\-=\[\]{}<>/\\|，。！？；：、（）【】《》〈〉「」『』“”‘’·…—]+$/g;
+        return input.replace(edgePunctuation, '').trim();
+    }
+
+    private foldSearchText(input: string): string {
+        return String(input || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+    }
+
+    private buildSearchCandidates(rawSearch: string): string[] {
+        const normalized = this.normalizeSearchInput(rawSearch);
+        if (!normalized) return [];
+
+        const stripped = this.stripEdgePunctuation(normalized);
+        const candidates = new Set<string>([normalized]);
+        if (stripped) candidates.add(stripped);
+
+        return Array.from(candidates).filter(Boolean);
+    }
+
     async findAll(userId: string, query: {
         page?: number;
         limit?: number;
@@ -25,13 +58,68 @@ export class UserVocabularyService {
             where.sourceVideoId = sourceVideoId;
         }
 
-        if (search) {
-            where.vocabulary = {
-                OR: [
-                    { hanzi: { contains: search } },
-                    { pinyin: { contains: search, mode: 'insensitive' } },
-                    { meaningVi: { contains: search, mode: 'insensitive' } },
-                ],
+        const candidates = this.buildSearchCandidates(search || '');
+        if (candidates.length > 0) {
+            const allRows = await this.prisma.userVocabulary.findMany({
+                where,
+                orderBy: { savedAt: 'desc' },
+                include: {
+                    vocabulary: true,
+                    sourceVideo: {
+                        select: { id: true, title: true, thumbnailUrl: true },
+                    },
+                },
+            });
+
+            const foldedCandidates = candidates.map((c) => this.foldSearchText(c));
+
+            const scoreRow = (row: any): number => {
+                const hanzi = this.normalizeSearchInput(row?.vocabulary?.hanzi || '');
+                const pinyin = this.normalizeSearchInput(row?.vocabulary?.pinyin || '');
+                const meaningVi = this.normalizeSearchInput(row?.vocabulary?.meaningVi || '');
+                const meaningEn = this.normalizeSearchInput(row?.vocabulary?.meaningEn || '');
+
+                const foldedPinyin = this.foldSearchText(pinyin);
+                const foldedMeaningVi = this.foldSearchText(meaningVi);
+                const foldedMeaningEn = this.foldSearchText(meaningEn);
+
+                let best = -1;
+                for (let i = 0; i < candidates.length; i++) {
+                    const candidate = candidates[i];
+                    const folded = foldedCandidates[i];
+
+                    if (hanzi === candidate) best = Math.max(best, 1000);
+                    else if (hanzi.includes(candidate)) best = Math.max(best, 800);
+
+                    if (pinyin.toLowerCase().includes(candidate.toLowerCase())) {
+                        best = Math.max(best, 700);
+                    }
+
+                    if (folded && foldedPinyin.includes(folded)) best = Math.max(best, 650);
+                    if (folded && foldedMeaningVi.includes(folded)) best = Math.max(best, 500);
+                    if (folded && foldedMeaningEn.includes(folded)) best = Math.max(best, 450);
+                }
+
+                return best;
+            };
+
+            const matched = allRows
+                .map((row) => ({ row, score: scoreRow(row) }))
+                .filter((item) => item.score >= 0)
+                .sort((a, b) => b.score - a.score)
+                .map((item) => item.row);
+
+            const paged = matched.slice(skip, skip + limit);
+            const total = matched.length;
+
+            return {
+                data: paged,
+                meta: {
+                    total,
+                    page,
+                    limit,
+                    totalPages: Math.ceil(total / limit),
+                },
             };
         }
 
