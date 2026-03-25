@@ -589,15 +589,30 @@ export function WordPopover({
   };
 
   // Subtitle Re-segmentation Logic
+  const splitTokenPinyinByChars = (hanziText: string, pinyinText?: string) => {
+    const chars = Array.from(hanziText || "");
+    const cleanPinyin = (pinyinText || "").trim();
+    if (!cleanPinyin) return chars.map(() => "");
+
+    const syllables = cleanPinyin.split(/\s+/).filter(Boolean);
+    if (syllables.length === chars.length) {
+      return syllables;
+    }
+
+    // Fallback: if mismatch, keep first token pinyin and leave others empty.
+    return chars.map((_, idx) => (idx === 0 ? cleanPinyin : ""));
+  };
+
   const handleSplitToken = (index: number) => {
     const token = editingTokens[index];
     if (token.hanzi.length <= 1) return;
 
     const newTokens = [...editingTokens];
     const chars = Array.from(token.hanzi);
+    const splitPinyin = splitTokenPinyinByChars(token.hanzi, token.pinyin);
     const splitTokens = chars.map((char, i) => ({
       hanzi: char,
-      pinyin: "", // Will fetch/guess later
+      pinyin: splitPinyin[i] || "",
       meaning: "",
       position: 0, // Will re-index
     }));
@@ -616,7 +631,10 @@ export function WordPopover({
 
     const mergedToken = {
       hanzi: t1.hanzi + t2.hanzi,
-      pinyin: (t1.pinyin + " " + t2.pinyin).trim(),
+      pinyin: [t1.pinyin, t2.pinyin]
+        .map((part) => String(part || "").trim())
+        .filter(Boolean)
+        .join(" "),
       meaning: "",
       position: 0, // Will re-index
     };
@@ -967,107 +985,27 @@ export function WordPopover({
 
                 {/* Panel Content - No separate scrollbar anymore */}
                 <div className="p-0">
-                  {/* 📚 Dictionary Panel - Premium Multi-Pronunciation UI */}
+                  {/* 📚 Dictionary Panel */}
                   {activePanel === "dictionary" && (
                     <div className="p-4 space-y-4">
-                      {/* All Pronunciations - Accordion Style */}
-                      {lookupResult?.allEntries &&
-                      lookupResult.allEntries.length > 1 ? (
-                        <div className="space-y-3">
-                          <h4 className="text-xs text-text-secondary uppercase tracking-wider font-medium flex items-center gap-2">
-                            <Icon
-                              name="translate"
-                              size="sm"
-                              className="text-primary"
-                            />
-                            {lookupResult.allEntries.length} cách đọc
+                      {displayDefinitions.length > 0 && (
+                        <div>
+                          <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-2 font-medium">
+                            Định nghĩa
                           </h4>
-                          {lookupResult.allEntries.map((entry, idx) => {
-                            const colors = [
-                              "emerald",
-                              "blue",
-                              "violet",
-                              "amber",
-                              "rose",
-                            ];
-                            const color = colors[idx % colors.length];
-                            return (
-                              <div
-                                key={idx}
-                                className={`rounded-xl border transition-all overflow-hidden bg-${color}-500/5 border-${color}-500/20 hover:border-${color}-500/40`}
-                              >
-                                {/* Reading Header */}
-                                <div
-                                  className={`px-4 py-3 flex items-center gap-3 bg-${color}-500/10`}
-                                >
-                                  <span
-                                    className={`text-2xl font-chinese text-text-base`}
-                                    lang="zh-CN"
-                                  >
-                                    {word}
-                                  </span>
-                                  <div className="flex-1">
-                                    <span
-                                      className={`text-${color}-400 font-medium font-pinyin tracking-tight`}
-                                    >
-                                      {entry.pinyinDisplay}
-                                    </span>
-                                    {entry.partOfSpeech && (
-                                      <span className="ml-2 px-2 py-0.5 bg-surface-highlight text-text-secondary text-xs rounded-full">
-                                        {entry.partOfSpeech}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <SpeakerButton text={word} size="sm" />
-                                </div>
-                                {/* Definitions */}
-                                <div className="px-4 py-3 space-y-2">
-                                  {(entry.definitionsVi?.length
-                                    ? entry.definitionsVi
-                                    : entry.definitions || []
-                                  )
-                                    .slice(0, 4)
-                                    .map((def, i) => (
-                                      <div
-                                        key={i}
-                                        className="flex items-start gap-2"
-                                      >
-                                        <span
-                                          className={`size-5 rounded-full bg-${color}-500/20 text-${color}-400 text-xs flex items-center justify-center shrink-0 font-bold`}
-                                        >
-                                          {i + 1}
-                                        </span>
-                                        <span className="text-text-base/90 text-sm leading-relaxed">
-                                          {renderFormattedMeaning(def)}
-                                        </span>
-                                      </div>
-                                    ))}
-                                </div>
-                              </div>
-                            );
-                          })}
+                          <ul className="space-y-2">
+                            {displayDefinitions.slice(0, 5).map((def, i) => (
+                              <li key={i} className="flex items-start gap-3">
+                                <span className="size-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0 font-bold">
+                                  {i + 1}
+                                </span>
+                                <span className="text-text-base/90 text-sm leading-relaxed">
+                                  {def}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      ) : (
-                        /* Single Pronunciation - Original Style */
-                        displayDefinitions.length > 0 && (
-                          <div>
-                            <h4 className="text-xs text-text-secondary uppercase tracking-wider mb-2 font-medium">
-                              Định nghĩa
-                            </h4>
-                            <ul className="space-y-2">
-                              {displayDefinitions.slice(0, 5).map((def, i) => (
-                                <li key={i} className="flex items-start gap-3">
-                                  <span className="size-5 rounded-full bg-primary/20 text-primary text-xs flex items-center justify-center shrink-0 font-bold">
-                                    {i + 1}
-                                  </span>
-                                  <span className="text-text-base/90 text-sm leading-relaxed">
-                                    {def}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )
                       )}
 
                       {/* Example Sentences - Multi-section logic */}

@@ -323,6 +323,33 @@ export class AdminService {
 
     // If tokens are provided, replace them
     if (tokens && Array.isArray(tokens)) {
+      const existingTokens = await this.prisma.subtitleToken.findMany({
+        where: { subtitleId: id },
+        orderBy: { position: 'asc' },
+      });
+
+      const incomingVocabularyIds = Array.from(
+        new Set(
+          tokens
+            .map((t: any) =>
+              typeof t?.vocabularyId === 'string' ? t.vocabularyId.trim() : '',
+            )
+            .filter((v: string) => v.length > 0),
+        ),
+      );
+
+      const vocabularyPinyinMap = new Map<string, string>();
+      if (incomingVocabularyIds.length > 0) {
+        const vocabRows = await this.prisma.vocabulary.findMany({
+          where: { id: { in: incomingVocabularyIds } },
+          select: { id: true, pinyin: true },
+        });
+        for (const row of vocabRows) {
+          const py = typeof row.pinyin === 'string' ? row.pinyin.trim() : '';
+          if (py) vocabularyPinyinMap.set(row.id, py);
+        }
+      }
+
       // Delete old tokens
       await this.prisma.subtitleToken.deleteMany({
         where: { subtitleId: id },
@@ -336,7 +363,7 @@ export class AdminService {
           typeof token?.hanzi === 'string' ? token.hanzi.trim() : '';
         if (!normalizedHanzi) continue;
 
-        const normalizedPinyin =
+        let normalizedPinyin =
           typeof token?.pinyin === 'string' ? token.pinyin.trim() : '';
         const normalizedMeaning =
           typeof token?.meaning === 'string' ? token.meaning.trim() : '';
@@ -349,6 +376,41 @@ export class AdminService {
           : index;
 
         let vocabularyId = token?.vocabularyId;
+
+        // Preserve pinyin when re-segmentation sends empty pinyin values.
+        if (!normalizedPinyin) {
+          const normalizedVocabularyId =
+            typeof vocabularyId === 'string' ? vocabularyId.trim() : '';
+          if (normalizedVocabularyId) {
+            normalizedPinyin =
+              vocabularyPinyinMap.get(normalizedVocabularyId) || '';
+          }
+
+          if (!normalizedPinyin) {
+            const samePositionAndHanzi = existingTokens.find(
+              (t) =>
+                t.position === normalizedPosition &&
+                t.hanzi === normalizedHanzi &&
+                typeof t.pinyin === 'string' &&
+                t.pinyin.trim().length > 0,
+            );
+            if (samePositionAndHanzi?.pinyin) {
+              normalizedPinyin = samePositionAndHanzi.pinyin.trim();
+            }
+          }
+
+          if (!normalizedPinyin) {
+            const sameHanzi = existingTokens.find(
+              (t) =>
+                t.hanzi === normalizedHanzi &&
+                typeof t.pinyin === 'string' &&
+                t.pinyin.trim().length > 0,
+            );
+            if (sameHanzi?.pinyin) {
+              normalizedPinyin = sameHanzi.pinyin.trim();
+            }
+          }
+        }
 
         // If global update is requested, update or create vocabulary entry
         if (updateGlobal) {

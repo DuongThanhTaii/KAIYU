@@ -155,6 +155,16 @@ export const getInteractiveHanziSegments = (
   tokens?: any[],
 ): InteractiveHanziSegment[] => {
   if (tokens && tokens.length > 0 && !looksLikeSuspiciousErhuaShift(tokens)) {
+    const hasMissingChineseTokenPinyin = tokens.some((t) => {
+      const segment = String(t?.hanzi || "");
+      const tokenPinyin = String(t?.pinyin || t?.pinyinDisplay || "").trim();
+      return CHINESE_CHAR_RE.test(segment) && !tokenPinyin;
+    });
+
+    if (hasMissingChineseTokenPinyin && pinyin) {
+      return deriveSegmentsFromPinyin(hanzi || "", pinyin);
+    }
+
     return tokens.map((t) => ({
       segment: t?.hanzi || "",
       pinyin: t?.pinyin || t?.pinyinDisplay || undefined,
@@ -187,7 +197,10 @@ export const renderGroupedPinyin = (
   if (!pinyin) return pinyin;
 
   const groupedPinyin = getInteractiveHanziSegments(hanzi, pinyin, tokens)
-    .map((seg) => seg.pinyin || seg.segment)
+    .map((seg) => {
+      if (seg.pinyin && seg.pinyin.trim().length > 0) return seg.pinyin;
+      return CHINESE_CHAR_RE.test(seg.segment) ? "" : seg.segment;
+    })
     .filter((part) => part && part.trim().length > 0);
 
   // Join with space and then clean up spaces before punctuation
