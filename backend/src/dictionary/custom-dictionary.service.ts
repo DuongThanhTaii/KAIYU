@@ -72,6 +72,126 @@ export class CustomDictionaryService {
         console.log('CustomDictionaryService initialized (Centralized Mode)');
     }
 
+    private normalizeLookupInput(input: string): string {
+        if (!input) return '';
+        return input
+            .normalize('NFKC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    private stripEdgePunctuation(input: string): string {
+        if (!input) return '';
+        const edgePunctuation = /^[\s\u3000.,!?;:'"`~@#$%^&*()_+\-=\[\]{}<>/\\|，。！？；：、（）【】《》〈〉「」『』“”‘’·…—]+|[\s\u3000.,!?;:'"`~@#$%^&*()_+\-=\[\]{}<>/\\|，。！？；：、（）【】《》〈〉「」『』“”‘’·…—]+$/g;
+        return input.replace(edgePunctuation, '').trim();
+    }
+
+    private buildLookupCandidates(rawInput: string): string[] {
+        const normalized = this.normalizeLookupInput(rawInput);
+        if (!normalized) return [];
+
+        const stripped = this.stripEdgePunctuation(normalized);
+        const candidates = new Set<string>([normalized]);
+
+        if (stripped) {
+            candidates.add(stripped);
+        }
+
+        return Array.from(candidates).filter(Boolean);
+    }
+
+    private applyContextPinyinScore(vocabPinyin: string | null | undefined, contextPinyin?: string): number {
+        if (!contextPinyin || !vocabPinyin) return 0;
+
+        const normalizePinyin = (text: string) =>
+            text
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, '');
+
+        const target = normalizePinyin(contextPinyin);
+        const source = normalizePinyin(vocabPinyin);
+        if (!target || !source) return 0;
+        if (target === source) return 40;
+        if (source.includes(target) || target.includes(source)) return 20;
+        return 0;
+    }
+
+    private scoreVocabularyMatch(vocab: any, candidates: string[], contextPinyin?: string): number {
+        const hanzi = String(vocab?.hanzi || '');
+        if (!hanzi) return Number.NEGATIVE_INFINITY;
+
+        let best = 0;
+        for (const candidate of candidates) {
+            if (!candidate) continue;
+
+            if (hanzi === candidate) {
+                best = Math.max(best, 1000 + this.applyContextPinyinScore(vocab?.pinyin, contextPinyin));
+                continue;
+            }
+
+            if (candidate.includes(hanzi)) {
+                // Candidate is longer phrase, DB word is a meaningful sub-part
+                best = Math.max(best, 700 + hanzi.length * 5 + this.applyContextPinyinScore(vocab?.pinyin, contextPinyin));
+                continue;
+            }
+
+            if (hanzi.includes(candidate)) {
+                // DB word is longer phrase, still useful fallback
+                best = Math.max(best, 500 + candidate.length * 3 + this.applyContextPinyinScore(vocab?.pinyin, contextPinyin));
+            }
+        }
+
+        return best;
+    }
+
+    private async findFlexibleVocabularyMatches(rawInput: string, contextPinyin?: string): Promise<any[]> {
+        const candidates = this.buildLookupCandidates(rawInput);
+        if (candidates.length === 0) return [];
+
+        // 1) Exact match on normalized variants (fast path)
+        const exactMatches = await this.prisma.vocabulary.findMany({
+            where: {
+                hanzi: { in: candidates },
+            },
+        });
+        if (exactMatches.length > 0) {
+            return exactMatches.sort(
+                (a, b) =>
+                    this.scoreVocabularyMatch(b, candidates, contextPinyin) -
+                    this.scoreVocabularyMatch(a, candidates, contextPinyin),
+            );
+        }
+
+        // 2) Phrase decomposition fallback (candidate contains a known word)
+        const containsQueries = candidates.flatMap((candidate) => [
+            { hanzi: { contains: candidate } },
+            candidate.length > 1 ? { AND: [{ hanzi: { not: candidate } }, { hanzi: { in: Array.from(candidate) } }] } : null,
+        ].filter(Boolean) as any[]);
+
+        if (containsQueries.length === 0) return [];
+
+        const fuzzyMatches = await this.prisma.vocabulary.findMany({
+            where: {
+                OR: containsQueries,
+            },
+            take: 40,
+        });
+
+        if (fuzzyMatches.length === 0) return [];
+
+        return fuzzyMatches
+            .sort(
+                (a, b) =>
+                    this.scoreVocabularyMatch(b, candidates, contextPinyin) -
+                    this.scoreVocabularyMatch(a, candidates, contextPinyin),
+            )
+            .filter((item, index, arr) => arr.findIndex((v) => v.id === item.id) === index)
+            .slice(0, 10);
+    }
+
     /**
      * Transform database vocabulary to API response format
      */
@@ -104,18 +224,28 @@ export class CustomDictionaryService {
      */
     async lookup(hanzi: string, contextPinyin?: string): Promise<LookupResult> {
         try {
+            const normalizedInput = this.normalizeLookupInput(hanzi);
+            if (!normalizedInput) {
+                return this.createNotFoundResult(hanzi);
+            }
+
             // === STEP 1: Try to find in database ===
 
-            // Level 1: Exact match
-            const exact = await this.prisma.vocabulary.findUnique({
-                where: { hanzi },
-            });
+            // Level 1-2: Exact + flexible phrase/character fallback
+            const dbMatches = await this.findFlexibleVocabularyMatches(
+                normalizedInput,
+                contextPinyin,
+            );
 
-            if (exact) {
-                const entry = this.transformToEntry(exact);
+            if (dbMatches.length > 0) {
+                const entries = dbMatches.map((v) => this.transformToEntry(v));
+                const first = entries[0];
                 return {
-                    ...entry,
-                    allEntries: [entry],
+                    ...first,
+                    // Keep the original clicked token for display context,
+                    // but return the matched DB definition.
+                    hanzi: first.hanzi,
+                    allEntries: entries,
                 };
             }
 
@@ -135,19 +265,19 @@ export class CustomDictionaryService {
                     const first = entries[0];
                     return {
                         ...first,
-                        hanzi,
+                        hanzi: first.hanzi,
                         allEntries: entries,
                     };
                 }
             }
 
             // === STEP 2: Not found in DB ===
-            console.log(`[Dictionary] "${hanzi}" not found in DB`);
-            return this.createNotFoundResult(hanzi);
+            console.log(`[Dictionary] "${normalizedInput}" not found in DB`);
+            return this.createNotFoundResult(normalizedInput);
 
         } catch (error) {
             console.error('CustomDictionary lookup error:', error);
-            return this.createNotFoundResult(hanzi);
+            return this.createNotFoundResult(this.normalizeLookupInput(hanzi) || hanzi);
         }
     }
 
@@ -337,8 +467,15 @@ Nếu không phải từ tiếng Trung hợp lệ, trả về: {"error": true}`;
      */
     async getExamples(hanzi: string): Promise<{ chinese: string; pinyin?: string; vietnamese: string }[]> {
         try {
+            const normalizedInput = this.normalizeLookupInput(hanzi);
+            if (!normalizedInput) return [];
+
+            const matches = await this.findFlexibleVocabularyMatches(normalizedInput);
+            const bestMatch = matches[0];
+            if (!bestMatch) return [];
+
             const vocab = await this.prisma.vocabulary.findUnique({
-                where: { hanzi },
+                where: { id: bestMatch.id },
                 select: { examples: true },
             });
 
@@ -368,8 +505,19 @@ Nếu không phải từ tiếng Trung hợp lệ, trả về: {"error": true}`;
         isSystemWord: boolean;
     }> {
         try {
+            const normalizedInput = this.normalizeLookupInput(hanzi);
+            if (!normalizedInput) {
+                return { hanzi, isSystemWord: false };
+            }
+
+            const matches = await this.findFlexibleVocabularyMatches(normalizedInput);
+            const bestMatch = matches[0];
+            if (!bestMatch) {
+                return { hanzi: normalizedInput, isSystemWord: false };
+            }
+
             const vocab = await this.prisma.vocabulary.findUnique({
-                where: { hanzi },
+                where: { id: bestMatch.id },
                 select: {
                     hanzi: true,
                     radical: true,
@@ -383,7 +531,7 @@ Nếu không phải từ tiếng Trung hợp lệ, trả về: {"error": true}`;
             });
 
             if (!vocab) {
-                return { hanzi, isSystemWord: false };
+                return { hanzi: normalizedInput, isSystemWord: false };
             }
 
             return {

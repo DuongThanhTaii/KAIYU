@@ -16,6 +16,19 @@ export class VocabularyService {
 
     constructor(private prisma: PrismaService) { }
 
+    private normalizeText(value: string): string {
+        return value
+            .normalize('NFKC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .trim();
+    }
+
+    private normalizeOptionalText(value?: string): string | undefined {
+        if (typeof value !== 'string') return value;
+        const normalized = this.normalizeText(value);
+        return normalized.length > 0 ? normalized : undefined;
+    }
+
     async findAll(query: {
         page?: number;
         limit?: number;
@@ -134,43 +147,49 @@ export class VocabularyService {
 
     // Admin methods
     async create(data: CreateVocabularyDto) {
+        const normalizedHanzi = this.normalizeText(data.hanzi);
+        const normalizedPinyin = this.normalizeText(data.pinyin);
+        const normalizedMeaningVi = this.normalizeText(data.meaningVi);
+
         const existing = await this.prisma.vocabulary.findUnique({
-            where: { hanzi: data.hanzi },
+            where: { hanzi: normalizedHanzi },
         });
 
         if (existing) {
-            throw new ConflictException(`Từ vựng "${data.hanzi}" đã tồn tại trong hệ thống. Vui lòng sử dụng chức năng Sửa để cập nhật.`);
+            throw new ConflictException(`Từ vựng "${normalizedHanzi}" đã tồn tại trong hệ thống. Vui lòng sử dụng chức năng Sửa để cập nhật.`);
         }
 
         // If meanings array is provided, generate primary meaningVi from first entry
-        let primaryMeaningVi = data.meaningVi;
-        let primaryPartOfSpeech = data.partOfSpeech;
+        let primaryMeaningVi = normalizedMeaningVi;
+        let primaryPartOfSpeech = this.normalizeOptionalText(data.partOfSpeech);
         if (data.meanings && data.meanings.length > 0) {
-            const firstMeaning = data.meanings[0];
-            primaryPartOfSpeech = data.meanings.map(m => m.partOfSpeech).join(', ');
+            primaryPartOfSpeech = data.meanings
+                .map(m => this.normalizeText(m.partOfSpeech))
+                .join(', ');
             // Combine all meanings for quick display
             primaryMeaningVi = data.meanings
                 .flatMap(m => m.meanings)
+                .map((m) => this.normalizeText(m))
                 .join('; ');
         }
 
         return this.prisma.vocabulary.create({
             data: {
-                hanzi: data.hanzi,
-                pinyin: data.pinyin,
+                hanzi: normalizedHanzi,
+                pinyin: normalizedPinyin,
                 meaningVi: primaryMeaningVi,
-                meaningEn: data.meaningEn,
-                radical: data.radical,
-                radicalMeaning: data.radicalMeaning,
+                meaningEn: this.normalizeOptionalText(data.meaningEn),
+                radical: this.normalizeOptionalText(data.radical),
+                radicalMeaning: this.normalizeOptionalText(data.radicalMeaning),
                 strokeCount: data.strokeCount,
                 partOfSpeech: primaryPartOfSpeech,
                 hskLevel: data.hskLevel,
                 tags: data.tags || [],
-                audioUrl: data.audioUrl,
+                audioUrl: this.normalizeOptionalText(data.audioUrl),
                 examples: data.examples || [],
                 synonyms: data.synonyms || [],
                 antonyms: data.antonyms || [],
-                mnemonic: data.mnemonic,
+                mnemonic: this.normalizeOptionalText(data.mnemonic),
                 meanings: data.meanings || [],
             } as any,
         });
@@ -185,21 +204,21 @@ export class VocabularyService {
 
         // Build update data, only include defined fields
         const updateData: any = {};
-        if (data.hanzi !== undefined) updateData.hanzi = data.hanzi;
-        if (data.pinyin !== undefined) updateData.pinyin = data.pinyin;
-        if (data.meaningVi !== undefined) updateData.meaningVi = data.meaningVi;
-        if (data.meaningEn !== undefined) updateData.meaningEn = data.meaningEn;
-        if (data.radical !== undefined) updateData.radical = data.radical;
-        if (data.radicalMeaning !== undefined) updateData.radicalMeaning = data.radicalMeaning;
+        if (data.hanzi !== undefined) updateData.hanzi = this.normalizeText(data.hanzi);
+        if (data.pinyin !== undefined) updateData.pinyin = this.normalizeText(data.pinyin);
+        if (data.meaningVi !== undefined) updateData.meaningVi = this.normalizeText(data.meaningVi);
+        if (data.meaningEn !== undefined) updateData.meaningEn = this.normalizeOptionalText(data.meaningEn);
+        if (data.radical !== undefined) updateData.radical = this.normalizeOptionalText(data.radical);
+        if (data.radicalMeaning !== undefined) updateData.radicalMeaning = this.normalizeOptionalText(data.radicalMeaning);
         if (data.strokeCount !== undefined) updateData.strokeCount = data.strokeCount;
-        if (data.partOfSpeech !== undefined) updateData.partOfSpeech = data.partOfSpeech;
+        if (data.partOfSpeech !== undefined) updateData.partOfSpeech = this.normalizeOptionalText(data.partOfSpeech);
         if (data.hskLevel !== undefined) updateData.hskLevel = data.hskLevel;
         if (data.tags !== undefined) updateData.tags = data.tags;
-        if (data.audioUrl !== undefined) updateData.audioUrl = data.audioUrl;
+        if (data.audioUrl !== undefined) updateData.audioUrl = this.normalizeOptionalText(data.audioUrl);
         if (data.examples !== undefined) updateData.examples = data.examples;
         if (data.synonyms !== undefined) updateData.synonyms = data.synonyms;
         if (data.antonyms !== undefined) updateData.antonyms = data.antonyms;
-        if (data.mnemonic !== undefined) updateData.mnemonic = data.mnemonic;
+        if (data.mnemonic !== undefined) updateData.mnemonic = this.normalizeOptionalText(data.mnemonic);
         if (data.meanings !== undefined) updateData.meanings = data.meanings;
 
         return this.prisma.vocabulary.update({

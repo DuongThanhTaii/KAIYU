@@ -30,6 +30,10 @@ describe('CustomDictionaryService', () => {
     });
 
     describe('lookup', () => {
+        beforeEach(() => {
+            jest.clearAllMocks();
+        });
+
         it('should return found: true and include ID for existing words', async () => {
             const mockWord = {
                 id: 'test-id',
@@ -40,7 +44,6 @@ describe('CustomDictionaryService', () => {
                 hskLevel: 1,
             };
 
-            mockPrisma.vocabulary.findUnique.mockResolvedValue(mockWord);
             mockPrisma.vocabulary.findMany.mockResolvedValue([mockWord]);
 
             const result = await service.lookup('你好');
@@ -51,8 +54,29 @@ describe('CustomDictionaryService', () => {
             expect(result.pinyin).toBe('nǐ hǎo');
         });
 
+        it('should still match DB word when input has surrounding punctuation', async () => {
+            const mockWord = {
+                id: 'test-id-2',
+                hanzi: '你好',
+                pinyin: 'nǐ hǎo',
+                meaningVi: 'Xin chào',
+                partOfSpeech: 'interjection',
+                hskLevel: 1,
+            };
+
+            mockPrisma.vocabulary.findMany
+                .mockResolvedValueOnce([]) // exact with raw candidate fails
+                .mockResolvedValueOnce([mockWord]); // stripped candidate matches
+
+            const result = await service.lookup('「你好」');
+
+            expect(result.found).toBe(true);
+            expect(result.id).toBe('test-id-2');
+            expect(result.hanzi).toBe('你好');
+        });
+
         it('should return found: false for non-existent words', async () => {
-            mockPrisma.vocabulary.findUnique.mockResolvedValue(null);
+            mockPrisma.vocabulary.findMany.mockResolvedValue([]);
             
             const result = await service.lookup('unknown');
 

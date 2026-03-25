@@ -929,8 +929,7 @@ export default function AdminVideosPage() {
       const matchesKeyword =
         !keyword ||
         [video.title, video.description || "", video.category || ""].some(
-          (field) =>
-            String(field).toLocaleLowerCase("vi-VN").includes(keyword),
+          (field) => String(field).toLocaleLowerCase("vi-VN").includes(keyword),
         );
 
       if (!matchesKeyword) return false;
