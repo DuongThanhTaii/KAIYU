@@ -1,10 +1,10 @@
 // HSK Level colors (flat, no gradients)
 export const HSK_COLORS: Record<number, string> = {
-    1: 'bg-emerald-500',
-    2: 'bg-cyan-500',
-    3: 'bg-blue-500',
-    4: 'bg-violet-500',
-    5: 'bg-orange-500',
+    1: 'bg-blue-500',
+    2: 'bg-emerald-500',
+    3: 'bg-amber-500',
+    4: 'bg-orange-500',
+    5: 'bg-purple-500',
     6: 'bg-rose-500',
 };
 

@@ -187,6 +187,23 @@ export default function AdminVocabularyPage() {
         }
     }, [authLoading, isAuthenticated, user, router]);
 
+    // Dynamic styles for HSK levels
+    const getHskBadgeStyle = (level: number, isActive: boolean) => {
+        const styles: Record<number, { active: string; hover: string; text: string }> = {
+            1: { active: 'bg-blue-500/20 border-blue-500/50', hover: 'hover:border-blue-500/30 hover:bg-blue-500/5', text: 'text-blue-400' },
+            2: { active: 'bg-emerald-500/20 border-emerald-500/50', hover: 'hover:border-emerald-500/30 hover:bg-emerald-500/5', text: 'text-emerald-400' },
+            3: { active: 'bg-amber-500/20 border-amber-500/50', hover: 'hover:border-amber-500/30 hover:bg-amber-500/5', text: 'text-amber-400' },
+            4: { active: 'bg-orange-500/20 border-orange-500/50', hover: 'hover:border-orange-500/30 hover:bg-orange-500/5', text: 'text-orange-400' },
+            5: { active: 'bg-purple-500/20 border-purple-500/50', hover: 'hover:border-purple-500/30 hover:bg-purple-500/5', text: 'text-purple-400' },
+            6: { active: 'bg-red-500/20 border-red-500/50', hover: 'hover:border-red-500/30 hover:bg-red-500/5', text: 'text-red-400' },
+            7: { active: 'bg-cyan-500/20 border-cyan-500/50', hover: 'hover:border-cyan-500/30 hover:bg-cyan-500/5', text: 'text-cyan-400' },
+            0: { active: 'bg-slate-500/20 border-slate-500/50', hover: 'hover:border-slate-500/30 hover:bg-slate-500/5', text: 'text-slate-400' },
+        };
+        const s = styles[level] || styles[0];
+        if (isActive) return `${s.active} ${s.text} scale-105 shadow-sm`;
+        return `bg-surface-dark border-border-color ${s.hover}`;
+    };
+
     // Fetch vocabulary
     const fetchVocabulary = useCallback(async (page = 1, search?: string) => {
         setLoading(true);
@@ -1218,13 +1235,10 @@ export default function AdminVocabularyPage() {
                         <button
                             key={level}
                             onClick={() => setFilterHsk(filterHsk === level ? '' : level)}
-                            className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all ${filterHsk === level
-                                ? 'bg-primary/20 border-primary scale-105'
-                                : 'bg-surface-dark border-border-color hover:border-primary/30'
-                                }`}
+                            className={`p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border transition-all ${getHskBadgeStyle(level, filterHsk === level)}`}
                         >
-                            <p className="text-sm sm:text-xl font-bold text-text-base">{count}</p>
-                            <p className="text-[8px] sm:text-[10px] text-text-secondary leading-tight line-clamp-1">{label}</p>
+                            <p className={`text-sm sm:text-xl font-bold ${filterHsk === level ? 'text-current' : 'text-text-base'}`}>{count}</p>
+                            <p className="text-[8px] sm:text-[10px] text-text-secondary leading-tight line-clamp-1 font-medium">{label}</p>
                         </button>
                     );
                 })}
@@ -1261,7 +1275,7 @@ export default function AdminVocabularyPage() {
                 {filterHsk && (
                     <button
                         onClick={() => setFilterHsk('')}
-                        className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-primary/20 text-primary rounded-lg sm:rounded-xl whitespace-nowrap text-xs sm:text-sm"
+                        className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-3 border rounded-lg sm:rounded-xl whitespace-nowrap text-xs sm:text-sm transition-all ${getHskBadgeStyle(Number(filterHsk), true)}`}
                     >
                         <span className="hidden xs:inline">{filterHsk === 7 ? 'Ngoài HSK' : filterHsk === 0 ? 'Không chia cấp' : `HSK ${filterHsk}`}</span>
                         <span className="xs:hidden">{filterHsk === 7 ? 'EXT' : filterHsk === 0 ? 'N/A' : `H${filterHsk}`}</span>
