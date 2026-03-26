@@ -28,7 +28,6 @@ import { dictionaryApi } from '@/services/dictionaryApi';
 import { HSK_COLORS, POS_COLORS } from '@/constants/vocabulary';
 import { highlightWord, getPosColor } from '@/utils/chinese';
 
-type ExampleEntry = { chinese: string; pinyin?: string; vietnamese?: string };
 
 const POS_OPTIONS = [
     'Danh từ', 'Danh từ riêng', 'Động từ', 'Tính từ', 'Trạng từ', 
@@ -158,8 +157,8 @@ export default function AdminVocabularyPage() {
     // Example sentence type
     interface ExampleEntry {
         chinese: string;
-        pinyin: string;
-        vietnamese: string;
+        pinyin?: string;
+        vietnamese?: string;
     }
 
     // Form state - expanded for all vocabulary fields
