@@ -23,9 +23,12 @@ import {
     type Vocabulary,
     type ImportVocabularyItem
 } from '@/services/adminApi';
+
 import { dictionaryApi } from '@/services/dictionaryApi';
 import { HSK_COLORS, POS_COLORS } from '@/constants/vocabulary';
 import { highlightWord, getPosColor } from '@/utils/chinese';
+
+type ExampleEntry = { chinese: string; pinyin?: string; vietnamese?: string };
 
 const POS_OPTIONS = [
     'Danh từ', 'Danh từ riêng', 'Động từ', 'Tính từ', 'Trạng từ', 
@@ -1401,29 +1404,54 @@ export default function AdminVocabularyPage() {
                                     <div className="flex-1 h-px bg-border-color" />
                                 </h4>
                                 <div className="grid gap-4">
-                                    {selectedVocab.examples.map((ex, idx) => (
-                                        <div key={idx} className="bg-surface-highlight/10 border border-border-color/40 rounded-3xl p-6 hover:border-primary/30 transition-all group relative overflow-hidden">
-                                            <div className="absolute top-4 right-4 text-[10px] font-black text-primary/60 tracking-tighter uppercase pointer-events-none">
-                                                VÍ DỤ {idx + 1}
-                                            </div>
-                                            <div className="flex items-start justify-between gap-6">
-                                                <div className="flex-1 space-y-3">
+                                    {(() => {
+                                        const splitItems: ExampleEntry[] = [];
+                                        selectedVocab.examples.forEach(ex => {
+                                            // Split by Chinese full stops/exclamation/question for Hanzi
+                                            const hSent = (ex.chinese || "").split(/(?<=[。！？])\s*/).filter(s => s.trim());
+                                            // Split by Western full stops/exclamation/question + space for Pinyin/Vietnamese
+                                            const pSent = (ex.pinyin || "").split(/(?<=[.!?])\s+/).filter(s => s.trim());
+                                            const vSent = (ex.vietnamese || "").split(/(?<=[.!?])\s+/).filter(s => s.trim());
+
+                                            if (hSent.length > 1 && hSent.length === pSent.length && hSent.length === vSent.length) {
+                                                hSent.forEach((h, i) => {
+                                                    splitItems.push({
+                                                        chinese: h,
+                                                        pinyin: pSent[i],
+                                                        vietnamese: vSent[i]
+                                                    });
+                                                });
+                                            } else {
+                                                splitItems.push(ex);
+                                            }
+                                        });
+
+                                        return splitItems.map((ex, idx) => (
+                                            <div key={idx} className="bg-surface-highlight/10 border border-border-color/40 rounded-3xl p-6 hover:border-primary/30 transition-all group relative overflow-hidden">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="px-3 py-1 bg-primary/20 text-primary text-[10px] font-black rounded-full uppercase tracking-[0.1em]">
+                                                        VÍ DỤ {idx + 1}
+                                                    </div>
+                                                    <div className="shrink-0 group-hover:scale-110 transition-transform">
+                                                        <SpeakerButton text={ex.chinese || ""} size="sm" className="size-8 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-all" />
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
                                                     <p className="text-lg sm:text-2xl font-chinese text-text-base leading-snug" lang="zh-CN">
                                                         {highlightWord(ex.chinese || "", selectedVocab.hanzi)}
                                                     </p>
-                                                    <div className="space-y-1">
-                                                        <p className="text-primary font-pinyin text-base sm:text-lg tracking-tight opacity-80">
+                                                    <div className="space-y-2">
+                                                        <p className="text-primary font-pinyin text-base sm:text-lg tracking-tight opacity-90 leading-relaxed font-medium">
                                                             {highlightWord(ex.pinyin || "", selectedVocab.pinyin)}
                                                         </p>
-                                                        <p className="text-text-secondary text-sm sm:text-base italic border-l-2 border-primary/20 pl-4 py-1">{ex.vietnamese}</p>
+                                                        <p className="text-text-secondary text-sm sm:text-base italic border-l-2 border-primary/20 pl-4 py-1.5 leading-relaxed">
+                                                            {ex.vietnamese}
+                                                        </p>
                                                     </div>
                                                 </div>
-                                                <div className="shrink-0 pt-1 group-hover:scale-110 transition-transform">
-                                                    <SpeakerButton text={ex.chinese} size="sm" />
-                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ));
+                                    })()}
                                 </div>
                             </div>
                         )}
