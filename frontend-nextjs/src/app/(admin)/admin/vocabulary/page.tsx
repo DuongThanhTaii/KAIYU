@@ -36,8 +36,13 @@ const POS_OPTIONS = [
 /**
  * Format a Vietnamese meaning line by removing numbering and colorizing the part of speech
  */
-const renderFormattedMeaning = (text: string) => {
+const renderFormattedMeaning = (text: string, isDetail = false) => {
     if (!text) return null;
+    
+    // Size classes based on context
+    const containerClass = isDetail ? "text-lg sm:text-2xl" : "text-[14px]";
+    const posClass = isDetail ? "text-[11px] sm:text-[13px]" : "text-[10px]";
+    const spacingClass = isDetail ? "gap-2" : "gap-1";
     
     // Check if the text has numbering like "1. ... 2. ..."
     const hasNumbering = /\d+\./.test(text);
@@ -57,9 +62,9 @@ const renderFormattedMeaning = (text: string) => {
                         const colorClass = getPosColor(pos);
                         
                         return (
-                            <div key={idx} className="flex items-start gap-2 leading-tight">
-                                <div className="text-base sm:text-lg">
-                                    <span className={`${colorClass} font-black mr-2 uppercase tracking-wide text-[11px] sm:text-[12px]`}>{pos}:</span>
+                            <div key={idx} className={`flex items-start ${spacingClass} leading-tight`}>
+                                <div className={containerClass}>
+                                    <span className={`${colorClass} font-black mr-1.5 uppercase tracking-wide ${posClass}`}>{pos}:</span>
                                     <span className="text-text-base font-medium">{meaning}</span>
                                 </div>
                             </div>
@@ -84,14 +89,14 @@ const renderFormattedMeaning = (text: string) => {
         const colorClass = getPosColor(pos);
 
         return (
-            <div className="text-base sm:text-lg py-1">
-                <span className={`${colorClass} font-black mr-2 uppercase tracking-wide text-[11px] sm:text-[12px]`}>{pos}:</span>
+            <div className={`${containerClass} py-0.5`}>
+                <span className={`${colorClass} font-black mr-2 uppercase tracking-wide ${posClass}`}>{pos}:</span>
                 <span className="text-text-base font-medium">{meaning}</span>
             </div>
         );
     }
 
-    return <span className="text-text-base text-sm">{text}</span>;
+    return <span className={`text-text-base ${containerClass}`}>{text}</span>;
 }
 
 export default function AdminVocabularyPage() {
@@ -1347,8 +1352,8 @@ export default function AdminVocabularyPage() {
                                 <div className="mt-6 space-y-3 w-full max-w-[500px] mx-auto text-left">
                                     {selectedVocab.meaningVi.includes('1.') ? (
                                         selectedVocab.meaningVi.split(/(?=\d+\.)/).map((part, i) => (
-                                            <div key={i} className="text-lg sm:text-2xl font-medium leading-relaxed">
-                                                {renderFormattedMeaning(part)}
+                                            <div key={i} className="font-medium leading-relaxed">
+                                                {renderFormattedMeaning(part, true)}
                                             </div>
                                         ))
                                     ) : (
@@ -1827,11 +1832,11 @@ export default function AdminVocabularyPage() {
                     {/* Mode Toggle */}
                     <div className="flex items-center gap-4 mb-4">
                         <span className="text-sm text-text-secondary">Định dạng:</span>
-                        <div className="flex items-center gap-1 bg-background-dark rounded-lg p-1 border border-border-color">
+                        <div className="flex items-center gap-1 bg-background-dark rounded-full p-1 border border-border-color">
                             <button
                                 onClick={() => setImportMode('xlsx')}
-                                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${importMode === 'xlsx'
-                                    ? 'bg-primary text-on-primary'
+                                className={`px-4 py-1.5 text-sm font-bold rounded-full transition-all ${importMode === 'xlsx'
+                                    ? 'bg-primary text-on-primary shadow-sm active:scale-95'
                                     : 'text-text-secondary hover:text-text-base'
                                     }`}
                             >
@@ -1839,8 +1844,8 @@ export default function AdminVocabularyPage() {
                             </button>
                             <button
                                 onClick={() => setImportMode('csv')}
-                                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${importMode === 'csv'
-                                    ? 'bg-primary text-on-primary'
+                                className={`px-4 py-1.5 text-sm font-bold rounded-full transition-all ${importMode === 'csv'
+                                    ? 'bg-primary text-on-primary shadow-sm active:scale-95'
                                     : 'text-text-secondary hover:text-text-base'
                                     }`}
                             >
@@ -1848,8 +1853,8 @@ export default function AdminVocabularyPage() {
                             </button>
                             <button
                                 onClick={() => setImportMode('json')}
-                                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${importMode === 'json'
-                                    ? 'bg-primary text-on-primary'
+                                className={`px-4 py-1.5 text-sm font-bold rounded-full transition-all ${importMode === 'json'
+                                    ? 'bg-primary text-on-primary shadow-sm active:scale-95'
                                     : 'text-text-secondary hover:text-text-base'
                                     }`}
                             >

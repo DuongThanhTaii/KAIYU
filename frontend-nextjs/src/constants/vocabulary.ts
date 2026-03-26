@@ -14,6 +14,7 @@ export const POS_COLORS: Record<string, string> = {
     'Danh từ': 'text-blue-400',
     'Tính từ': 'text-emerald-400',
     'Trạng từ': 'text-purple-400',
+    'Phó từ': 'text-purple-400',
     'Đại từ': 'text-rose-400',
     'Giới từ': 'text-cyan-400',
     'Liên từ': 'text-orange-400',
