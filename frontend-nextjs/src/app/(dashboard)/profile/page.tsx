@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import Icon from "@/components/common/Icon";
 import StreakBadge from "@/components/common/StreakBadge";
+import { getStreakColor, getStreakBg } from "@/utils/streak";
 import {
     userVocabularyApi,
     type UserVocabularyStats,
@@ -344,8 +345,16 @@ export default function ProfilePage() {
               Cấp độ
             </p>
           </div>
-          <div className="bg-orange-500/5 dark:bg-surface-dark rounded-2xl border border-orange-500/10 p-5 text-center transition-all hover:scale-[1.02] group flex flex-col items-center justify-center">
-            <StreakBadge count={user?.streak || 0} size="lg" />
+          <div className={`${getStreakBg(user?.streak || 0)} rounded-2xl p-5 text-center transition-all hover:scale-[1.02] group flex flex-col items-center justify-center border`}>
+            <div className="flex items-center justify-center gap-2">
+              <Icon
+                name="local_fire_department"
+                className={`text-2xl sm:text-3xl ${getStreakColor(user?.streak || 0)} ${user?.streak >= 30 ? 'animate-streak-glow' : user?.streak >= 15 ? 'animate-streak-pulse' : ''}`}
+              />
+              <p className="text-2xl sm:text-3xl font-black text-text-base">
+                {user?.streak || 0}
+              </p>
+            </div>
             <p className="text-[10px] sm:text-xs font-bold text-text-secondary uppercase tracking-widest mt-1">
               Streak
             </p>

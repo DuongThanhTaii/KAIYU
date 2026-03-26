@@ -18,3 +18,13 @@ export const getStreakBg = (count: number) => {
     if (count < 60) return 'bg-blue-500/10 border-blue-500/20';
     return 'bg-amber-500/10 border-amber-500/20';
 };
+
+export const getStreakRawColor = (count: number) => {
+    if (count <= 0) return 'text-secondary';
+    if (count < 4) return 'orange-400';
+    if (count < 8) return 'red-500';
+    if (count < 15) return 'rose-500';
+    if (count < 30) return 'purple-500';
+    if (count < 60) return 'blue-500';
+    return 'amber-400';
+};
