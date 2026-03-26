@@ -57,10 +57,10 @@ const renderFormattedMeaning = (text: string) => {
                         const colorClass = getPosColor(pos);
                         
                         return (
-                            <div key={idx} className="flex items-start gap-1 leading-tight">
-                                <div className="text-sm">
-                                    <span className={`${colorClass} font-bold mr-1.5 uppercase tracking-tighter text-[10px]`}>{pos}:</span>
-                                    <span className="text-text-base">{meaning}</span>
+                            <div key={idx} className="flex items-start gap-2 leading-tight">
+                                <div className="text-base sm:text-lg">
+                                    <span className={`${colorClass} font-black mr-2 uppercase tracking-wide text-[11px] sm:text-[12px]`}>{pos}:</span>
+                                    <span className="text-text-base font-medium">{meaning}</span>
                                 </div>
                             </div>
                         );
@@ -84,9 +84,9 @@ const renderFormattedMeaning = (text: string) => {
         const colorClass = getPosColor(pos);
 
         return (
-            <div className="text-sm py-0.5">
-                <span className={`${colorClass} font-bold mr-2 uppercase tracking-tighter text-[10px]`}>{pos}:</span>
-                <span className="text-text-base">{meaning}</span>
+            <div className="text-base sm:text-lg py-1">
+                <span className={`${colorClass} font-black mr-2 uppercase tracking-wide text-[11px] sm:text-[12px]`}>{pos}:</span>
+                <span className="text-text-base font-medium">{meaning}</span>
             </div>
         );
     }
@@ -1344,20 +1344,18 @@ export default function AdminVocabularyPage() {
                             </div>
 
                             {selectedVocab.meaningVi && (
-                                <div className="mt-8 p-4 bg-surface-dark/60 rounded-2xl border border-border-color/30 inline-block min-w-[300px] text-left">
-                                    <div className="space-y-2">
-                                        {selectedVocab.meaningVi.includes('1.') ? (
-                                            selectedVocab.meaningVi.split(/(?=\d+\.)/).map((part, i) => (
-                                                <div key={i} className="text-base sm:text-xl font-medium leading-relaxed">
-                                                    {renderFormattedMeaning(part)}
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <p className="text-lg sm:text-2xl text-text-base font-semibold tracking-tight text-center">
-                                                {selectedVocab.meaningVi}
-                                            </p>
-                                        )}
-                                    </div>
+                                <div className="mt-6 space-y-3 w-full max-w-[500px] mx-auto text-left">
+                                    {selectedVocab.meaningVi.includes('1.') ? (
+                                        selectedVocab.meaningVi.split(/(?=\d+\.)/).map((part, i) => (
+                                            <div key={i} className="text-lg sm:text-2xl font-medium leading-relaxed">
+                                                {renderFormattedMeaning(part)}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-xl sm:text-3xl text-text-base font-bold tracking-tight text-center">
+                                            {selectedVocab.meaningVi}
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
