@@ -5,6 +5,7 @@ interface IconProps {
     size?: 'sm' | 'md' | 'lg' | 'xl';
     filled?: boolean;
     className?: string;
+    style?: React.CSSProperties;
 }
 
 const Icon: React.FC<IconProps> = ({
@@ -12,6 +13,7 @@ const Icon: React.FC<IconProps> = ({
     size = 'md',
     filled = false,
     className = '',
+    style = {},
 }) => {
     const sizes = {
         sm: 'text-[16px]',
@@ -25,6 +27,7 @@ const Icon: React.FC<IconProps> = ({
     return (
         <span
             className={`material-symbols-outlined ${sizes[size]} ${fillClass} ${className}`}
+            style={style}
         >
             {name}
         </span>

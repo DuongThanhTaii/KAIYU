@@ -410,3 +410,22 @@ input[type="checkbox"].checkbox-theme:hover {
   mask-image: linear-gradient(to right, black 85%, transparent 100%);
   -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
 }
+
+/* Streak Animations */
+@keyframes streak-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+@keyframes streak-glow {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px currentColor); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 6px currentColor); }
+}
+
+.animate-streak-pulse {
+  animation: streak-pulse 2s ease-in-out infinite;
+}
+
+.animate-streak-glow {
+  animation: streak-glow 1.5s ease-in-out infinite;
+}

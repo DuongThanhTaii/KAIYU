@@ -8,6 +8,7 @@ import Modal from '@/components/admin/Modal';
 import StatsCard from '@/components/admin/StatsCard';
 import Icon from '@/components/common/Icon';
 import Badge from '@/components/common/Badge';
+import StreakBadge from '@/components/common/StreakBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { getAllUsers, updateUserRole, deleteUser, type AdminUser } from '@/services/adminApi';
 
@@ -196,13 +197,7 @@ export default function AdminUsersPage() {
             width: '80px',
             hideOnMobile: true,
             render: (user: AdminUser) => (
-                <div className="flex items-center gap-1">
-                    <Icon name="local_fire_department" className={`text-lg ${user.streak > 0 ? 'text-orange-400' : 'text-gray-500'
-                        }`} />
-                    <span className={user.streak > 0 ? 'text-text-base font-medium' : 'text-text-secondary'}>
-                        {user.streak}
-                    </span>
-                </div>
+                <StreakBadge count={user.streak} size="sm" />
             ),
         },
         {
@@ -385,9 +380,9 @@ export default function AdminUsersPage() {
                                 <p className="text-2xl font-bold text-primary">HSK {showUserDetail.hskLevel}</p>
                                 <p className="text-xs text-text-secondary">Cấp độ</p>
                             </div>
-                            <div className="p-4 bg-background-dark rounded-xl text-center border border-border-color/30">
-                                <p className="text-2xl font-bold text-orange-400">{showUserDetail.streak}</p>
-                                <p className="text-xs text-text-secondary">Streak</p>
+                            <div className="p-4 bg-background-dark rounded-xl text-center border border-border-color/30 flex flex-col items-center justify-center">
+                                <StreakBadge count={showUserDetail.streak} size="md" />
+                                <p className="text-xs text-text-secondary mt-1">Streak</p>
                             </div>
                             <div className="p-4 bg-background-dark rounded-xl text-center border border-border-color/30">
                                 <p className="text-2xl font-bold text-text-base">{showUserDetail._count?.userVocabulary || 0}</p>

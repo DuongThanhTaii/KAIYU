@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import Icon from '../common/Icon';
+import StreakBadge from '../common/StreakBadge';
 import NotificationDropdown from '../common/NotificationDropdown';
 import { useAuth } from '../../contexts/AuthContext';
 import { addNotification, hasRecentNotification } from '../../services/notificationService';
@@ -138,10 +139,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
 
             <div className="flex items-center gap-4 md:gap-6">
                 {/* Streak Display */}
-                <div className="hidden md:flex items-center gap-2 bg-orange-500/10 px-4 py-2 rounded-full border border-orange-500/20 shadow-sm transition-all hover:scale-105">
-                    <Icon name="local_fire_department" className="text-orange-600 dark:text-orange-500" size="md" />
-                    <span className="text-sm font-black text-text-base">{user?.streak || 0}</span>
-                </div>
+                <StreakBadge count={user?.streak || 0} size="md" className="hidden md:inline-flex" />
 
                 {/* XP Display */}
                 <div className="hidden md:flex items-center gap-2 bg-cyan-500/10 px-4 py-2 rounded-full border border-cyan-500/20 shadow-sm transition-all hover:scale-105">

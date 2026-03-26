@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/common/Button';
 import Icon from '@/components/common/Icon';
+import StreakBadge from '@/components/common/StreakBadge';
 import { getProgress, type RecentProgress } from '@/services/progressStorage';
 
 function LoginPageContent() {
@@ -113,12 +114,11 @@ function LoginPageContent() {
                         {/* Content */}
                         <div className="relative z-10 flex flex-col h-full justify-between">
                             <div className="space-y-6">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20 w-fit">
-                                    <Icon name="local_fire_department" className="text-primary" size="sm" />
-                                    <span className="text-xs font-bold text-text-base uppercase tracking-wider">
-                                        {hasProgress ? `Day ${displayStreak} Streak` : 'Bắt đầu ngay'}
-                                    </span>
-                                </div>
+                                <StreakBadge
+                                    count={displayStreak}
+                                    showText={hasProgress}
+                                    size="md"
+                                />
                                 <div>
                                     <h1 className="text-4xl font-black text-text-base leading-tight tracking-tight mb-2">
                                         Học tiếng Trung <br /> <span className="text-primary">Tự nhiên.</span>
