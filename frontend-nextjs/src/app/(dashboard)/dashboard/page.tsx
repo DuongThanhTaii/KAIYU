@@ -119,14 +119,9 @@ export default function DashboardPage() {
                 {/* Welcome Header */}
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                     <div>
-                        <div className="flex items-center gap-3">
-                            <h1 className="text-3xl md:text-4xl font-black text-text-base tracking-tight">
-                                Xin chào, {user?.name || 'Bạn'}! 👋
-                            </h1>
-                            {user?.streak && user.streak > 0 && (
-                                <StreakBadge count={user.streak} size="md" />
-                            )}
-                        </div>
+                        <h1 className="text-3xl md:text-4xl font-black text-text-base tracking-tight mb-2">
+                            Xin chào, {user?.name || 'Bạn'}! 👋
+                        </h1>
                         <p className="text-text-secondary text-lg font-bold tracking-tight mt-2">
                             {user?.streak && user.streak > 0
                                 ? 'Tiếp tục phát huy nhé!'

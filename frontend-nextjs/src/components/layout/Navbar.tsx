@@ -139,7 +139,7 @@ const Navbar: React.FC<NavbarProps> = ({ variant = 'landing', onMobileMenuClick 
 
             <div className="flex items-center gap-4 md:gap-6">
                 {/* Streak Display */}
-                <StreakBadge count={user?.streak || 0} size="md" className="hidden md:inline-flex" />
+                <StreakBadge count={user?.streak || 0} size="lg" className="hidden md:inline-flex" />
 
                 {/* XP Display */}
                 <div className="hidden md:flex items-center gap-2 bg-cyan-500/10 px-4 py-2 rounded-full border border-cyan-500/20 shadow-sm transition-all hover:scale-105">
