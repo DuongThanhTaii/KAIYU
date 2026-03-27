@@ -668,25 +668,30 @@ export function WordPopover({
 
     setIsUpdatingSubtitle(true);
     try {
-      await videoApi.updateSubtitle(subtitle.id, {
+      const savedSubtitle = await videoApi.updateSubtitle(subtitle.id, {
         tokens: editingTokens,
         hanzi: currentFullHanzi,
         pinyin: currentFullPinyin,
       });
+      // Use server-verified data instead of optimistic local state
       setSubtitle((prev) =>
         prev
           ? {
               ...prev,
-              hanzi: currentFullHanzi,
-              pinyin: currentFullPinyin,
-              tokens: editingTokens,
+              hanzi: savedSubtitle.hanzi || currentFullHanzi,
+              pinyin: savedSubtitle.pinyin || currentFullPinyin,
+              tokens: savedSubtitle.tokens || editingTokens,
             }
           : prev,
       );
+      // Sync editingTokens with server state to prevent stale re-saves
+      if (savedSubtitle.tokens) {
+        setEditingTokens(savedSubtitle.tokens.map((t: any) => ({ ...t })));
+      }
       setShowSequenceConfirmModal(false);
       setSaveSuccess(true);
       triggerXp(100);
-      // Auto-reload subtitles in parent
+      // Auto-reload subtitles in parent so all views are synchronized
       onSubtitlesUpdated?.();
     } catch (error) {
       console.error("Failed to update subtitle:", error);

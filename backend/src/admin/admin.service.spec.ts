@@ -18,6 +18,7 @@ describe('AdminService', () => {
   const mockPrisma = {
     subtitle: {
       update: jest.fn(),
+      findUnique: jest.fn(),
     },
     subtitleToken: {
       findMany: jest.fn(),
@@ -52,6 +53,8 @@ describe('AdminService', () => {
 
     mockPrisma.subtitleToken.findMany.mockResolvedValue([]);
     mockPrisma.vocabulary.findMany.mockResolvedValue([]);
+    // Default: return a subtitle with tokens for updateSubtitle's final findUnique
+    mockPrisma.subtitle.findUnique.mockResolvedValue({ id: 'sub-1', tokens: [] });
   });
 
   it('should be defined', () => {

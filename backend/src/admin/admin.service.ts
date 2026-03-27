@@ -548,7 +548,11 @@ export class AdminService {
       }
     }
 
-    return updatedSubtitle;
+    // Return fresh subtitle with newly created tokens so all clients get verified data
+    return this.prisma.subtitle.findUnique({
+      where: { id },
+      include: { tokens: { orderBy: { position: 'asc' } } },
+    });
   }
 
   // ============ Vocabulary Management ============
