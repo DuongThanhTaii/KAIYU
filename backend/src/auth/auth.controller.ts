@@ -100,8 +100,18 @@ export class AuthController {
         // Get the auth result from the request (set by GoogleStrategy)
         const { accessToken, user } = req.user;
 
-        // Get frontend URL from config
-        const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+        // Get frontend URLs from config
+        const frontendUrlConfig = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
+        const frontendUrls = frontendUrlConfig.split(',');
+        
+        // Try to determine which frontend the user came from
+        // If not possible, default to the first one (or the new one if you prefer)
+        let frontendUrl = frontendUrls[0];
+        
+        // If we want to prioritize the new domain for all redirects:
+        if (frontendUrls.length > 1) {
+            frontendUrl = frontendUrls[frontendUrls.length - 1]; // Pick the new domain
+        }
 
         // Redirect to frontend with token and user info
         const userJson = encodeURIComponent(JSON.stringify(user));
