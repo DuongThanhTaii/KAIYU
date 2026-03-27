@@ -137,6 +137,7 @@ export function WordPopover({
   const [editPinyin, setEditPinyin] = useState("");
   const [editMeaning, setEditMeaning] = useState("");
   const [editPos, setEditPos] = useState("");
+  const [editHsk, setEditHsk] = useState<number>(1);
   const [isSavingGlobal, setIsSavingGlobal] = useState(false);
 
   // "Not found" admin search/create states
@@ -378,6 +379,7 @@ export function WordPopover({
           setEditPinyin(result.pinyin || "");
           setEditMeaning(result.meaningVi || result.meaningEn || "");
           setEditPos(result.partOfSpeech || "");
+          setEditHsk(result.hskLevel || 1);
           dictionaryApi
             .getExamples(word)
             .then((exs) => setExamples(exs))
@@ -544,6 +546,7 @@ export function WordPopover({
           pinyin: normalizedPinyin,
           meaningVi: normalizedMeaning,
           partOfSpeech: normalizedPos,
+          hskLevel: editHsk,
         });
       } else {
         // Create new word
@@ -552,7 +555,7 @@ export function WordPopover({
           pinyin: normalizedPinyin,
           meaningVi: normalizedMeaning,
           partOfSpeech: normalizedPos,
-          hskLevel: 1, // Default or add a field
+          hskLevel: editHsk,
         });
       }
 
@@ -572,6 +575,7 @@ export function WordPopover({
           freshResult.meaningVi || freshResult.meaningEn || normalizedMeaning,
         );
         setEditPos(freshResult.partOfSpeech || normalizedPos);
+        setEditHsk(freshResult.hskLevel || editHsk);
         syncEditedWordToTokens(
           freshResult.meaningVi || freshResult.meaningEn || normalizedMeaning,
           freshResult.pinyin || normalizedPinyin,
@@ -1410,6 +1414,22 @@ export function WordPopover({
                                 className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-blue-400 focus:outline-none focus:border-primary"
                                 placeholder="e.g. Danh từ, Động từ..."
                               />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">
+                                HSK Level
+                              </label>
+                              <select
+                                value={editHsk}
+                                onChange={(e) => setEditHsk(Number(e.target.value))}
+                                className="w-full bg-[var(--color-surface-dark)] border border-border-color rounded-lg px-3 py-2 text-orange-400 font-bold focus:outline-none focus:border-primary"
+                              >
+                                {[1, 2, 3, 4, 5, 6].map((level) => (
+                                  <option key={level} value={level}>
+                                    HSK {level}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
                             <div>
                               <label className="text-[10px] text-text-secondary uppercase tracking-wider mb-1 block">
