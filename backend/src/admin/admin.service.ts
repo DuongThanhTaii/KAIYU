@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   parseSubtitleFile,
@@ -289,7 +289,27 @@ export class AdminService {
   async deleteVideo(id: string) {
     const video = await this.prisma.video.findUnique({ where: { id } });
     if (!video) throw new NotFoundException('Video not found');
-    await this.prisma.video.delete({ where: { id } });
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        // Keep user vocabulary history while removing broken source references.
+        await tx.userVocabulary.updateMany({
+          where: { sourceVideoId: id },
+          data: { sourceVideoId: null },
+        });
+
+        // Progress rows use a non-cascade relation in schema, so clear them explicitly.
+        await tx.videoProgress.deleteMany({ where: { videoId: id } });
+
+        await tx.video.delete({ where: { id } });
+      });
+    } catch (error: any) {
+      if (error?.code === 'P2003') {
+        throw new ConflictException('Không thể xóa video vì còn dữ liệu liên quan');
+      }
+      throw error;
+    }
+
     return { message: 'Video deleted' };
   }
 

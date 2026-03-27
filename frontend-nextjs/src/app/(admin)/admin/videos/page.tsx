@@ -329,9 +329,9 @@ export default function AdminVideosPage() {
       await videoApi.remove(id);
       setShowDeleteConfirm(null);
       fetchVideos(pagination.page);
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to delete video:", err);
-      setError("Không thể xóa video");
+      setError(err?.message || "Không thể xóa video");
     }
   };
 
