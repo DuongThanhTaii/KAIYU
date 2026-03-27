@@ -339,7 +339,7 @@ export default function AdminUsersPage() {
                 columns={columns}
                 loading={loading}
                 pagination={pagination}
-                onPageChange={(page) => setPagination({ ...pagination, page })}
+                onPageChange={(page) => fetchUsers(page)}
                 actions={actions}
                 emptyMessage="Không tìm thấy user nào"
             />
