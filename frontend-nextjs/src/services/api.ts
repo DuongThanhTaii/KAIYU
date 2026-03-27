@@ -1,5 +1,15 @@
 import axios, { type AxiosError, type InternalAxiosRequestConfig } from 'axios';
 
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        skipAuthRedirect?: boolean;
+    }
+
+    interface InternalAxiosRequestConfig {
+        skipAuthRedirect?: boolean;
+    }
+}
+
 // API Base URL - will be replaced in production
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001');
 
@@ -74,12 +84,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     (response) => response,
     (error: AxiosError<{ message?: string; error?: string }>) => {
+        const shouldSkipAuthRedirect = Boolean(error.config?.skipAuthRedirect);
+
         // Handle 401 Unauthorized - auto logout
-        if (error.response?.status === 401) {
+        if (error.response?.status === 401 && !shouldSkipAuthRedirect) {
             tokenManager.clearAuth();
-            // Redirect to login if not already there
-            if (window.location.pathname !== '/login') {
-                window.location.href = '/login';
+
+            if (typeof window !== 'undefined') {
+                const path = window.location.pathname;
+                const search = window.location.search;
+                const isAuthRoute = path.startsWith('/login') || path.startsWith('/register');
+
+                // Redirect to login if not already on an auth route.
+                if (!isAuthRoute) {
+                    const redirectTo = `${path}${search}`;
+                    window.location.assign(`/login?redirect=${encodeURIComponent(redirectTo)}`);
+                }
             }
         }
 

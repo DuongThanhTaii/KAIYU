@@ -70,6 +70,65 @@ interface YouTubePlayerProps {
 
 // Generate unique ID for each player instance
 let playerIdCounter = 0;
+let youtubeApiReadyPromise: Promise<void> | null = null;
+
+const getYouTubeApiReady = (): Promise<void> => {
+    if (window.YT && window.YT.Player) {
+        return Promise.resolve();
+    }
+
+    if (youtubeApiReadyPromise) {
+        return youtubeApiReadyPromise;
+    }
+
+    youtubeApiReadyPromise = new Promise<void>((resolve, reject) => {
+        let settled = false;
+
+        const finalize = () => {
+            if (settled) return;
+            settled = true;
+            clearInterval(pollInterval);
+            clearTimeout(timeoutId);
+            resolve();
+        };
+
+        const fail = () => {
+            if (settled) return;
+            settled = true;
+            clearInterval(pollInterval);
+            clearTimeout(timeoutId);
+            youtubeApiReadyPromise = null;
+            reject(new Error('YouTube IFrame API load timeout'));
+        };
+
+        const pollInterval = setInterval(() => {
+            if (window.YT && window.YT.Player) {
+                finalize();
+            }
+        }, 100);
+
+        const timeoutId = setTimeout(fail, 15000);
+
+        const previousReadyHandler = window.onYouTubeIframeAPIReady;
+        window.onYouTubeIframeAPIReady = () => {
+            if (typeof previousReadyHandler === 'function') {
+                previousReadyHandler();
+            }
+            finalize();
+        };
+
+        const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
+        if (!existingScript) {
+            const tag = document.createElement('script');
+            tag.src = 'https://www.youtube.com/iframe_api';
+            tag.async = true;
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        }
+    });
+
+    return youtubeApiReadyPromise;
+};
 
 const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
     videoId,
@@ -135,45 +194,24 @@ const YouTubePlayer = forwardRef<YouTubePlayerHandle, YouTubePlayerProps>(({
         },
     }), []);
 
-    // Load YouTube IFrame API script
-    const loadYouTubeAPI = useCallback(() => {
-        return new Promise<void>((resolve) => {
-            if (window.YT && window.YT.Player) {
-                resolve();
-                return;
-            }
-
-            const existingScript = document.querySelector('script[src*="youtube.com/iframe_api"]');
-            if (existingScript) {
-                // Script exists but API not ready yet, wait for it
-                const checkReady = setInterval(() => {
-                    if (window.YT && window.YT.Player) {
-                        clearInterval(checkReady);
-                        resolve();
-                    }
-                }, 100);
-                return;
-            }
-
-            // Create script element
-            const tag = document.createElement('script');
-            tag.src = 'https://www.youtube.com/iframe_api';
-            const firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-
-            // Wait for API to be ready
-            window.onYouTubeIframeAPIReady = () => {
-                resolve();
-            };
-        });
-    }, []);
-
     // Load API on mount
     useEffect(() => {
-        loadYouTubeAPI().then(() => {
-            setIsAPIReady(true);
-        });
-    }, [loadYouTubeAPI]);
+        let isMounted = true;
+
+        getYouTubeApiReady()
+            .then(() => {
+                if (isMounted) {
+                    setIsAPIReady(true);
+                }
+            })
+            .catch((error) => {
+                console.error('Failed to load YouTube API:', error);
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, []);
 
     // Initialize player when API is ready
     useEffect(() => {

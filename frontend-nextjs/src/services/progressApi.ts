@@ -70,7 +70,9 @@ export const progressApi = {
         videoId: string,
         data: { progressPercent: number; lastPositionSeconds: number }
     ): Promise<VideoProgress> {
-        const response = await api.put<VideoProgress>(`/progress/videos/${videoId}`, data);
+        const response = await api.put<VideoProgress>(`/progress/videos/${videoId}`, data, {
+            skipAuthRedirect: true,
+        });
         return response.data;
     },
 

@@ -66,6 +66,8 @@ export default function VideoPlayerPage() {
     const subtitleItemRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [duration, setDuration] = useState(0);
+    const currentTimeRef = useRef(0);
+    const lastUiTimeUpdateRef = useRef(0);
 
     // Sidebar tab state
     const [activeTab, setActiveTab] = useState<SidebarTab>('subtitles');
@@ -116,7 +118,16 @@ export default function VideoPlayerPage() {
 
     // Handle time update from YouTube player with loop support
     const handleTimeUpdate = useCallback((time: number) => {
-        setCurrentTime(time);
+        currentTimeRef.current = time;
+
+        // Avoid re-rendering 10 times/second while preserving loop/shadow precision.
+        if (
+            Math.abs(time - lastUiTimeUpdateRef.current) >= 0.25 ||
+            time < lastUiTimeUpdateRef.current
+        ) {
+            lastUiTimeUpdateRef.current = time;
+            setCurrentTime(time);
+        }
 
         // Loop mode: if we have a looped subtitle and passed its end, seek back
         if (isLoopMode && loopedSubtitle) {
@@ -325,14 +336,15 @@ export default function VideoPlayerPage() {
         if (!video || !videoId) return;
 
         const saveProgress = async () => {
+            const latestTime = currentTimeRef.current;
             const totalDuration = video.durationSeconds || 1;
-            const progressPercent = Math.min(100, (currentTime / totalDuration) * 100);
+            const progressPercent = Math.min(100, (latestTime / totalDuration) * 100);
 
-            if (currentTime > 5) { // Only save if watched more than 5 seconds
+            if (latestTime > 5) { // Only save if watched more than 5 seconds
                 try {
                     await progressApi.updateVideoProgress(videoId, {
                         progressPercent: Math.round(progressPercent),
-                        lastPositionSeconds: Math.floor(currentTime),
+                        lastPositionSeconds: Math.floor(latestTime),
                     });
                 } catch (error) {
                     console.error('Failed to save progress:', error);
@@ -345,7 +357,7 @@ export default function VideoPlayerPage() {
 
         // Save on page unload
         const handleBeforeUnload = () => {
-            saveProgress();
+            void saveProgress();
             watchTimeTracker.stopTracking();
         };
         window.addEventListener('beforeunload', handleBeforeUnload);
@@ -353,10 +365,10 @@ export default function VideoPlayerPage() {
         return () => {
             clearInterval(interval);
             window.removeEventListener('beforeunload', handleBeforeUnload);
-            saveProgress(); // Save when component unmounts
+            void saveProgress(); // Save when component unmounts
             watchTimeTracker.stopTracking(); // Stop watch time tracking
         };
-    }, [video, videoId, currentTime]);
+    }, [video, videoId]);
 
     // Handle adding a new note
     const handleAddNote = async () => {

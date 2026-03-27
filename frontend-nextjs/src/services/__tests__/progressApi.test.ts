@@ -40,7 +40,9 @@ describe('Progress API', () => {
 
             const result = await progressApi.updateVideoProgress(videoId, updateData);
 
-            expect(api.put).toHaveBeenCalledWith(`/progress/videos/${videoId}`, updateData);
+            expect(api.put).toHaveBeenCalledWith(`/progress/videos/${videoId}`, updateData, {
+                skipAuthRedirect: true,
+            });
             expect(result).toEqual(mockResponse);
         });
     });

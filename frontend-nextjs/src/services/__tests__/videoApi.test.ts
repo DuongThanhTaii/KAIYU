@@ -71,6 +71,22 @@ describe('Video API', () => {
         });
     });
 
+    describe('recordView', () => {
+        it('should send watched time with background-auth redirect disabled', async () => {
+            const mockResult = { counted: true, message: 'OK' };
+            (api.post as any).mockResolvedValue({ data: mockResult });
+
+            const result = await videoApi.recordView('video-123', 42);
+
+            expect(api.post).toHaveBeenCalledWith(
+                '/videos/video-123/view',
+                { watchedSeconds: 42 },
+                { skipAuthRedirect: true }
+            );
+            expect(result).toEqual(mockResult);
+        });
+    });
+
     describe('formatDuration', () => {
         it('should format seconds to mm:ss', () => {
             expect(videoApi.formatDuration(0)).toBe('0:00');

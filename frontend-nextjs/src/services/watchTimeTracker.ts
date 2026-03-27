@@ -77,6 +77,18 @@ class WatchTimeTrackerService {
     startTracking(videoId: string, videoTitle?: string): void {
         console.log('[WatchTime] Start tracking:', videoId);
 
+        if (this.currentSession) {
+            if (this.currentSession.videoId === videoId) {
+                if (!this.currentSession.isPlaying) {
+                    this.resumeTracking();
+                }
+                return;
+            }
+
+            // Ensure previous video session is closed before starting a new one.
+            this.stopTracking();
+        }
+
         // Save last video info
         const progress = this.getStoredProgress();
         progress.lastVideoId = videoId;

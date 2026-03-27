@@ -122,7 +122,11 @@ export const videoApi = {
      * Returns { counted: boolean, message: string }
      */
     async recordView(videoId: string, watchedSeconds: number): Promise<{ counted: boolean; message: string }> {
-        const response = await api.post<{ counted: boolean; message: string }>(`/videos/${videoId}/view`, { watchedSeconds });
+        const response = await api.post<{ counted: boolean; message: string }>(
+            `/videos/${videoId}/view`,
+            { watchedSeconds },
+            { skipAuthRedirect: true }
+        );
         return response.data;
     },
 

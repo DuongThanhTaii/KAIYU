@@ -1,6 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import api, { tokenManager } from '../api';
 
+const getResponseRejectedHandler = () => {
+    const handlers = (api.interceptors.response as any).handlers as Array<{ rejected?: (error: any) => Promise<never> }>;
+    const rejected = [...(handlers || [])].reverse().find((h) => typeof h?.rejected === 'function')?.rejected;
+
+    if (!rejected) {
+        throw new Error('Response rejected interceptor not found');
+    }
+
+    return rejected;
+};
+
 describe('API Service', () => {
     beforeEach(() => {
         vi.clearAllMocks();
@@ -61,6 +72,13 @@ describe('API Service', () => {
 });
 
 describe('Axios Instance', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        localStorage.getItem = vi.fn();
+        localStorage.setItem = vi.fn();
+        localStorage.removeItem = vi.fn();
+    });
+
     it('should export axios instance as default', () => {
         expect(api).toBeDefined();
         expect(api.defaults).toBeDefined();
@@ -70,7 +88,36 @@ describe('Axios Instance', () => {
         expect(api.defaults.headers['Content-Type']).toBe('application/json');
     });
 
-    it('should have 30 second timeout', () => {
-        expect(api.defaults.timeout).toBe(30000);
+    it('should have 120 second timeout', () => {
+        expect(api.defaults.timeout).toBe(120000);
+    });
+
+    it('should clear auth on normal 401 response', async () => {
+        const rejected = getResponseRejectedHandler();
+
+        await expect(
+            rejected({
+                response: { status: 401, data: { message: 'Unauthorized' } },
+                config: {},
+                message: 'Unauthorized',
+            })
+        ).rejects.toBeInstanceOf(Error);
+
+        expect(localStorage.removeItem).toHaveBeenCalledWith('auth_token');
+        expect(localStorage.removeItem).toHaveBeenCalledWith('auth_user');
+    });
+
+    it('should not clear auth on 401 when skipAuthRedirect is true', async () => {
+        const rejected = getResponseRejectedHandler();
+
+        await expect(
+            rejected({
+                response: { status: 401, data: { message: 'Unauthorized' } },
+                config: { skipAuthRedirect: true },
+                message: 'Unauthorized',
+            })
+        ).rejects.toBeInstanceOf(Error);
+
+        expect(localStorage.removeItem).not.toHaveBeenCalled();
     });
 });
