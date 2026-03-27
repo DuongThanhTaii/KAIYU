@@ -162,7 +162,48 @@ export const getInteractiveHanziSegments = (
     });
 
     if (hasMissingChineseTokenPinyin && pinyin) {
-      return deriveSegmentsFromPinyin(hanzi || "", pinyin);
+      // Fill in missing pinyin from subtitle-level pinyin while preserving
+      // admin-edited token word boundaries (instead of falling back completely).
+      const charPinyinSource = deriveSegmentsFromPinyin(hanzi || "", pinyin);
+      // Build a char → pinyin lookup from the derived segments
+      const charPinyinMap = new Map<number, string>();
+      let charIdx = 0;
+      for (const seg of charPinyinSource) {
+        const chars = Array.from(seg.segment);
+        const syllables = seg.pinyin ? seg.pinyin.split(/\s+/) : [];
+        let syllableIdx = 0;
+        for (const ch of chars) {
+          if (CHINESE_CHAR_RE.test(ch) && syllableIdx < syllables.length) {
+            charPinyinMap.set(charIdx, syllables[syllableIdx]);
+            syllableIdx++;
+          }
+          charIdx++;
+        }
+      }
+
+      // Map tokens, filling in missing pinyin from the char-level map
+      let globalCharIdx = 0;
+      return tokens.map((t) => {
+        const tokenHanzi = String(t?.hanzi || "");
+        const tokenPinyin = String(t?.pinyin || t?.pinyinDisplay || "").trim();
+        if (tokenPinyin) {
+          globalCharIdx += Array.from(tokenHanzi).length;
+          return { segment: tokenHanzi, pinyin: tokenPinyin };
+        }
+        // Collect pinyin for each Chinese character in this token
+        const parts: string[] = [];
+        for (const ch of Array.from(tokenHanzi)) {
+          if (CHINESE_CHAR_RE.test(ch)) {
+            const py = charPinyinMap.get(globalCharIdx);
+            if (py) parts.push(py);
+          }
+          globalCharIdx++;
+        }
+        return {
+          segment: tokenHanzi,
+          pinyin: parts.length > 0 ? parts.join(" ") : undefined,
+        };
+      });
     }
 
     return tokens.map((t) => ({
