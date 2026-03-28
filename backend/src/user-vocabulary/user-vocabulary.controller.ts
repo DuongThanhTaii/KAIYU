@@ -44,6 +44,27 @@ export class UserVocabularyController {
         return this.userVocabularyService.getStats(user.id);
     }
 
+    @Get('check')
+    @ApiOperation({ summary: 'Check whether a word is already saved by current user' })
+    @ApiQuery({ name: 'hanzi', required: true, type: String })
+    @ApiResponse({ status: 200, description: 'Saved status for the word' })
+    async checkSavedWord(
+        @CurrentUser() user: any,
+        @Query('hanzi') hanzi: string,
+    ) {
+        return this.userVocabularyService.checkSavedWord(user.id, hanzi);
+    }
+
+    @Post('check-batch')
+    @ApiOperation({ summary: 'Check saved status for multiple words' })
+    @ApiResponse({ status: 200, description: 'Batch saved status result' })
+    async checkSavedWordsBatch(
+        @CurrentUser() user: any,
+        @Body() body: { hanziList: string[] },
+    ) {
+        return this.userVocabularyService.checkSavedWordsBatch(user.id, body?.hanziList || []);
+    }
+
     @Post()
     @ApiOperation({ summary: 'Save a vocabulary word' })
     @ApiResponse({ status: 201, description: 'Vocabulary saved' })

@@ -5,6 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export class UserVocabularyService {
     constructor(private prisma: PrismaService) { }
 
+    private normalizeHanziInput(input: string): string {
+        return String(input || '')
+            .normalize('NFKC')
+            .replace(/[\u200B-\u200D\uFEFF]/g, '')
+            .trim();
+    }
+
     private normalizeSearchInput(input: string): string {
         return String(input || '')
             .normalize('NFKC')
@@ -372,6 +379,129 @@ export class UserVocabularyService {
             review: proficiencyStats.review || 0,
             mastered: proficiencyStats.mastered || 0,
             savedThisWeek: recentlySaved,
+        };
+    }
+
+    async checkSavedWord(userId: string, hanzi: string) {
+        const normalizedHanzi = this.normalizeHanziInput(hanzi);
+        if (!normalizedHanzi) {
+            throw new BadRequestException('hanzi is required');
+        }
+
+        const vocab = await this.prisma.vocabulary.findUnique({
+            where: { hanzi: normalizedHanzi },
+            select: { id: true, hanzi: true },
+        });
+
+        if (!vocab) {
+            return {
+                hanzi: normalizedHanzi,
+                vocabularyId: null,
+                saved: false,
+                userVocabularyId: null,
+                folderId: null,
+                savedAt: null,
+            };
+        }
+
+        const userVocab = await this.prisma.userVocabulary.findUnique({
+            where: {
+                userId_vocabularyId: {
+                    userId,
+                    vocabularyId: vocab.id,
+                },
+            },
+            select: {
+                id: true,
+                folderId: true,
+                savedAt: true,
+            },
+        });
+
+        return {
+            hanzi: vocab.hanzi,
+            vocabularyId: vocab.id,
+            saved: Boolean(userVocab),
+            userVocabularyId: userVocab?.id || null,
+            folderId: userVocab?.folderId || null,
+            savedAt: userVocab?.savedAt || null,
+        };
+    }
+
+    async checkSavedWordsBatch(userId: string, hanziList: string[]) {
+        const normalizedWords = Array.from(
+            new Set((hanziList || []).map((word) => this.normalizeHanziInput(word)).filter(Boolean)),
+        );
+
+        if (normalizedWords.length === 0) {
+            return {
+                savedHanzi: [],
+                items: [],
+            };
+        }
+
+        const vocabRows = await this.prisma.vocabulary.findMany({
+            where: { hanzi: { in: normalizedWords } },
+            select: { id: true, hanzi: true },
+        });
+
+        if (vocabRows.length === 0) {
+            return {
+                savedHanzi: [],
+                items: normalizedWords.map((hanzi) => ({
+                    hanzi,
+                    vocabularyId: null,
+                    saved: false,
+                    userVocabularyId: null,
+                    folderId: null,
+                    savedAt: null,
+                })),
+            };
+        }
+
+        const vocabIdToHanzi = new Map(vocabRows.map((row) => [row.id, row.hanzi]));
+        const userRows = await this.prisma.userVocabulary.findMany({
+            where: {
+                userId,
+                vocabularyId: { in: vocabRows.map((row) => row.id) },
+            },
+            select: {
+                id: true,
+                vocabularyId: true,
+                folderId: true,
+                savedAt: true,
+            },
+        });
+
+        const userByHanzi = new Map(
+            userRows
+                .map((row) => {
+                    const hanzi = vocabIdToHanzi.get(row.vocabularyId);
+                    if (!hanzi) return null;
+                    return [hanzi, row] as const;
+                })
+                .filter((entry): entry is readonly [string, (typeof userRows)[number]] => Boolean(entry)),
+        );
+
+        const vocabByHanzi = new Map(vocabRows.map((row) => [row.hanzi, row.id]));
+
+        const items = normalizedWords.map((hanzi) => {
+            const vocabId = vocabByHanzi.get(hanzi) || null;
+            const userRow = userByHanzi.get(hanzi);
+
+            return {
+                hanzi,
+                vocabularyId: vocabId,
+                saved: Boolean(userRow),
+                userVocabularyId: userRow?.id || null,
+                folderId: userRow?.folderId || null,
+                savedAt: userRow?.savedAt || null,
+            };
+        });
+
+        return {
+            savedHanzi: items.filter((item) => item.saved).map((item) => item.hanzi),
+            items,
         };
     }
 }

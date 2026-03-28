@@ -98,7 +98,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Google OAuth callback' })
     async googleAuthCallback(@Req() req: any, @Res() res: any) {
         // Get the auth result from the request (set by GoogleStrategy)
-        const { accessToken, user } = req.user;
+        const { accessToken, user, isNewUser } = req.user;
 
         // Get frontend URLs from config
         const frontendUrlConfig = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:5173';
@@ -113,9 +113,12 @@ export class AuthController {
             frontendUrl = frontendUrls[frontendUrls.length - 1]; // Pick the new domain
         }
 
+        // Redirect to onboarding for brand-new Google users to match email register flow.
+        const redirectPath = isNewUser ? '/onboarding/goals' : '/dashboard';
+
         // Redirect to frontend with token and user info
         const userJson = encodeURIComponent(JSON.stringify(user));
-        res.redirect(`${frontendUrl}/dashboard?token=${accessToken}&user=${userJson}`);
+        res.redirect(`${frontendUrl}${redirectPath}?token=${accessToken}&user=${userJson}`);
     }
 }
 

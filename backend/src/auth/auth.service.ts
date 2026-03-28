@@ -242,11 +242,12 @@ export class AuthService {
         email: string;
         name: string;
         avatarUrl?: string | null;
-    }): Promise<{ accessToken: string; user: any }> {
+    }): Promise<{ accessToken: string; user: any; isNewUser: boolean }> {
         // Check if user exists with this email
         let user = await this.prisma.user.findUnique({
             where: { email: googleUser.email },
         });
+        const isNewUser = !user;
 
         if (user) {
             // Update googleId if not set
@@ -285,6 +286,7 @@ export class AuthService {
         return {
             accessToken,
             user: this.sanitizeUser(userWithLatestStreak),
+            isNewUser,
         };
     }
 

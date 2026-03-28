@@ -68,6 +68,8 @@ interface WordPopoverProps {
     meaning?: string;
   }[];
   sourceSubtitle?: any;
+  preloadedSavedWords?: Set<string>;
+  onWordSaved?: (hanzi: string) => void;
 }
 
 type PanelType =
@@ -89,6 +91,8 @@ export function WordPopover({
   onSubtitlesUpdated,
   currentSubtitleTokens,
   sourceSubtitle,
+  preloadedSavedWords,
+  onWordSaved,
 }: WordPopoverProps) {
   // Data states
   const [lookupResult, setLookupResult] = useState<LookupResult | null>(null);
@@ -367,6 +371,8 @@ export function WordPopover({
     const fetchData = async () => {
       hasFetchedRef.current = word;
       setIsLoading(true);
+      setSaveSuccess(false);
+      setSavedInFolder(null);
       try {
         const [result, foldersList] = await Promise.all([
           // Pass sourcePinyin for context-aware entry prioritization
@@ -375,6 +381,18 @@ export function WordPopover({
         ]);
         setLookupResult(result);
         setFolders(foldersList);
+
+        const hanziToCheck = (result.hanzi || word).trim();
+        if (result.isSystemWord && hanziToCheck) {
+          const savedStatus = await userVocabularyApi.checkSavedWord(hanziToCheck, {
+            knownSavedWords: preloadedSavedWords,
+          });
+          if (savedStatus.saved) {
+            setSaveSuccess(true);
+            setSavedInFolder("đã lưu trước đó");
+          }
+        }
+
         if (result.found) {
           setEditPinyin(result.pinyin || "");
           setEditMeaning(result.meaningVi || result.meaningEn || "");
@@ -490,6 +508,18 @@ export function WordPopover({
       });
       setSaveSuccess(true);
       triggerXp(10);
+      const normalizedHanzi = (lookupResult?.hanzi || word).trim();
+      if (normalizedHanzi) {
+        userVocabularyApi.primeSavedWordCache({
+          hanzi: normalizedHanzi,
+          vocabularyId: lookupResult?.id || null,
+          saved: true,
+          userVocabularyId: null,
+          folderId: selectedFolderId || null,
+          savedAt: new Date().toISOString(),
+        });
+        onWordSaved?.(normalizedHanzi);
+      }
       // Find folder name
       const folder = folders.find((f) => f.id === selectedFolderId);
       setSavedInFolder(folder?.name || "Mặc định");

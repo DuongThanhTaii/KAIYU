@@ -80,6 +80,58 @@ export interface SaveWordData {
     note?: string;
 }
 
+export interface SavedWordStatus {
+    hanzi: string;
+    vocabularyId: string | null;
+    saved: boolean;
+    userVocabularyId: string | null;
+    folderId: string | null;
+    savedAt: string | null;
+}
+
+export interface SavedWordBatchStatus {
+    savedHanzi: string[];
+    items: SavedWordStatus[];
+}
+
+const SAVED_WORD_CACHE_TTL_MS = 5 * 60 * 1000;
+const SAVED_WORD_BATCH_SIZE = 200;
+
+type SavedWordCacheEntry = {
+    value: SavedWordStatus;
+    expiresAt: number;
+};
+
+const savedWordCache = new Map<string, SavedWordCacheEntry>();
+
+const normalizeHanzi = (hanzi: string): string =>
+    String(hanzi || '').normalize('NFKC').trim();
+
+const getSavedWordCache = (hanzi: string): SavedWordStatus | null => {
+    const key = normalizeHanzi(hanzi);
+    if (!key) return null;
+
+    const cached = savedWordCache.get(key);
+    if (!cached) return null;
+
+    if (cached.expiresAt < Date.now()) {
+        savedWordCache.delete(key);
+        return null;
+    }
+
+    return cached.value;
+};
+
+const setSavedWordCache = (status: SavedWordStatus) => {
+    const key = normalizeHanzi(status.hanzi);
+    if (!key) return;
+
+    savedWordCache.set(key, {
+        value: { ...status, hanzi: key },
+        expiresAt: Date.now() + SAVED_WORD_CACHE_TTL_MS,
+    });
+};
+
 // User Vocabulary API (requires authentication)
 export const userVocabularyApi = {
     /**
@@ -139,6 +191,112 @@ export const userVocabularyApi = {
     async getStats(): Promise<UserVocabularyStats> {
         const response = await api.get<UserVocabularyStats>('/user-vocabulary/stats');
         return response.data;
+    },
+
+    /**
+     * Check if a specific word was already saved by current user
+     */
+    async checkSavedWord(
+        hanzi: string,
+        options?: { knownSavedWords?: Iterable<string> }
+    ): Promise<SavedWordStatus> {
+        const normalized = normalizeHanzi(hanzi);
+        if (!normalized) {
+            return {
+                hanzi: '',
+                vocabularyId: null,
+                saved: false,
+                userVocabularyId: null,
+                folderId: null,
+                savedAt: null,
+            };
+        }
+
+        if (options?.knownSavedWords) {
+            for (const knownWord of options.knownSavedWords) {
+                if (normalizeHanzi(knownWord) === normalized) {
+                    const knownSavedStatus: SavedWordStatus = {
+                        hanzi: normalized,
+                        vocabularyId: null,
+                        saved: true,
+                        userVocabularyId: null,
+                        folderId: null,
+                        savedAt: null,
+                    };
+                    setSavedWordCache(knownSavedStatus);
+                    return knownSavedStatus;
+                }
+            }
+        }
+
+        const cached = getSavedWordCache(normalized);
+        if (cached) {
+            return cached;
+        }
+
+        const response = await api.get<SavedWordStatus>(`/user-vocabulary/check?hanzi=${encodeURIComponent(normalized)}`);
+        const status = {
+            ...response.data,
+            hanzi: normalizeHanzi(response.data.hanzi || normalized),
+        };
+        setSavedWordCache(status);
+        return status;
+    },
+
+    /**
+     * Batch check saved state for a list of words (used for subtitle preload)
+     */
+    async checkSavedWordsBatch(hanziList: string[]): Promise<SavedWordBatchStatus> {
+        const normalizedList = Array.from(
+            new Set((hanziList || []).map((word) => normalizeHanzi(word)).filter(Boolean))
+        );
+
+        if (normalizedList.length === 0) {
+            return { savedHanzi: [], items: [] };
+        }
+
+        const uncachedWords: string[] = [];
+        const cachedItems: SavedWordStatus[] = [];
+
+        for (const word of normalizedList) {
+            const cached = getSavedWordCache(word);
+            if (cached) {
+                cachedItems.push(cached);
+            } else {
+                uncachedWords.push(word);
+            }
+        }
+
+        const apiItems: SavedWordStatus[] = [];
+        if (uncachedWords.length > 0) {
+            for (let i = 0; i < uncachedWords.length; i += SAVED_WORD_BATCH_SIZE) {
+                const chunk = uncachedWords.slice(i, i + SAVED_WORD_BATCH_SIZE);
+                const response = await api.post<SavedWordBatchStatus>('/user-vocabulary/check-batch', {
+                    hanziList: chunk,
+                });
+                const normalizedItems = response.data.items.map((item) => ({
+                    ...item,
+                    hanzi: normalizeHanzi(item.hanzi),
+                }));
+                normalizedItems.forEach(setSavedWordCache);
+                apiItems.push(...normalizedItems);
+            }
+        }
+
+        const allItems = [...cachedItems, ...apiItems];
+        const savedHanzi = allItems.filter((item) => item.saved).map((item) => item.hanzi);
+
+        return {
+            savedHanzi,
+            items: allItems,
+        };
+    },
+
+    /**
+     * Prime cache after save/remove operations to keep icon state instantly accurate
+     */
+    primeSavedWordCache(status: SavedWordStatus) {
+        setSavedWordCache(status);
     },
 };
 

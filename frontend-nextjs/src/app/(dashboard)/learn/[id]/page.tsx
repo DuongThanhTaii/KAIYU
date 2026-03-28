@@ -46,6 +46,7 @@ type SidebarTab = 'subtitles' | 'vocabulary' | 'notes';
 
 
 const playbackSpeeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+const SAVED_WORD_PRELOAD_WINDOW = 30;
 
 export default function VideoPlayerPage() {
     const router = useRouter();
@@ -75,6 +76,8 @@ export default function VideoPlayerPage() {
     // Vocabulary state
     const [savedVocabulary, setSavedVocabulary] = useState<UserVocabulary[]>([]);
     const [vocabLoading, setVocabLoading] = useState(false);
+    const [savedSubtitleWords, setSavedSubtitleWords] = useState<Set<string>>(new Set());
+    const lastPreloadedWindowRef = useRef<string | null>(null);
 
     // Notes state
     const [notes, setNotes] = useState<VideoNote[]>([]);
@@ -297,6 +300,12 @@ export default function VideoPlayerPage() {
         }
     }, [isAuthenticated, videoId]);
 
+    useEffect(() => {
+        // Reset preload cache when switching video to avoid stale windows.
+        setSavedSubtitleWords(new Set());
+        lastPreloadedWindowRef.current = null;
+    }, [videoId]);
+
     // Fetch vocabulary when tab changes to vocabulary
     useEffect(() => {
         const fetchVocabulary = async () => {
@@ -412,8 +421,18 @@ export default function VideoPlayerPage() {
     // Handle removing vocabulary
     const handleRemoveVocabulary = async (vocabId: string) => {
         try {
+            const removedItem = savedVocabulary.find((item) => item.id === vocabId);
             await userVocabularyApi.remove(vocabId);
             setSavedVocabulary(prev => prev.filter(v => v.id !== vocabId));
+            if (removedItem?.vocabulary?.hanzi) {
+                const hanzi = removedItem.vocabulary.hanzi.trim();
+                setSavedSubtitleWords((prev) => {
+                    if (!prev.has(hanzi)) return prev;
+                    const next = new Set(prev);
+                    next.delete(hanzi);
+                    return next;
+                });
+            }
         } catch (error) {
             console.error("Failed to remove vocabulary:", error);
         }
@@ -439,6 +458,58 @@ export default function VideoPlayerPage() {
             pinyin: segment.pinyin,
         }),
     );
+
+    // Preload saved words only for a sliding subtitle window around current position.
+    useEffect(() => {
+        const preloadSavedWordsForCurrentWindow = async () => {
+            if (!isAuthenticated || subtitles.length === 0) {
+                return;
+            }
+
+            const centerIndex = currentSubtitleIndex >= 0 ? currentSubtitleIndex : 0;
+            const windowStart = Math.max(0, centerIndex - SAVED_WORD_PRELOAD_WINDOW);
+            const windowEnd = Math.min(subtitles.length, centerIndex + SAVED_WORD_PRELOAD_WINDOW + 1);
+            const windowKey = `${videoId}:${windowStart}-${windowEnd}`;
+
+            if (lastPreloadedWindowRef.current === windowKey) {
+                return;
+            }
+
+            const subtitleWords = Array.from(
+                new Set(
+                    subtitles
+                        .slice(windowStart, windowEnd)
+                        .flatMap((sub) =>
+                            getInteractiveHanziSegments(
+                                sub.hanzi || '',
+                                sub.pinyin,
+                                sub.tokens,
+                            ).map((seg) => seg.segment.trim()),
+                        )
+                        .filter((word) => word.length > 0),
+                ),
+            );
+
+            if (subtitleWords.length === 0) {
+                lastPreloadedWindowRef.current = windowKey;
+                return;
+            }
+
+            try {
+                const result = await userVocabularyApi.checkSavedWordsBatch(subtitleWords);
+                setSavedSubtitleWords((prev) => {
+                    const next = new Set(prev);
+                    result.savedHanzi.forEach((hanzi) => next.add(hanzi));
+                    return next;
+                });
+                lastPreloadedWindowRef.current = windowKey;
+            } catch (error) {
+                console.error('Failed to preload saved words:', error);
+            }
+        };
+
+        preloadSavedWordsForCurrentWindow();
+    }, [isAuthenticated, subtitles, currentSubtitleIndex, videoId]);
 
     // Save current sentence to notes
     const saveSentenceToNotes = useCallback(async () => {
@@ -1133,6 +1204,17 @@ export default function VideoPlayerPage() {
                         // Segmentation: auto-reload subtitles + token meanings
                         onSubtitlesUpdated={refreshSubtitles}
                         currentSubtitleTokens={currentSubtitleTokenContext}
+                        preloadedSavedWords={savedSubtitleWords}
+                        onWordSaved={(hanzi) => {
+                            const normalized = String(hanzi || '').trim();
+                            if (!normalized) return;
+                            setSavedSubtitleWords((prev) => {
+                                if (prev.has(normalized)) return prev;
+                                const next = new Set(prev);
+                                next.add(normalized);
+                                return next;
+                            });
+                        }}
                     />
                 )
             }
