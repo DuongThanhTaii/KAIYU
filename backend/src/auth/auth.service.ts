@@ -63,23 +63,24 @@ export class AuthService {
         }
 
         // Update streak on login (Duolingo style)
-        await this.xpStreak.updateStreak(user.id);
-
-        // Refetch user to get updated streak
-        const updatedUser = await this.prisma.user.findUnique({
-            where: { id: user.id },
-        });
+        const streakResult = await this.xpStreak.updateStreak(user.id);
+        const userWithLatestStreak = {
+            ...user,
+            streak: streakResult.streak,
+        };
 
         // Generate token
         const accessToken = this.generateToken(user.id, user.email, user.role);
 
         return {
             accessToken,
-            user: this.sanitizeUser(updatedUser || user),
+            user: this.sanitizeUser(userWithLatestStreak),
         };
     }
 
     async getProfile(userId: string) {
+        await this.xpStreak.updateStreak(userId);
+
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
         });
@@ -272,11 +273,18 @@ export class AuthService {
             });
         }
 
+        // Keep streak in sync for first login of the day across OAuth flow as well.
+        const streakResult = await this.xpStreak.updateStreak(user.id);
+        const userWithLatestStreak = {
+            ...user,
+            streak: streakResult.streak,
+        };
+
         const accessToken = this.generateToken(user.id, user.email, user.role);
 
         return {
             accessToken,
-            user: this.sanitizeUser(user),
+            user: this.sanitizeUser(userWithLatestStreak),
         };
     }
 
