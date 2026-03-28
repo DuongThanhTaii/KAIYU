@@ -194,10 +194,10 @@ export default function AdminUsersPage() {
         {
             key: 'streak',
             header: 'Streak',
-            width: '80px',
+            width: '95px',
             hideOnMobile: true,
             render: (user: AdminUser) => (
-                <StreakBadge count={user.streak} size="sm" />
+                <StreakBadge count={user.streak} size="md" className="justify-center min-w-[68px]" />
             ),
         },
         {
