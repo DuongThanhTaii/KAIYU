@@ -110,7 +110,12 @@ describe('Auth API', () => {
 
             const result = await authApi.getProfile();
 
-            expect(api.get).toHaveBeenCalledWith('/auth/me');
+            expect(api.get).toHaveBeenCalledWith(
+                '/auth/me',
+                expect.objectContaining({
+                    validateStatus: expect.any(Function),
+                }),
+            );
             expect(result).toEqual(mockUser);
         });
     });

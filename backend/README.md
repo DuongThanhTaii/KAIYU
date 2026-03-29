@@ -57,6 +57,25 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+## Benchmark (Response Time)
+
+Use this command to generate response-time evidence for grading:
+
+```bash
+$ npm run benchmark:api
+```
+
+Optional environment variables:
+
+```bash
+BENCH_URL=http://localhost:3000/api
+BENCH_REQUESTS=100
+BENCH_CONCURRENCY=20
+BENCH_THRESHOLD_MS=5000
+```
+
+The script fails with non-zero exit code if any request fails or if `p95 >= BENCH_THRESHOLD_MS`.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.

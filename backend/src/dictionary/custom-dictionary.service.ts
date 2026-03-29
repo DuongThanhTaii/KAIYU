@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface DictionaryEntry {
@@ -60,6 +60,7 @@ interface AICacheEntry {
  */
 @Injectable()
 export class CustomDictionaryService {
+  private readonly logger = new Logger(CustomDictionaryService.name);
   private readonly GEMINI_API_URL =
     'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
   private readonly MAX_RETRIES = 2;
@@ -70,7 +71,7 @@ export class CustomDictionaryService {
   private readonly MAX_AI_CACHE_SIZE = 500;
 
   constructor(private prisma: PrismaService) {
-    console.log('CustomDictionaryService initialized (Centralized Mode)');
+    this.logger.log('Initialized (Centralized Mode)');
   }
 
   private normalizeLookupInput(input: string): string {

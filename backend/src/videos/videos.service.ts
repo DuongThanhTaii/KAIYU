@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { XpStreakService } from '../xp-streak/xp-streak.service';
 import { CreateVideoDto, UpdateVideoDto, VideoQueryDto } from './dto';
@@ -6,6 +7,8 @@ import { parseSubtitleFile, tokenizeChinese, segmentHanziWithPinyin, ParsedToken
 
 @Injectable()
 export class VideosService {
+    private readonly logger = new Logger(VideosService.name);
+
     constructor(
         private prisma: PrismaService,
         private xpStreak: XpStreakService,
@@ -15,7 +18,7 @@ export class VideosService {
         const { page = 1, limit = 10, hskLevel, category, search } = query;
         const skip = (page - 1) * limit;
 
-        const where: any = {};
+        const where: Prisma.VideoWhereInput = {};
 
         if (!includeUnpublished) {
             where.isPublished = true;
@@ -236,19 +239,19 @@ export class VideosService {
      */
     async uploadSubtitles(videoId: string, content: string, filename: string) {
         try {
-            console.log('uploadSubtitles called for video:', videoId);
-            console.log('Content length:', content.length);
-            console.log('Filename:', filename);
+            this.logger.debug(`uploadSubtitles called for video: ${videoId}`);
+            this.logger.debug(`Content length: ${content.length}`);
+            this.logger.debug(`Filename: ${filename}`);
 
             const video = await this.prisma.video.findUnique({ where: { id: videoId } });
             if (!video) {
                 throw new NotFoundException('Video not found');
             }
-            console.log('Video found:', video.id);
+            this.logger.debug(`Video found: ${video.id}`);
 
             // Parse subtitles using imported functions
             const parsedSubtitles = parseSubtitleFile(content, filename);
-            console.log('Parsed subtitles count:', parsedSubtitles.length);
+            this.logger.debug(`Parsed subtitles count: ${parsedSubtitles.length}`);
 
             if (parsedSubtitles.length === 0) {
                 throw new Error('No subtitles found in file');
@@ -256,7 +259,7 @@ export class VideosService {
 
             // Delete existing subtitles for this video
             await this.prisma.subtitle.deleteMany({ where: { videoId } });
-            console.log('Deleted existing subtitles');
+            this.logger.debug('Deleted existing subtitles');
 
             // Prepare subtitle data for batch insert
             const subtitleData = parsedSubtitles.map(sub => ({
@@ -274,10 +277,15 @@ export class VideosService {
             const createdSubtitles = await (this.prisma.subtitle as any).createManyAndReturn({
                 data: subtitleData,
             });
-            console.log('Created subtitles count:', createdSubtitles.length);
+            this.logger.debug(`Created subtitles count: ${createdSubtitles.length}`);
 
             // 2. Generate tokens for each subtitle
-            const allTokens: any[] = [];
+            const allTokens: {
+                subtitleId: string;
+                hanzi: string;
+                pinyin: string;
+                position: number;
+            }[] = [];
             
             for (let i = 0; i < parsedSubtitles.length; i++) {
                 const sub = parsedSubtitles[i];
@@ -316,7 +324,7 @@ export class VideosService {
                         data: chunk,
                     });
                 }
-                console.log('Created tokens count:', allTokens.length);
+                this.logger.debug(`Created tokens count: ${allTokens.length}`);
             }
 
             // Update video subtitle count and languages
@@ -332,9 +340,10 @@ export class VideosService {
                 message: 'Subtitles uploaded successfully',
                 count: subtitleData.length,
             };
-        } catch (error) {
-            console.error('uploadSubtitles error:', error);
-            console.error('Error stack:', error.stack);
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : String(error);
+            const stack = error instanceof Error ? error.stack : undefined;
+            this.logger.error(`uploadSubtitles error: ${message}`, stack);
             throw error;
         }
     }

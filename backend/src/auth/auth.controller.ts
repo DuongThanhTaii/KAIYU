@@ -2,9 +2,22 @@ import { Controller, Post, Body, Get, Put, UseGuards, HttpCode, HttpStatus, Req,
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto, ChangePasswordDto, AuthResponseDto, UpdateProfileDto, ForgotPasswordDto, ResetPasswordDto } from './dto';
 import { CurrentUser } from './decorators';
+
+type AuthenticatedUser = {
+    id: string;
+};
+
+type GoogleCallbackRequest = Request & {
+    user: {
+        accessToken: string;
+        user: unknown;
+        isNewUser: boolean;
+    };
+};
 
 @ApiTags('auth')
 @Controller('auth')
@@ -37,7 +50,7 @@ export class AuthController {
     @ApiOperation({ summary: 'Get current user profile' })
     @ApiResponse({ status: 200, description: 'User profile' })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
-    async getProfile(@CurrentUser() user: any) {
+    async getProfile(@CurrentUser() user: AuthenticatedUser) {
         return this.authService.getProfile(user.id);
     }
 
@@ -48,7 +61,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Profile updated successfully' })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async updateProfile(
-        @CurrentUser() user: any,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: UpdateProfileDto,
     ) {
         return this.authService.updateProfile(user.id, dto);
@@ -61,7 +74,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Password changed successfully' })
     @ApiResponse({ status: 401, description: 'Unauthorized or incorrect current password' })
     async changePassword(
-        @CurrentUser() user: any,
+        @CurrentUser() user: AuthenticatedUser,
         @Body() dto: ChangePasswordDto,
     ): Promise<{ message: string }> {
         return this.authService.changePassword(user.id, dto);
@@ -96,7 +109,7 @@ export class AuthController {
     @Get('google/callback')
     @UseGuards(AuthGuard('google'))
     @ApiOperation({ summary: 'Google OAuth callback' })
-    async googleAuthCallback(@Req() req: any, @Res() res: any) {
+    async googleAuthCallback(@Req() req: GoogleCallbackRequest, @Res() res: Response) {
         // Get the auth result from the request (set by GoogleStrategy)
         const { accessToken, user, isNewUser } = req.user;
 

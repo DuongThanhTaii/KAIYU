@@ -1,11 +1,12 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
 
   // Increase body size limit for large vocabulary imports (5000+ items)
@@ -55,8 +56,8 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
 
-  console.log(`🚀 Application is running on: http://localhost:${port}/api`);
-  console.log(`📚 Swagger docs available at: http://localhost:${port}/api/docs`);
+  logger.log(`Application is running on: http://localhost:${port}/api`);
+  logger.log(`Swagger docs available at: http://localhost:${port}/api/docs`);
 }
 
 bootstrap();
