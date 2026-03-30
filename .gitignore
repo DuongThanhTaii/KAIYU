@@ -32,3 +32,10 @@ frontend/
 
 # Gemini artifacts
 .gemini/
+
+# User-requested: keep local only, do not push
+data/
+docs/
+stitch_landing_page/
+output_pinyin.srt
+Ý TƯỞNG WEB.docx
