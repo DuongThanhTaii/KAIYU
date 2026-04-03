@@ -195,8 +195,8 @@ export class AdminAnalyticsService {
     const normalizedWindow = this.normalizeWindow(window);
     const domain = this.normalizeHost(
       this.configService.get<string>('ANALYTICS_DISPLAY_DOMAIN') ||
-      this.configService.get<string>('CLOUDFLARE_ANALYTICS_DOMAIN') ||
-      this.extractDomainFromFrontendUrl(),
+        this.configService.get<string>('CLOUDFLARE_ANALYTICS_DOMAIN') ||
+        this.extractDomainFromFrontendUrl(),
     );
 
     const internal = await this.getInternalSnapshot(normalizedWindow);
@@ -279,6 +279,10 @@ export class AdminAnalyticsService {
       };
     }
 
+    const fallbackNote = nginx
+      ? 'Chua co du lieu traffic trong khung thoi gian da chon. He thong dang cho log Nginx moi.'
+      : 'Khong the lay du lieu ha tang luc nay. Dang hien thi du lieu noi bo theo thoi gian thuc.';
+
     return {
       generatedAt: new Date().toISOString(),
       window: normalizedWindow,
@@ -308,7 +312,7 @@ export class AdminAnalyticsService {
       accessLogs: [],
       error4xxLogs: [],
       error5xxLogs: [],
-      note: 'Chưa kết nối Cloudflare API hoặc token không có quyền Analytics. Đang hiển thị dữ liệu nội bộ theo thời gian thực.',
+      note: fallbackNote,
     };
   }
 
@@ -922,7 +926,9 @@ export class AdminAnalyticsService {
   }
 
   private normalizeHost(value: string, stripWww = false): string {
-    const raw = String(value || '').trim().toLowerCase();
+    const raw = String(value || '')
+      .trim()
+      .toLowerCase();
     if (!raw) {
       return '';
     }
