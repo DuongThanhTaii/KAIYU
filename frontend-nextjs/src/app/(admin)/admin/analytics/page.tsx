@@ -231,6 +231,14 @@ export default function AdminAnalyticsPage() {
     return Math.max(...snapshot.timeline.map((x) => x.requests), 1);
   }, [snapshot?.timeline]);
 
+  const yAxisTicks = useMemo(() => {
+    const segments = 4;
+    return Array.from({ length: segments + 1 }, (_, index) => {
+      const value = (maxTimeline * (segments - index)) / segments;
+      return Math.round(value);
+    });
+  }, [maxTimeline]);
+
   const formatTime = useCallback((value: string) => {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return value;
@@ -370,9 +378,7 @@ export default function AdminAnalyticsPage() {
               value={fmt(snapshot.overview.activeLearners5m)}
               icon="school"
               accent="bg-emerald-500/20"
-              sub={
-                isStreaming ? "Đã kết nối realtime" : "Đang kết nối lại..."
-              }
+              sub={isStreaming ? "Đã kết nối realtime" : "Đang kết nối lại..."}
             />
           </div>
         </section>
@@ -439,6 +445,40 @@ export default function AdminAnalyticsPage() {
                     viewBox="0 0 1000 220"
                     preserveAspectRatio="none"
                   >
+                    {yAxisTicks.map((tick, index) => {
+                      const chartLeft = 76;
+                      const chartRight = 980;
+                      const chartTop = 14;
+                      const chartBottom = 210;
+                      const y =
+                        chartTop +
+                        ((chartBottom - chartTop) * index) /
+                          Math.max(yAxisTicks.length - 1, 1);
+
+                      return (
+                        <g key={`tick-${tick}-${index}`}>
+                          <line
+                            x1={chartLeft}
+                            y1={y}
+                            x2={chartRight}
+                            y2={y}
+                            stroke="rgba(148, 163, 184, 0.22)"
+                            strokeWidth="1"
+                            strokeDasharray="4 4"
+                          />
+                          <text
+                            x={64}
+                            y={y + 3}
+                            textAnchor="end"
+                            fontSize="11"
+                            fill="rgba(148, 163, 184, 0.92)"
+                          >
+                            {fmt(tick)}
+                          </text>
+                        </g>
+                      );
+                    })}
+
                     {snapshot.timeline.length > 1 && (
                       <polyline
                         fill="none"
@@ -446,10 +486,18 @@ export default function AdminAnalyticsPage() {
                         strokeWidth="3"
                         points={snapshot.timeline
                           .map((point, index) => {
+                            const chartLeft = 76;
+                            const chartRight = 980;
+                            const chartTop = 14;
+                            const chartBottom = 210;
                             const x =
-                              (index / (snapshot.timeline.length - 1)) * 1000;
+                              chartLeft +
+                              (index / (snapshot.timeline.length - 1)) *
+                                (chartRight - chartLeft);
                             const y =
-                              210 - (point.requests / maxTimeline) * 180;
+                              chartBottom -
+                              (point.requests / maxTimeline) *
+                                (chartBottom - chartTop);
                             return `${x},${y}`;
                           })
                           .join(" ")}
