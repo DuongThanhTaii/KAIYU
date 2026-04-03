@@ -280,7 +280,7 @@ export class AdminAnalyticsService {
     }
 
     const fallbackNote = nginx
-      ? 'Chua co du lieu traffic trong khung thoi gian da chon. He thong dang cho log Nginx moi.'
+      ? undefined
       : 'Khong the lay du lieu ha tang luc nay. Dang hien thi du lieu noi bo theo thoi gian thuc.';
 
     return {

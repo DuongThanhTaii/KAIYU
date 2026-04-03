@@ -22,10 +22,10 @@ import {
 } from "@/services/adminApi";
 
 const WINDOW_OPTIONS: Array<{ value: AnalyticsWindow; label: string }> = [
-  { value: "1h", label: "Last 1 hour" },
-  { value: "6h", label: "Last 6 hours" },
-  { value: "24h", label: "Last 24 hours" },
-  { value: "7d", label: "Last 7 days" },
+  { value: "1h", label: "1 giờ qua" },
+  { value: "6h", label: "6 giờ qua" },
+  { value: "24h", label: "24 giờ qua" },
+  { value: "7d", label: "7 ngày qua" },
 ];
 
 const fmt = (value: number) =>
@@ -34,7 +34,7 @@ const fmt = (value: number) =>
 const getModeLabel = (mode: AnalyticsSnapshot["mode"]) => {
   if (mode === "cloudflare") return "Cloudflare";
   if (mode === "nginx") return "Nginx";
-  return "Fallback";
+  return "Nội bộ";
 };
 
 function MetricCard({
@@ -116,7 +116,7 @@ export default function AdminAnalyticsPage() {
       }
     } catch (err) {
       console.error("Failed to load analytics:", err);
-      setError("Khong the tai du lieu analytics realtime");
+      setError("Không thể tải dữ liệu phân tích thời gian thực");
     } finally {
       setLoading(false);
     }
@@ -138,7 +138,7 @@ export default function AdminAnalyticsPage() {
       try {
         const token = getAdminAuthToken();
         if (!token) {
-          setError("Token dang nhap da het han. Vui long dang nhap lai.");
+          setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
           return;
         }
 
@@ -251,7 +251,7 @@ export default function AdminAnalyticsPage() {
 
   if (loading) {
     return (
-      <AdminLayout title="Realtime Analytics">
+      <AdminLayout title="Phân tích thời gian thực">
         <div className="h-[60vh] flex items-center justify-center">
           <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
@@ -261,17 +261,17 @@ export default function AdminAnalyticsPage() {
 
   if (error || !snapshot) {
     return (
-      <AdminLayout title="Realtime Analytics">
+      <AdminLayout title="Phân tích thời gian thực">
         <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center">
           <Icon name="error" className="text-red-400 text-3xl" />
           <p className="mt-2 text-red-300">
-            {error || "Khong co du lieu analytics"}
+            {error || "Không có dữ liệu phân tích"}
           </p>
           <button
             onClick={() => void fetchInitial()}
             className="mt-4 rounded-xl bg-red-500 px-4 py-2 text-white font-semibold hover:bg-red-600 transition-colors"
           >
-            Thu lai
+            Thử lại
           </button>
         </div>
       </AdminLayout>
@@ -301,14 +301,14 @@ export default function AdminAnalyticsPage() {
           : [];
 
   return (
-    <AdminLayout title="Realtime Analytics" showLogo={false}>
+    <AdminLayout title="Phân tích thời gian thực" showLogo={false}>
       <div className="space-y-5">
         <section className="rounded-2xl border border-border-color bg-surface-dark shadow-sm overflow-hidden">
           <div className="px-4 md:px-6 py-4 border-b border-border-color bg-background-dark/60">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
                 <p className="text-sm font-black text-text-base tracking-tight">
-                  Analytics
+                  Phân tích
                 </p>
                 <div className="flex items-center gap-2 mt-1">
                   <p className="text-xl md:text-2xl font-black text-text-base">
@@ -342,13 +342,13 @@ export default function AdminAnalyticsPage() {
 
           <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 md:gap-4">
             <MetricCard
-              title="Total requests"
+              title="Tổng lượt truy cập"
               value={fmt(snapshot.overview.totalRequests)}
               icon="network_check"
               accent="bg-primary/20"
             />
             <MetricCard
-              title="Bandwidth"
+              title="Băng thông"
               value={`${snapshot.overview.bandwidthMB.toFixed(2)} MB`}
               icon="database"
               accent="bg-blue-500/20"
@@ -366,23 +366,15 @@ export default function AdminAnalyticsPage() {
               accent="bg-red-500/20"
             />
             <MetricCard
-              title="Active learners (5m)"
+              title="Học viên hoạt động (5p)"
               value={fmt(snapshot.overview.activeLearners5m)}
               icon="school"
               accent="bg-emerald-500/20"
               sub={
-                isStreaming ? "Live stream connected" : "Reconnecting stream..."
+                isStreaming ? "Đã kết nối realtime" : "Đang kết nối lại..."
               }
             />
           </div>
-
-          {snapshot.note && (
-            <div className="px-4 md:px-6 pb-4">
-              <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-3 text-xs text-amber-200">
-                {snapshot.note}
-              </div>
-            </div>
-          )}
         </section>
 
         <section className="grid grid-cols-1 xl:grid-cols-3 gap-5">
@@ -396,7 +388,7 @@ export default function AdminAnalyticsPage() {
                     : "text-text-secondary hover:text-text-base"
                 }`}
               >
-                Analytics
+                Phân tích
               </button>
               <button
                 onClick={() => setActiveMainTab("access")}
@@ -406,7 +398,7 @@ export default function AdminAnalyticsPage() {
                     : "text-text-secondary hover:text-text-base"
                 }`}
               >
-                Access logs
+                Nhật ký truy cập
               </button>
               <button
                 onClick={() => setActiveMainTab("error5xx")}
@@ -416,7 +408,7 @@ export default function AdminAnalyticsPage() {
                     : "text-text-secondary hover:text-text-base"
                 }`}
               >
-                Error code 5xx
+                Lỗi 5xx
               </button>
               <button
                 onClick={() => setActiveMainTab("error4xx")}
@@ -426,7 +418,7 @@ export default function AdminAnalyticsPage() {
                     : "text-text-secondary hover:text-text-base"
                 }`}
               >
-                Error code 4xx
+                Lỗi 4xx
               </button>
             </div>
 
@@ -434,7 +426,7 @@ export default function AdminAnalyticsPage() {
               <>
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-base md:text-lg font-black text-text-base">
-                    Total requests
+                    Tổng lượt truy cập
                   </h3>
                   <span className="text-xs text-text-secondary">
                     {snapshot.window.toUpperCase()}
@@ -491,7 +483,7 @@ export default function AdminAnalyticsPage() {
                 <div className="max-h-[300px] overflow-y-auto">
                   {tableRows.length === 0 ? (
                     <div className="px-3 py-8 text-center text-sm text-text-secondary">
-                      No logs in selected range
+                      Không có log trong khung thời gian đã chọn
                     </div>
                   ) : (
                     tableRows.map((row) => (
@@ -530,7 +522,7 @@ export default function AdminAnalyticsPage() {
                       : "text-text-secondary hover:text-text-base"
                   }`}
                 >
-                  Countries
+                  Quốc gia
                 </button>
                 <button
                   onClick={() => setActiveListTab("ips")}
@@ -540,7 +532,7 @@ export default function AdminAnalyticsPage() {
                       : "text-text-secondary hover:text-text-base"
                   }`}
                 >
-                  IP addresses
+                  Địa chỉ IP
                 </button>
                 <button
                   onClick={() => setActiveListTab("requests")}
@@ -550,7 +542,7 @@ export default function AdminAnalyticsPage() {
                       : "text-text-secondary hover:text-text-base"
                   }`}
                 >
-                  Requests
+                  Yêu cầu
                 </button>
               </div>
             </div>
@@ -558,7 +550,7 @@ export default function AdminAnalyticsPage() {
             <div className="p-4 space-y-2 max-h-[360px] overflow-y-auto">
               {listData.length === 0 ? (
                 <div className="rounded-xl border border-border-color bg-background-dark/40 p-4 text-center text-sm text-text-secondary">
-                  Chua co du lieu cho tab nay
+                  Chưa có dữ liệu cho tab này
                 </div>
               ) : (
                 listData.map((item, idx) => (
@@ -586,26 +578,26 @@ export default function AdminAnalyticsPage() {
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <MetricCard
-            title="Video views / min"
+            title="Lượt xem video / phút"
             value={fmt(snapshot.product.videoViewsPerMin)}
             icon="play_circle"
             accent="bg-indigo-500/20"
           />
           <MetricCard
-            title="Flashcards / min"
+            title="Lượt ôn từ / phút"
             value={fmt(snapshot.product.flashcardsPerMin)}
             icon="style"
             accent="bg-fuchsia-500/20"
           />
           <MetricCard
-            title="Live mode"
+            title="Nguồn dữ liệu"
             value={getModeLabel(snapshot.mode)}
             icon="bolt"
             accent="bg-emerald-500/20"
             sub={
               permissions?.canViewInfrastructure
-                ? "Infrastructure analytics enabled"
-                : "Limited by permission"
+                ? "Đã bật phân tích hạ tầng"
+                : "Bị giới hạn bởi quyền"
             }
           />
         </section>
