@@ -31,6 +31,12 @@ const WINDOW_OPTIONS: Array<{ value: AnalyticsWindow; label: string }> = [
 const fmt = (value: number) =>
   new Intl.NumberFormat("en-US").format(Number(value || 0));
 
+const getModeLabel = (mode: AnalyticsSnapshot["mode"]) => {
+  if (mode === "cloudflare") return "Cloudflare";
+  if (mode === "nginx") return "Nginx";
+  return "Fallback";
+};
+
 function MetricCard({
   title,
   value,
@@ -593,7 +599,7 @@ export default function AdminAnalyticsPage() {
           />
           <MetricCard
             title="Live mode"
-            value={snapshot.mode === "cloudflare" ? "Cloudflare" : "Fallback"}
+            value={getModeLabel(snapshot.mode)}
             icon="bolt"
             accent="bg-emerald-500/20"
             sub={

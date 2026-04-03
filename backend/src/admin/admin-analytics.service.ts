@@ -193,10 +193,11 @@ export class AdminAnalyticsService {
     }
 
     const normalizedWindow = this.normalizeWindow(window);
-    const domain =
+    const domain = this.normalizeHost(
       this.configService.get<string>('ANALYTICS_DISPLAY_DOMAIN') ||
       this.configService.get<string>('CLOUDFLARE_ANALYTICS_DOMAIN') ||
-      this.extractDomainFromFrontendUrl();
+      this.extractDomainFromFrontendUrl(),
+    );
 
     const internal = await this.getInternalSnapshot(normalizedWindow);
     const nginx = await this.getNginxSnapshot(normalizedWindow, domain);
@@ -592,7 +593,7 @@ export class AdminAnalyticsService {
       const ts = this.safeDate(row.time);
       if (!ts) continue;
 
-      const host = String(row.host || '').trim();
+      const host = this.normalizeHost(String(row.host || '').trim());
       const method = String(row.method || 'GET')
         .trim()
         .toUpperCase();
@@ -654,7 +655,7 @@ export class AdminAnalyticsService {
       const since = new Date(
         Date.now() - this.getWindowMinutes(window) * 60 * 1000,
       );
-      const host = String(domain || '').trim();
+      const host = this.normalizeHost(String(domain || '').trim(), true);
 
       const [
         overviewRows,
@@ -674,7 +675,8 @@ export class AdminAnalyticsService {
                 COALESCE(SUM(CASE WHEN status BETWEEN 400 AND 499 THEN 1 ELSE 0 END), 0)::int AS error_4xx,
                 COALESCE(SUM(CASE WHEN status BETWEEN 500 AND 599 THEN 1 ELSE 0 END), 0)::int AS error_5xx
               FROM analytics_requests
-              WHERE ts >= $1 AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+              WHERE ts >= $1
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
             `,
           since,
           host,
@@ -683,7 +685,8 @@ export class AdminAnalyticsService {
           `
               SELECT COALESCE(NULLIF(country, ''), 'Unknown') AS country, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+              WHERE ts >= $1
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               GROUP BY COALESCE(NULLIF(country, ''), 'Unknown')
               ORDER BY requests DESC
               LIMIT 5
@@ -695,7 +698,8 @@ export class AdminAnalyticsService {
           `
               SELECT COALESCE(NULLIF(ip, ''), 'Unknown') AS ip, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+              WHERE ts >= $1
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               GROUP BY COALESCE(NULLIF(ip, ''), 'Unknown')
               ORDER BY requests DESC
               LIMIT 5
@@ -707,7 +711,8 @@ export class AdminAnalyticsService {
           `
               SELECT COALESCE(NULLIF(path, ''), '/') AS request, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+              WHERE ts >= $1
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               GROUP BY COALESCE(NULLIF(path, ''), '/')
               ORDER BY requests DESC
               LIMIT 5
@@ -719,7 +724,8 @@ export class AdminAnalyticsService {
           `
               SELECT date_trunc('minute', ts) AS bucket, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+              WHERE ts >= $1
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               GROUP BY bucket
               ORDER BY bucket ASC
             `,
@@ -730,7 +736,8 @@ export class AdminAnalyticsService {
           `
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1 AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+              WHERE ts >= $1
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               ORDER BY ts DESC
               LIMIT 50
             `,
@@ -742,7 +749,7 @@ export class AdminAnalyticsService {
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
               WHERE ts >= $1 AND status BETWEEN 400 AND 499
-                AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               ORDER BY ts DESC
               LIMIT 50
             `,
@@ -754,7 +761,7 @@ export class AdminAnalyticsService {
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
               WHERE ts >= $1 AND status BETWEEN 500 AND 599
-                AND ($2 = '' OR host = $2 OR host = CONCAT('www.', $2))
+                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
               ORDER BY ts DESC
               LIMIT 50
             `,
@@ -912,5 +919,19 @@ export class AdminAnalyticsService {
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  private normalizeHost(value: string, stripWww = false): string {
+    const raw = String(value || '').trim().toLowerCase();
+    if (!raw) {
+      return '';
+    }
+
+    // Accept both full URL and plain host values from env/log input.
+    const noProtocol = raw.replace(/^https?:\/\//, '');
+    const hostWithMaybePort = noProtocol.split('/')[0] || '';
+    const noPort = hostWithMaybePort.split(':')[0] || '';
+    const cleaned = noPort.replace(/\.$/, '');
+    return stripWww ? cleaned.replace(/^www\./, '') : cleaned;
   }
 }
