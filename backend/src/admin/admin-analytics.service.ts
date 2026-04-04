@@ -24,6 +24,12 @@ interface TimelinePoint {
   requests: number;
 }
 
+interface AnalyticsRange {
+  since: Date;
+  until: Date;
+  isCustom: boolean;
+}
+
 export interface NginxIngestRow {
   time: string;
   host?: string;
@@ -186,6 +192,8 @@ export class AdminAnalyticsService {
   async getRealtimeSnapshot(
     user: AdminIdentity,
     window: AnalyticsWindow = '1h',
+    fromDate?: string,
+    toDate?: string,
   ): Promise<AnalyticsSnapshot> {
     const permissions = this.getPermissions(user);
     if (!permissions.canViewRealtime) {
@@ -193,18 +201,19 @@ export class AdminAnalyticsService {
     }
 
     const normalizedWindow = this.normalizeWindow(window);
+    const range = this.resolveTimeRange(normalizedWindow, fromDate, toDate);
     const domain = this.normalizeHost(
       this.configService.get<string>('ANALYTICS_DISPLAY_DOMAIN') ||
         this.configService.get<string>('CLOUDFLARE_ANALYTICS_DOMAIN') ||
         this.extractDomainFromFrontendUrl(),
     );
 
-    const internal = await this.getInternalSnapshot(normalizedWindow);
-    const nginx = await this.getNginxSnapshot(normalizedWindow, domain);
+    const internal = await this.getInternalSnapshot(range);
+    const nginx = await this.getNginxSnapshot(range, domain);
     let cloudflare: CloudflareSnapshot | null = null;
 
     if (permissions.canViewInfrastructure) {
-      cloudflare = await this.getCloudflareSnapshot(normalizedWindow);
+      cloudflare = await this.getCloudflareSnapshot(range);
     }
 
     if (nginx && nginx.overview.totalRequests > 0) {
@@ -316,12 +325,13 @@ export class AdminAnalyticsService {
     };
   }
 
-  private async getInternalSnapshot(window: AnalyticsWindow) {
+  private async getInternalSnapshot(range: AnalyticsRange) {
     const now = new Date();
-    const windowMinutes = this.getWindowMinutes(window);
-    const since = new Date(now.getTime() - windowMinutes * 60 * 1000);
-    const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-    const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
+    const since = range.since;
+    const until = range.until;
+    const refTime = until > now ? now : until;
+    const fiveMinutesAgo = new Date(refTime.getTime() - 5 * 60 * 1000);
+    const oneMinuteAgo = new Date(refTime.getTime() - 60 * 1000);
 
     const [
       totalRequests,
@@ -334,29 +344,29 @@ export class AdminAnalyticsService {
     ] = await Promise.all([
       this.prisma.videoView.count({ where: { viewedAt: { gte: since } } }),
       this.prisma.videoView.count({
-        where: { viewedAt: { gte: oneMinuteAgo } },
+        where: { viewedAt: { gte: oneMinuteAgo, lte: refTime } },
       }),
       this.prisma.flashcardReview.count({
-        where: { lastReviewAt: { gte: oneMinuteAgo } },
+        where: { lastReviewAt: { gte: oneMinuteAgo, lte: refTime } },
       }),
       this.prisma.videoProgress.findMany({
-        where: { lastWatchedAt: { gte: fiveMinutesAgo } },
+        where: { lastWatchedAt: { gte: fiveMinutesAgo, lte: refTime } },
         select: { userId: true },
         distinct: ['userId'],
       }),
       this.prisma.flashcardReview.findMany({
-        where: { lastReviewAt: { gte: fiveMinutesAgo } },
+        where: { lastReviewAt: { gte: fiveMinutesAgo, lte: refTime } },
         select: { userId: true },
         distinct: ['userId'],
       }),
       this.prisma.videoView.findMany({
-        where: { viewedAt: { gte: fiveMinutesAgo } },
+        where: { viewedAt: { gte: fiveMinutesAgo, lte: refTime } },
         select: { userId: true },
         distinct: ['userId'],
       }),
       this.prisma.videoView.groupBy({
         by: ['videoId'],
-        where: { viewedAt: { gte: since } },
+        where: { viewedAt: { gte: since, lte: until } },
         _count: { _all: true },
         orderBy: { _count: { videoId: 'desc' } },
         take: 5,
@@ -382,7 +392,7 @@ export class AdminAnalyticsService {
       };
     });
 
-    const timeline = await this.buildInternalTimeline(window, now);
+    const timeline = await this.buildInternalTimeline(range);
 
     return {
       totalRequests,
@@ -395,16 +405,18 @@ export class AdminAnalyticsService {
   }
 
   private async buildInternalTimeline(
-    window: AnalyticsWindow,
-    now: Date,
+    range: AnalyticsRange,
   ): Promise<TimelinePoint[]> {
-    const windowMinutes = this.getWindowMinutes(window);
+    const totalMinutes = Math.max(
+      1,
+      Math.round((range.until.getTime() - range.since.getTime()) / 60000),
+    );
     const points = 24;
-    const stepMinutes = Math.max(1, Math.round(windowMinutes / points));
+    const stepMinutes = Math.max(1, Math.round(totalMinutes / points));
 
     const results: TimelinePoint[] = [];
     for (let i = points - 1; i >= 0; i--) {
-      const end = new Date(now.getTime() - i * stepMinutes * 60 * 1000);
+      const end = new Date(range.until.getTime() - i * stepMinutes * 60 * 1000);
       const start = new Date(end.getTime() - stepMinutes * 60 * 1000);
 
       const requests = await this.prisma.videoView.count({
@@ -417,7 +429,7 @@ export class AdminAnalyticsService {
       });
 
       results.push({
-        label: this.formatTimeLabel(end),
+        label: this.formatTimeLabel(end, totalMinutes > 24 * 60),
         requests,
       });
     }
@@ -426,7 +438,7 @@ export class AdminAnalyticsService {
   }
 
   private async getCloudflareSnapshot(
-    window: AnalyticsWindow,
+    range: AnalyticsRange,
   ): Promise<CloudflareSnapshot | null> {
     const zoneId = this.configService.get<string>('CLOUDFLARE_ZONE_ID');
     const token = this.configService.get<string>('CLOUDFLARE_API_TOKEN');
@@ -435,7 +447,7 @@ export class AdminAnalyticsService {
       return null;
     }
 
-    const cacheKey = `${zoneId}:${window}`;
+    const cacheKey = `${zoneId}:${range.since.toISOString()}:${range.until.toISOString()}`;
     const now = Date.now();
     if (
       this.cloudflareCache &&
@@ -446,10 +458,8 @@ export class AdminAnalyticsService {
     }
 
     try {
-      const until = new Date();
-      const since = new Date(
-        until.getTime() - this.getWindowMinutes(window) * 60 * 1000,
-      );
+      const until = range.until;
+      const since = range.since;
 
       const query = `
         query Realtime($zoneTag: String!, $since: Time!, $until: Time!) {
@@ -541,6 +551,7 @@ export class AdminAnalyticsService {
         return {
           label: this.formatTimeLabel(
             new Date(row?.dimensions?.datetimeMinute || new Date()),
+            range.isCustom,
           ),
           requests: req,
         };
@@ -651,14 +662,13 @@ export class AdminAnalyticsService {
   }
 
   private async getNginxSnapshot(
-    window: AnalyticsWindow,
+    range: AnalyticsRange,
     domain: string,
   ): Promise<NginxSnapshot | null> {
     try {
       await this.ensureAnalyticsTable();
-      const since = new Date(
-        Date.now() - this.getWindowMinutes(window) * 60 * 1000,
-      );
+      const since = range.since;
+      const until = range.until;
       const host = this.normalizeHost(String(domain || '').trim(), true);
 
       const [
@@ -679,97 +689,105 @@ export class AdminAnalyticsService {
                 COALESCE(SUM(CASE WHEN status BETWEEN 400 AND 499 THEN 1 ELSE 0 END), 0)::int AS error_4xx,
                 COALESCE(SUM(CASE WHEN status BETWEEN 500 AND 599 THEN 1 ELSE 0 END), 0)::int AS error_5xx
               FROM analytics_requests
-              WHERE ts >= $1
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT COALESCE(NULLIF(country, ''), 'Unknown') AS country, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               GROUP BY COALESCE(NULLIF(country, ''), 'Unknown')
               ORDER BY requests DESC
               LIMIT 5
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT COALESCE(NULLIF(ip, ''), 'Unknown') AS ip, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               GROUP BY COALESCE(NULLIF(ip, ''), 'Unknown')
               ORDER BY requests DESC
               LIMIT 5
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT COALESCE(NULLIF(path, ''), '/') AS request, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               GROUP BY COALESCE(NULLIF(path, ''), '/')
               ORDER BY requests DESC
               LIMIT 5
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT date_trunc('minute', ts) AS bucket, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               GROUP BY bucket
               ORDER BY bucket ASC
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               ORDER BY ts DESC
               LIMIT 50
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1 AND status BETWEEN 400 AND 499
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2 AND status BETWEEN 400 AND 499
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               ORDER BY ts DESC
               LIMIT 50
             `,
           since,
+          until,
           host,
         ),
         this.prisma.$queryRawUnsafe<any[]>(
           `
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1 AND status BETWEEN 500 AND 599
-                AND ($2 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $2)
+              WHERE ts >= $1 AND ts <= $2 AND status BETWEEN 500 AND 599
+                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
               ORDER BY ts DESC
               LIMIT 50
             `,
           since,
+          until,
           host,
         ),
       ]);
@@ -797,7 +815,7 @@ export class AdminAnalyticsService {
           requests: Number(x.requests || 0),
         })),
         timeline: timelineRows.map((x) => ({
-          label: this.formatTimeLabel(new Date(x.bucket)),
+          label: this.formatTimeLabel(new Date(x.bucket), range.isCustom),
           requests: Number(x.requests || 0),
         })),
         accessLogs: accessRows.map((x) => this.mapTrafficLogRow(x)),
@@ -918,11 +936,54 @@ export class AdminAnalyticsService {
     }
   }
 
-  private formatTimeLabel(date: Date): string {
-    return date.toLocaleTimeString('vi-VN', {
+  private formatTimeLabel(date: Date, includeDate = false): string {
+    return date.toLocaleString('vi-VN', {
+      ...(includeDate ? { day: '2-digit', month: '2-digit' } : {}),
       hour: '2-digit',
       minute: '2-digit',
     });
+  }
+
+  private resolveTimeRange(
+    window: AnalyticsWindow,
+    fromDate?: string,
+    toDate?: string,
+  ): AnalyticsRange {
+    const parsedFrom = this.parseRangeDate(fromDate, false);
+    const parsedTo = this.parseRangeDate(toDate, true);
+
+    if (parsedFrom && parsedTo && parsedFrom <= parsedTo) {
+      return {
+        since: parsedFrom,
+        until: parsedTo,
+        isCustom: true,
+      };
+    }
+
+    const until = new Date();
+    const since = new Date(
+      until.getTime() - this.getWindowMinutes(window) * 60 * 1000,
+    );
+    return {
+      since,
+      until,
+      isCustom: false,
+    };
+  }
+
+  private parseRangeDate(raw?: string, endOfDay = false): Date | null {
+    const value = String(raw || '').trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      return null;
+    }
+
+    const date = new Date(
+      `${value}T${endOfDay ? '23:59:59.999' : '00:00:00.000'}Z`,
+    );
+    if (Number.isNaN(date.getTime())) {
+      return null;
+    }
+    return date;
   }
 
   private normalizeHost(value: string, stripWww = false): string {

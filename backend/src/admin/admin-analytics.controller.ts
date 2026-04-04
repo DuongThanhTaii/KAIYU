@@ -35,8 +35,15 @@ export class AdminAnalyticsController {
   async getRealtime(
     @Req() req: any,
     @Query('window') window?: AnalyticsWindow,
+    @Query('from') fromDate?: string,
+    @Query('to') to?: string,
   ) {
-    return this.analyticsService.getRealtimeSnapshot(req.user, window || '1h');
+    return this.analyticsService.getRealtimeSnapshot(
+      req.user,
+      window || '1h',
+      fromDate,
+      to,
+    );
   }
 
   @Sse('stream')
@@ -44,6 +51,8 @@ export class AdminAnalyticsController {
   streamRealtime(
     @Req() req: any,
     @Query('window') window?: AnalyticsWindow,
+    @Query('from') fromDate?: string,
+    @Query('to') to?: string,
     @Query('intervalSec') intervalSec?: number,
   ) {
     const safeInterval = this.analyticsService.resolveStreamInterval(
@@ -54,7 +63,12 @@ export class AdminAnalyticsController {
     return timer(0, safeInterval * 1000).pipe(
       switchMap(() =>
         from(
-          this.analyticsService.getRealtimeSnapshot(req.user, window || '1h'),
+          this.analyticsService.getRealtimeSnapshot(
+            req.user,
+            window || '1h',
+            fromDate,
+            to,
+          ),
         ),
       ),
       map(

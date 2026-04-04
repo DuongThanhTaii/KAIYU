@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import AdminLayout from "@/components/layout/AdminLayout";
 import Icon from "@/components/common/Icon";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,7 +74,13 @@ function MetricCard({
 
 export default function AdminAnalyticsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+
+  const initialFrom =
+    (searchParams.get("from") || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || "";
+  const initialTo =
+    (searchParams.get("to") || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || "";
 
   const [permissions, setPermissions] = useState<AnalyticsPermissions | null>(
     null,
@@ -90,6 +96,10 @@ export default function AdminAnalyticsPage() {
   const [activeMainTab, setActiveMainTab] = useState<
     "analytics" | "access" | "error5xx" | "error4xx"
   >("analytics");
+  const [fromDateInput, setFromDateInput] = useState(initialFrom);
+  const [toDateInput, setToDateInput] = useState(initialTo);
+  const [appliedFromDate, setAppliedFromDate] = useState(initialFrom);
+  const [appliedToDate, setAppliedToDate] = useState(initialTo);
 
   const abortRef = useRef<AbortController | null>(null);
   const reconnectRef = useRef<number | null>(null);
@@ -107,7 +117,7 @@ export default function AdminAnalyticsPage() {
     try {
       const [perm, initial] = await Promise.all([
         getAnalyticsPermissions(),
-        getRealtimeAnalytics(windowSize),
+        getRealtimeAnalytics(windowSize, appliedFromDate, appliedToDate),
       ]);
       setPermissions(perm);
       setSnapshot(initial);
@@ -120,7 +130,7 @@ export default function AdminAnalyticsPage() {
     } finally {
       setLoading(false);
     }
-  }, [windowSize]);
+  }, [windowSize, appliedFromDate, appliedToDate]);
 
   const startStream = useCallback(() => {
     if (!isAuthenticated || user?.role !== "admin") return;
@@ -143,7 +153,13 @@ export default function AdminAnalyticsPage() {
         }
 
         const intervalSec = permissions?.defaultStreamIntervalSec || 5;
-        const url = `${getAdminApiBaseUrl()}/admin/analytics/stream?window=${windowSize}&intervalSec=${intervalSec}`;
+        const streamQuery = new URLSearchParams({
+          window: windowSize,
+          intervalSec: String(intervalSec),
+        });
+        if (appliedFromDate) streamQuery.set("from", appliedFromDate);
+        if (appliedToDate) streamQuery.set("to", appliedToDate);
+        const url = `${getAdminApiBaseUrl()}/admin/analytics/stream?${streamQuery.toString()}`;
 
         const response = await fetch(url, {
           method: "GET",
@@ -200,11 +216,39 @@ export default function AdminAnalyticsPage() {
 
     void connect();
   }, [
+    appliedFromDate,
+    appliedToDate,
     isAuthenticated,
     permissions?.defaultStreamIntervalSec,
     user?.role,
     windowSize,
   ]);
+
+  const hasCustomRange = Boolean(appliedFromDate && appliedToDate);
+
+  const applyDateRange = () => {
+    if (!fromDateInput || !toDateInput) {
+      setError("Vui lòng chọn đầy đủ Từ ngày và Đến ngày.");
+      return;
+    }
+    if (fromDateInput > toDateInput) {
+      setError(
+        "Khoảng ngày không hợp lệ: Từ ngày phải nhỏ hơn hoặc bằng Đến ngày.",
+      );
+      return;
+    }
+    setAppliedFromDate(fromDateInput);
+    setAppliedToDate(toDateInput);
+    setError(null);
+  };
+
+  const clearDateRange = () => {
+    setFromDateInput("");
+    setToDateInput("");
+    setAppliedFromDate("");
+    setAppliedToDate("");
+    setError(null);
+  };
 
   useEffect(() => {
     if (isAuthenticated && user?.role === "admin") {
@@ -334,7 +378,10 @@ export default function AdminAnalyticsPage() {
                 {WINDOW_OPTIONS.map((item) => (
                   <button
                     key={item.value}
-                    onClick={() => setWindowSize(item.value)}
+                    onClick={() => {
+                      setWindowSize(item.value);
+                      clearDateRange();
+                    }}
                     className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
                       windowSize === item.value
                         ? "bg-primary text-on-primary shadow-md shadow-primary/20"
@@ -345,6 +392,50 @@ export default function AdminAnalyticsPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-text-secondary">
+                  Từ ngày
+                </label>
+                <input
+                  type="date"
+                  value={fromDateInput}
+                  onChange={(e) => setFromDateInput(e.target.value)}
+                  className="rounded-lg border border-border-color bg-background-dark px-2.5 py-1.5 text-xs text-text-base"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[11px] font-semibold text-text-secondary">
+                  Đến ngày
+                </label>
+                <input
+                  type="date"
+                  value={toDateInput}
+                  onChange={(e) => setToDateInput(e.target.value)}
+                  className="rounded-lg border border-border-color bg-background-dark px-2.5 py-1.5 text-xs text-text-base"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={applyDateRange}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-on-primary hover:opacity-90"
+              >
+                Áp dụng
+              </button>
+              <button
+                type="button"
+                onClick={clearDateRange}
+                className="rounded-lg border border-border-color px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-text-base"
+              >
+                Bỏ lọc
+              </button>
+              {hasCustomRange && (
+                <span className="text-xs text-primary font-semibold">
+                  Đang lọc: {appliedFromDate} {"->"} {appliedToDate}
+                </span>
+              )}
             </div>
           </div>
 

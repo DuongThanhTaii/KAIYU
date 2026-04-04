@@ -277,8 +277,13 @@ export const getAnalyticsPermissions = (): Promise<AnalyticsPermissions> => {
 
 export const getRealtimeAnalytics = (
   window: AnalyticsWindow = "1h",
+  from?: string,
+  to?: string,
 ): Promise<AnalyticsSnapshot> => {
-  const query = new URLSearchParams({ window }).toString();
+  const queryParams = new URLSearchParams({ window });
+  if (from) queryParams.set("from", from);
+  if (to) queryParams.set("to", to);
+  const query = queryParams.toString();
   return apiRequest<AnalyticsSnapshot>(`/admin/analytics/realtime?${query}`);
 };
 
