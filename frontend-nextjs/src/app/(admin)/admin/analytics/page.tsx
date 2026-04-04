@@ -7,7 +7,7 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import AdminLayout from "@/components/layout/AdminLayout";
 import Icon from "@/components/common/Icon";
 import { useAuth } from "@/contexts/AuthContext";
@@ -74,13 +74,7 @@ function MetricCard({
 
 export default function AdminAnalyticsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-
-  const initialFrom =
-    (searchParams.get("from") || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || "";
-  const initialTo =
-    (searchParams.get("to") || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || "";
 
   const [permissions, setPermissions] = useState<AnalyticsPermissions | null>(
     null,
@@ -96,10 +90,10 @@ export default function AdminAnalyticsPage() {
   const [activeMainTab, setActiveMainTab] = useState<
     "analytics" | "access" | "error5xx" | "error4xx"
   >("analytics");
-  const [fromDateInput, setFromDateInput] = useState(initialFrom);
-  const [toDateInput, setToDateInput] = useState(initialTo);
-  const [appliedFromDate, setAppliedFromDate] = useState(initialFrom);
-  const [appliedToDate, setAppliedToDate] = useState(initialTo);
+  const [fromDateInput, setFromDateInput] = useState("");
+  const [toDateInput, setToDateInput] = useState("");
+  const [appliedFromDate, setAppliedFromDate] = useState("");
+  const [appliedToDate, setAppliedToDate] = useState("");
 
   const abortRef = useRef<AbortController | null>(null);
   const reconnectRef = useRef<number | null>(null);
@@ -110,6 +104,20 @@ export default function AdminAnalyticsPage() {
       else if (user?.role !== "admin") router.replace("/dashboard");
     }
   }, [authLoading, isAuthenticated, user, router]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const from = (params.get("from") || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || "";
+    const to = (params.get("to") || "").match(/^\d{4}-\d{2}-\d{2}$/)?.[0] || "";
+
+    if (from && to && from <= to) {
+      setFromDateInput(from);
+      setToDateInput(to);
+      setAppliedFromDate(from);
+      setAppliedToDate(to);
+    }
+  }, []);
 
   const fetchInitial = useCallback(async () => {
     setLoading(true);
