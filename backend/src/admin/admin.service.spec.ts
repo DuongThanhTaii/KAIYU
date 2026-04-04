@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock the parser BEFORE importing the service to avoid module resolution errors
 jest.mock('../videos/subtitle-parser', () => ({
@@ -15,7 +16,7 @@ describe('AdminService', () => {
   let service: AdminService;
   let prisma: PrismaService;
 
-  const mockPrisma = {
+  const mockPrisma: any = {
     subtitle: {
       update: jest.fn(),
       findUnique: jest.fn(),
@@ -54,7 +55,10 @@ describe('AdminService', () => {
     mockPrisma.subtitleToken.findMany.mockResolvedValue([]);
     mockPrisma.vocabulary.findMany.mockResolvedValue([]);
     // Default: return a subtitle with tokens for updateSubtitle's final findUnique
-    mockPrisma.subtitle.findUnique.mockResolvedValue({ id: 'sub-1', tokens: [] });
+    mockPrisma.subtitle.findUnique.mockResolvedValue({
+      id: 'sub-1',
+      tokens: [],
+    });
   });
 
   it('should be defined', () => {

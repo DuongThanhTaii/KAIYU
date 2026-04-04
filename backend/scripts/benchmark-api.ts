@@ -20,7 +20,10 @@ function parsePositiveInt(input: string | undefined, fallback: number): number {
 
 function percentile(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
-  const index = Math.min(sorted.length - 1, Math.ceil((p / 100) * sorted.length) - 1);
+  const index = Math.min(
+    sorted.length - 1,
+    Math.ceil((p / 100) * sorted.length) - 1,
+  );
   return sorted[index];
 }
 
@@ -47,7 +50,9 @@ async function runBenchmark(options: BenchOptions): Promise<void> {
 
   for (let i = 0; i < options.requests; i += options.concurrency) {
     const batchSize = Math.min(options.concurrency, options.requests - i);
-    const batch = Array.from({ length: batchSize }, () => requestOnce(options.url));
+    const batch = Array.from({ length: batchSize }, () =>
+      requestOnce(options.url),
+    );
     const results = await Promise.allSettled(batch);
 
     for (const result of results) {
@@ -63,7 +68,8 @@ async function runBenchmark(options: BenchOptions): Promise<void> {
   }
 
   const sorted = [...durations].sort((a, b) => a - b);
-  const avg = sorted.reduce((sum, item) => sum + item, 0) / Math.max(sorted.length, 1);
+  const avg =
+    sorted.reduce((sum, item) => sum + item, 0) / Math.max(sorted.length, 1);
   const p95 = percentile(sorted, 95);
   const p99 = percentile(sorted, 99);
   const min = sorted[0] ?? 0;
@@ -86,11 +92,15 @@ async function runBenchmark(options: BenchOptions): Promise<void> {
 
   if (p95 >= options.thresholdMs) {
     process.exitCode = 1;
-    console.error(`Benchmark failed: P95 ${p95.toFixed(2)} ms is not below ${options.thresholdMs} ms.`);
+    console.error(
+      `Benchmark failed: P95 ${p95.toFixed(2)} ms is not below ${options.thresholdMs} ms.`,
+    );
     return;
   }
 
-  console.log(`Benchmark passed: P95 ${p95.toFixed(2)} ms < ${options.thresholdMs} ms.`);
+  console.log(
+    `Benchmark passed: P95 ${p95.toFixed(2)} ms < ${options.thresholdMs} ms.`,
+  );
 }
 
 const options: BenchOptions = {

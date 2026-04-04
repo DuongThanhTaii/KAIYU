@@ -15,7 +15,6 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: "Dashboard", path: "/admin", icon: "dashboard" },
-  { label: "Realtime Analytics", path: "/admin/analytics", icon: "analytics" },
   { label: "Quản lý Video", path: "/admin/videos", icon: "video_library" },
   { label: "Quản lý Từ vựng", path: "/admin/vocabulary", icon: "translate" },
   { label: "Quản lý Users", path: "/admin/users", icon: "group" },

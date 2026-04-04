@@ -4,7 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import AdminLayout from "@/components/layout/AdminLayout";
 import StatsCard from "@/components/admin/StatsCard";
+import AdminRealtimeAnalyticsSection from "@/components/admin/AdminRealtimeAnalyticsSection";
 import Icon from "@/components/common/Icon";
+import ThemedDateRangePicker from "@/components/common/ThemedDateRangePicker";
 import {
   getOverviewStats,
   getActivityStats,
@@ -19,24 +21,12 @@ export default function AdminDashboard() {
   const [selectedDays, setSelectedDays] = useState<number>(7);
   const [chartData, setChartData] = useState<ActivityData[]>([]);
   const [chartLoading, setChartLoading] = useState(false);
-  const [analyticsFromDate, setAnalyticsFromDate] = useState("");
-  const [analyticsToDate, setAnalyticsToDate] = useState("");
-
-  useEffect(() => {
-    const today = new Date();
-    const from = new Date(today);
-    from.setDate(today.getDate() - 6);
-
-    const formatDateInput = (date: Date) => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    };
-
-    setAnalyticsFromDate(formatDateInput(from));
-    setAnalyticsToDate(formatDateInput(today));
-  }, []);
+  const [showActivityFilter, setShowActivityFilter] = useState(false);
+  const [activityFromDate, setActivityFromDate] = useState("");
+  const [activityToDate, setActivityToDate] = useState("");
+  const [appliedActivityFromDate, setAppliedActivityFromDate] = useState("");
+  const [appliedActivityToDate, setAppliedActivityToDate] = useState("");
+  const [activityFilterError, setActivityFilterError] = useState("");
 
   // Fetch activity stats for chart
   const fetchActivityData = useCallback(async (days: number) => {
@@ -87,6 +77,39 @@ export default function AdminDashboard() {
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
+
+  const activityDataForView =
+    appliedActivityFromDate && appliedActivityToDate
+      ? chartData.filter(
+          (day) =>
+            day.date >= appliedActivityFromDate &&
+            day.date <= appliedActivityToDate,
+        )
+      : chartData;
+
+  const applyActivityRange = () => {
+    if (!activityFromDate || !activityToDate) {
+      setActivityFilterError("Vui lòng chọn đủ Từ ngày và Đến ngày.");
+      return;
+    }
+    if (activityFromDate > activityToDate) {
+      setActivityFilterError("Khoảng ngày không hợp lệ.");
+      return;
+    }
+
+    setAppliedActivityFromDate(activityFromDate);
+    setAppliedActivityToDate(activityToDate);
+    setActivityFilterError("");
+    setShowActivityFilter(false);
+  };
+
+  const clearActivityRange = () => {
+    setActivityFromDate("");
+    setActivityToDate("");
+    setAppliedActivityFromDate("");
+    setAppliedActivityToDate("");
+    setActivityFilterError("");
   };
 
   if (loading) {
@@ -156,53 +179,65 @@ export default function AdminDashboard() {
             <h3 className="text-base sm:text-lg font-bold text-text-base">
               Thống kê hoạt động
             </h3>
-            <div className="flex items-center gap-1 bg-background-dark rounded-xl p-1 shrink-0">
-              {[7, 30, 90].map((days) => (
-                <button
-                  key={days}
-                  onClick={() => handleDaysChange(days)}
-                  className={`px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${
-                    selectedDays === days
-                      ? "bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105"
-                      : "text-text-secondary hover:text-text-base hover:bg-surface-highlight"
-                  }`}
-                >
-                  {days} ngày
-                </button>
-              ))}
-            </div>
-          </div>
+            <div className="relative flex items-center gap-2 shrink-0">
+              <div className="flex items-center gap-1 bg-background-dark rounded-xl p-1">
+                {[7, 30, 90].map((days) => (
+                  <button
+                    key={days}
+                    onClick={() => handleDaysChange(days)}
+                    className={`px-3 py-1.5 text-[10px] sm:text-xs font-bold rounded-lg transition-all ${
+                      selectedDays === days
+                        ? "bg-primary text-on-primary shadow-lg shadow-primary/20 scale-105"
+                        : "text-text-secondary hover:text-text-base hover:bg-surface-highlight"
+                    }`}
+                  >
+                    {days} ngày
+                  </button>
+                ))}
+              </div>
 
-          <div className="mb-4 rounded-xl border border-border-color bg-background-dark/40 p-3">
-            <div className="flex flex-wrap items-end gap-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-text-secondary">
-                  Từ ngày
-                </label>
-                <input
-                  type="date"
-                  value={analyticsFromDate}
-                  onChange={(e) => setAnalyticsFromDate(e.target.value)}
-                  className="rounded-lg border border-border-color bg-background-dark px-2.5 py-1.5 text-xs text-text-base"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[11px] font-semibold text-text-secondary">
-                  Đến ngày
-                </label>
-                <input
-                  type="date"
-                  value={analyticsToDate}
-                  onChange={(e) => setAnalyticsToDate(e.target.value)}
-                  className="rounded-lg border border-border-color bg-background-dark px-2.5 py-1.5 text-xs text-text-base"
-                />
-              </div>
-              <Link
-                href={`/admin/analytics?from=${analyticsFromDate}&to=${analyticsToDate}`}
-                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-on-primary hover:opacity-90"
+              <button
+                type="button"
+                onClick={() => setShowActivityFilter((prev) => !prev)}
+                className={`size-9 rounded-lg border border-border-color bg-background-dark flex items-center justify-center transition-all ${
+                  showActivityFilter ||
+                  (appliedActivityFromDate && appliedActivityToDate)
+                    ? "text-primary border-primary/50"
+                    : "text-text-secondary hover:text-text-base"
+                }`}
+                title="Lọc theo ngày"
               >
-                Mở Analytics theo khoảng ngày
-              </Link>
+                <Icon name="filter_list" size="sm" />
+              </button>
+
+              {showActivityFilter && (
+                <div className="absolute right-0 top-full z-20 mt-2 w-[320px] rounded-xl border border-border-color bg-surface-dark p-3 shadow-2xl">
+                  <ThemedDateRangePicker
+                    fromDate={activityFromDate}
+                    toDate={activityToDate}
+                    onFromDateChange={setActivityFromDate}
+                    onToDateChange={setActivityToDate}
+                    error={activityFilterError}
+                  />
+
+                  <div className="mt-3 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={clearActivityRange}
+                      className="rounded-lg border border-border-color px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-text-base"
+                    >
+                      Bỏ lọc
+                    </button>
+                    <button
+                      type="button"
+                      onClick={applyActivityRange}
+                      className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-on-primary hover:opacity-90"
+                    >
+                      Áp dụng
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -214,10 +249,12 @@ export default function AdminDashboard() {
           ) : selectedDays === 7 ? (
             /* Bar Chart for 7 days with axes */
             <div className="h-52">
-              {chartData.length > 0 ? (
+              {activityDataForView.length > 0 ? (
                 (() => {
                   const maxValue = Math.max(
-                    ...chartData.map((d) => Math.max(d.newUsers, d.videoViews)),
+                    ...activityDataForView.map((d) =>
+                      Math.max(d.newUsers, d.videoViews),
+                    ),
                     1,
                   );
                   const chartHeight = 176; // h-44 = 11rem = 176px
@@ -251,7 +288,7 @@ export default function AdminDashboard() {
 
                           {/* Bars */}
                           <div className="absolute inset-0 flex items-end">
-                            {chartData.map((day, index) => {
+                            {activityDataForView.map((day, index) => {
                               const userHeightPx =
                                 (day.newUsers / maxValue) * chartHeight;
                               const videoHeightPx =
@@ -308,7 +345,7 @@ export default function AdminDashboard() {
 
                         {/* X-axis labels - border-l transparent matches bars container */}
                         <div className="flex pt-2 text-[10px] sm:text-xs text-text-secondary border-l border-transparent overflow-hidden">
-                          {chartData.map((day, index) => {
+                          {activityDataForView.map((day, index) => {
                             const isToday = day.date === today;
                             return (
                               <div
@@ -356,8 +393,10 @@ export default function AdminDashboard() {
                   "Tháng 12",
                 ];
 
-                const groupedByMonth: { [key: string]: typeof chartData } = {};
-                chartData.forEach((day) => {
+                const groupedByMonth: {
+                  [key: string]: typeof activityDataForView;
+                } = {};
+                activityDataForView.forEach((day) => {
                   const [year, month] = day.date.split("-");
                   const monthKey = `${monthNames[parseInt(month) - 1]}/${year}`;
                   if (!groupedByMonth[monthKey]) {
@@ -562,61 +601,8 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-6 grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-4">
-        <Link
-          href="/admin/videos"
-          className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-amber-500/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
-        >
-          <div className="p-3 rounded-lg bg-amber-500/10 flex items-center justify-center">
-            <Icon name="add_circle" className="text-2xl text-amber-500" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-text-base">Thêm Video</p>
-            <p className="text-xs text-text-secondary">Upload video mới</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/vocabulary"
-          className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-primary/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
-        >
-          <div className="p-3 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Icon name="library_add" className="text-2xl text-primary" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-text-base">Thêm Từ vựng</p>
-            <p className="text-xs text-text-secondary">Thêm từ mới vào kho</p>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/vocabulary"
-          className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-blue-500/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
-        >
-          <div className="p-3 rounded-lg bg-blue-500/10 flex items-center justify-center">
-            <Icon name="upload_file" className="text-2xl text-blue-500" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-text-base">Import Excel</p>
-            <p className="text-xs text-text-secondary">
-              Import từ vựng hàng loạt
-            </p>
-          </div>
-        </Link>
-
-        <Link
-          href="/admin/achievements"
-          className="p-3 sm:p-4 bg-surface-dark rounded-xl border border-border-color hover:border-purple-500/30 transition-colors shadow-sm flex items-center gap-3 sm:gap-4"
-        >
-          <div className="p-3 rounded-lg bg-purple-500/10 flex items-center justify-center">
-            <Icon name="emoji_events" className="text-2xl text-purple-500" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-text-base">Thành tựu</p>
-            <p className="text-xs text-text-secondary">Quản lý achievements</p>
-          </div>
-        </Link>
+      <div className="mt-6">
+        <AdminRealtimeAnalyticsSection />
       </div>
     </AdminLayout>
   );

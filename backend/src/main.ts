@@ -17,8 +17,10 @@ async function bootstrap() {
   app.setGlobalPrefix('api');
 
   // CORS configuration
-  const frontendUrls = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : ['http://localhost:5173', 'http://localhost:3000'];
-  
+  const frontendUrls = process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(',')
+    : ['http://localhost:5173', 'http://localhost:3000'];
+
   app.enableCors({
     origin: frontendUrls,
     credentials: true,
@@ -38,7 +40,9 @@ async function bootstrap() {
   // Swagger documentation
   const config = new DocumentBuilder()
     .setTitle('Chinese Learning API')
-    .setDescription('API for Chinese language learning application with interactive subtitles')
+    .setDescription(
+      'API for Chinese language learning application with interactive subtitles',
+    )
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth', 'Authentication endpoints')
