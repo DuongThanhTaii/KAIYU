@@ -104,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Link
                                 key={item.path}
                                 href={item.path}
-                                className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'justify-center' : ''} ${isActive(item.path)
+                                className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-4'} px-3 py-3 rounded-xl transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'justify-center' : ''} ${isActive(item.path)
                                     ? 'bg-primary text-on-primary shadow-md shadow-primary/10'
                                     : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                     }`}
@@ -117,9 +117,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
-                                        transition: 'opacity 200ms ease, transform 200ms ease',
+                                        transition: 'opacity 200ms ease, transform 200ms ease, width 200ms ease',
                                         opacity: isCollapsed ? 0 : 1,
-                                        transform: isCollapsed ? 'translateX(-6px)' : 'translateX(0)'
+                                        transform: isCollapsed ? 'translateX(-6px)' : 'translateX(0)',
+                                        width: isCollapsed ? 0 : 'auto'
                                     }}
                                 >
                                     {item.label}
@@ -133,7 +134,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex flex-col gap-2">
                     <Link
                         href="/settings"
-                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center ${isCollapsed ? 'gap-0' : 'gap-4'} px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? "Cài đặt" : undefined}
                     >
                         <Icon name="settings" />
@@ -143,9 +144,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                                 whiteSpace: 'nowrap',
                                 overflow: 'hidden',
                                 textOverflow: 'ellipsis',
-                                transition: 'opacity 200ms ease, transform 200ms ease',
+                                transition: 'opacity 200ms ease, transform 200ms ease, width 200ms ease',
                                 opacity: isCollapsed ? 0 : 1,
-                                transform: isCollapsed ? 'translateX(-6px)' : 'translateX(0)'
+                                transform: isCollapsed ? 'translateX(-6px)' : 'translateX(0)',
+                                width: isCollapsed ? 0 : 'auto'
                             }}
                         >
                             Cài đặt
