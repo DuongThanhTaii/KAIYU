@@ -43,7 +43,6 @@ const Sidebar: React.FC<SidebarProps> = ({
 
   const isActive = (path: string) => pathname === path;
 
-  // Fetch daily progress
   const fetchDailyProgress = useCallback(async () => {
     try {
       const daily = await progressApi.getDailyProgress();
@@ -61,21 +60,17 @@ const Sidebar: React.FC<SidebarProps> = ({
     fetchDailyProgress();
   }, [fetchDailyProgress]);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setIsMobileOpen(false);
   }, [pathname, setIsMobileOpen]);
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <aside
-        className={`hidden lg:flex flex-col border-r border-border-color bg-[var(--color-background-dark)] p-4 justify-between shrink-0 transition-all duration-300 ease-in-out ${isCollapsed ? "w-20" : "w-72"}`}
+        className={`hidden lg:flex flex-col border-r border-border-color bg-[var(--color-background-dark)] p-4 justify-between shrink-0 transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${isCollapsed ? "w-20" : "w-72"}`}
       >
         <div className="flex flex-col gap-8">
-          {/* Header: Hamburger + Brand */}
-          <div className="flex items-center gap-2 px-1">
-            {/* Menu Toggle */}
+          <div className="flex items-center gap-2 px-1 min-h-12">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="p-2 rounded-lg hover:bg-surface-highlight transition-colors shrink-0 inline-flex items-center justify-center cursor-pointer"
@@ -88,9 +83,17 @@ const Sidebar: React.FC<SidebarProps> = ({
               />
             </button>
 
-            {/* Brand - Hidden entirely when collapsed */}
-            {!isCollapsed && (
-              <div className="flex items-center gap-2">
+            <div
+              className="flex items-center gap-2 overflow-hidden"
+              style={{
+                transition:
+                  "max-width 360ms ease, opacity 240ms ease, transform 240ms ease",
+                maxWidth: isCollapsed ? 0 : 240,
+                opacity: isCollapsed ? 0 : 1,
+                transform: isCollapsed ? "translateX(-6px)" : "translateX(0)",
+              }}
+              aria-hidden={isCollapsed}
+            >
                 <div className="size-9 flex items-center justify-center shrink-0 rounded-full overflow-hidden bg-white">
                   <Image
                     src="/images/logo_nentrang.png"
@@ -108,72 +111,72 @@ const Sidebar: React.FC<SidebarProps> = ({
                     CHINESE LANGUAGE SYSTEM
                   </span>
                 </div>
-              </div>
-            )}
+            </div>
           </div>
 
-          {/* Navigation */}
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
                 key={item.path}
                 href={item.path}
-                className={`flex items-center ${isCollapsed ? "gap-0" : "gap-4"} px-3 py-3 rounded-xl transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? "justify-center" : ""} ${
+                className={`flex items-center px-3 py-3 rounded-xl transition-colors duration-300 overflow-hidden ${
                   isActive(item.path)
                     ? "bg-primary text-on-primary shadow-md shadow-primary/10"
                     : "text-text-secondary hover:bg-surface-highlight hover:text-text-base"
                 }`}
                 title={isCollapsed ? item.label : undefined}
               >
-                <Icon name={item.icon} filled={isActive(item.path)} />
-                <p
+                <span className="w-6 min-w-6 flex items-center justify-center">
+                  <Icon name={item.icon} filled={isActive(item.path)} />
+                </span>
+                <span
                   className={`text-sm ${isActive(item.path) ? "font-bold" : "font-medium"}`}
                   style={{
                     whiteSpace: "nowrap",
                     overflow: "hidden",
                     textOverflow: "ellipsis",
                     transition:
-                      "opacity 200ms ease, transform 200ms ease, width 200ms ease",
+                      "max-width 320ms ease, opacity 220ms ease, transform 220ms ease, margin 320ms ease",
                     opacity: isCollapsed ? 0 : 1,
-                    transform: isCollapsed
-                      ? "translateX(-6px)"
-                      : "translateX(0)",
-                    width: isCollapsed ? 0 : "auto",
+                    transform: isCollapsed ? "translateX(-6px)" : "translateX(0)",
+                    maxWidth: isCollapsed ? 0 : 180,
+                    marginLeft: isCollapsed ? 0 : 16,
                   }}
                 >
                   {item.label}
-                </p>
+                </span>
               </Link>
             ))}
           </nav>
         </div>
 
-        {/* Bottom Actions */}
         <div className="flex flex-col gap-2">
           <Link
             href="/settings"
-            className={`flex items-center ${isCollapsed ? "gap-0" : "gap-4"} px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? "justify-center" : ""}`}
+            className="flex items-center px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-colors duration-300 overflow-hidden"
             title={isCollapsed ? "Cài đặt" : undefined}
           >
-            <Icon name="settings" />
-            <p
+            <span className="w-6 min-w-6 flex items-center justify-center">
+              <Icon name="settings" />
+            </span>
+            <span
               className="text-sm font-medium"
               style={{
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
                 transition:
-                  "opacity 200ms ease, transform 200ms ease, width 200ms ease",
+                  "max-width 320ms ease, opacity 220ms ease, transform 220ms ease, margin 320ms ease",
                 opacity: isCollapsed ? 0 : 1,
                 transform: isCollapsed ? "translateX(-6px)" : "translateX(0)",
-                width: isCollapsed ? 0 : "auto",
+                maxWidth: isCollapsed ? 0 : 180,
+                marginLeft: isCollapsed ? 0 : 16,
               }}
             >
               Cài đặt
-            </p>
+            </span>
           </Link>
 
-          {/* Daily Goal Progress - Show different versions */}
           {!isCollapsed ? (
             <div className="px-4 py-4 mt-2 rounded-xl bg-surface-dark border border-border-color shadow-sm">
               <div className="flex items-center justify-between mb-2">
@@ -188,14 +191,13 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div
                   className="h-full bg-primary rounded-full transition-all duration-500"
                   style={{ width: `${dailyProgress}%` }}
-                ></div>
+                />
               </div>
               <div className="mt-2 text-xs text-text-secondary text-center">
                 {minutesStudied}/{user?.dailyGoalMinutes || 30} phút
               </div>
             </div>
           ) : (
-            // Collapsed: Mini circular progress
             <div className="flex justify-center mt-2">
               <div
                 className="relative w-12 h-12"
@@ -232,7 +234,6 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </aside>
 
-      {/* Mobile/Tablet Overlay - Always rendered, animated with opacity */}
       <div
         className={`lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-all duration-300 ease-in-out ${
           isMobileOpen
@@ -242,14 +243,12 @@ const Sidebar: React.FC<SidebarProps> = ({
         onClick={() => setIsMobileOpen(false)}
       />
 
-      {/* Mobile/Tablet Sidebar */}
       <aside
         className={`lg:hidden fixed top-0 left-0 h-full w-72 flex flex-col border-r border-border-color bg-[var(--color-background-dark)] p-4 justify-between z-50 transition-transform duration-300 ease-in-out ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <div className="flex flex-col gap-8">
-          {/* Header */}
           <div className="flex items-center gap-2 px-1">
             <button
               onClick={() => setIsMobileOpen(false)}
@@ -278,7 +277,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           </div>
 
-          {/* Navigation */}
           <nav className="flex flex-col gap-2">
             {navItems.map((item) => (
               <Link
@@ -301,7 +299,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Bottom */}
         <div className="flex flex-col gap-2">
           <Link
             href="/settings"
@@ -323,7 +320,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <div
                 className="h-full bg-primary rounded-full transition-all duration-500"
                 style={{ width: `${dailyProgress}%` }}
-              ></div>
+              />
             </div>
             <div className="mt-2 text-xs text-text-secondary text-center">
               {minutesStudied}/{user?.dailyGoalMinutes || 30} phút

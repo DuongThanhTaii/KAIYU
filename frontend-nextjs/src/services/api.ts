@@ -85,9 +85,20 @@ api.interceptors.response.use(
     (response) => response,
     (error: AxiosError<{ message?: string; error?: string }>) => {
         const shouldSkipAuthRedirect = Boolean(error.config?.skipAuthRedirect);
+        const requestAuthHeader =
+            (error.config?.headers as any)?.Authorization ||
+            (error.config?.headers as any)?.authorization;
+        const requestToken =
+            typeof requestAuthHeader === 'string'
+                ? requestAuthHeader.replace(/^Bearer\s+/i, '').trim()
+                : null;
+        const currentToken = tokenManager.getToken();
+        const isCurrentSessionRequest =
+            !requestToken || (currentToken !== null && requestToken === currentToken);
 
-        // Handle 401 Unauthorized - auto logout
-        if (error.response?.status === 401 && !shouldSkipAuthRedirect) {
+        // Handle 401 Unauthorized - only auto logout if it belongs to current session.
+        // This prevents stale in-flight requests from an old account clearing a newer login.
+        if (error.response?.status === 401 && !shouldSkipAuthRedirect && isCurrentSessionRequest) {
             tokenManager.clearAuth();
 
             if (typeof window !== 'undefined') {

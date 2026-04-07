@@ -582,7 +582,7 @@ export const uploadFile = async (
   const formData = new FormData();
   formData.append("file", file);
 
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("auth_token");
   const response = await fetch(`${BASE_URL}/upload/${type}`, {
     method: "POST",
     headers: {
@@ -634,7 +634,7 @@ export const uploadFileWithProgress = async (
 
     xhr.addEventListener("error", () => reject(new Error("Upload failed")));
 
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("auth_token");
     xhr.open("POST", `${BASE_URL}/upload/${type}`);
     if (token) {
       xhr.setRequestHeader("Authorization", `Bearer ${token}`);

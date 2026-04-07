@@ -4,6 +4,7 @@ import {
   Body,
   Get,
   Put,
+  Header,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -120,6 +121,9 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
+  @Header('Cache-Control', 'no-store, no-cache, must-revalidate, private')
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current user profile' })
   @ApiResponse({ status: 200, description: 'User profile' })

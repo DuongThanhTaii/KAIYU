@@ -107,20 +107,11 @@ export const authApi = {
    */
   async getProfile(): Promise<User> {
     const response = await api.get<User>("/auth/me", {
-      validateStatus: (status) =>
-        (status >= 200 && status < 300) || status === 304,
+      headers: {
+        "Cache-Control": "no-store, no-cache, max-age=0",
+        Pragma: "no-cache",
+      },
     });
-
-    if (response.status === 304) {
-      const cachedUser = tokenManager.getUser();
-      if (cachedUser) {
-        return cachedUser;
-      }
-      throw new Error(
-        "Profile cache returned 304 but no cached user is available",
-      );
-    }
-
     tokenManager.setUser(response.data);
     return response.data;
   },

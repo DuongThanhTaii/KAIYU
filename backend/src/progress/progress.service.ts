@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { XpStreakService } from '../xp-streak/xp-streak.service';
 
 export interface DailyProgress {
     date: string;
@@ -10,7 +11,29 @@ export interface DailyProgress {
 
 @Injectable()
 export class ProgressService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private xpStreak: XpStreakService,
+    ) { }
+
+    private getVietnamDayRange(baseDate: Date = new Date()) {
+        const vietnamOffsetMs = 7 * 60 * 60 * 1000;
+        const vietnamNow = new Date(
+            baseDate.getTime() + baseDate.getTimezoneOffset() * 60 * 1000 + vietnamOffsetMs,
+        );
+
+        const localMidnight = new Date(vietnamNow);
+        localMidnight.setHours(0, 0, 0, 0);
+
+        const nextLocalMidnight = new Date(localMidnight);
+        nextLocalMidnight.setDate(nextLocalMidnight.getDate() + 1);
+
+        return {
+            startUtc: new Date(localMidnight.getTime() - vietnamOffsetMs),
+            endUtc: new Date(nextLocalMidnight.getTime() - vietnamOffsetMs),
+            dateKey: `${localMidnight.getFullYear()}-${String(localMidnight.getMonth() + 1).padStart(2, '0')}-${String(localMidnight.getDate()).padStart(2, '0')}`,
+        };
+    }
 
     async getVideoProgress(userId: string) {
         const progress = await this.prisma.videoProgress.findMany({
@@ -53,6 +76,7 @@ export class ProgressService {
                 videoId,
                 progressPercent: data.progressPercent,
                 lastPositionSeconds: data.lastPositionSeconds,
+                lastWatchedAt: new Date(),
             },
             update: {
                 progressPercent: data.progressPercent,
@@ -61,33 +85,37 @@ export class ProgressService {
             },
         });
 
+        // Streak should be driven by actual study activity, not only login.
+        if (data.lastPositionSeconds > 0 || data.progressPercent > 0) {
+            await this.xpStreak.updateStreak(userId);
+        }
+
         return progress;
     }
 
     async getDailyProgress(userId: string) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
+        const { startUtc, dateKey } = this.getVietnamDayRange();
 
         const [todayVocab, todayReviews, videoProgress] = await Promise.all([
             // Vocabulary saved today
             this.prisma.userVocabulary.count({
                 where: {
                     userId,
-                    savedAt: { gte: today },
+                    savedAt: { gte: startUtc },
                 },
             }),
             // Reviews done today
             this.prisma.flashcardReview.count({
                 where: {
                     userId,
-                    lastReviewAt: { gte: today },
+                    lastReviewAt: { gte: startUtc },
                 },
             }),
             // Videos watched today
             this.prisma.videoProgress.findMany({
                 where: {
                     userId,
-                    lastWatchedAt: { gte: today },
+                    lastWatchedAt: { gte: startUtc },
                 },
                 include: { video: true },
             }),
@@ -101,7 +129,7 @@ export class ProgressService {
         }, 0);
 
         return {
-            date: today.toISOString().split('T')[0],
+            date: dateKey,
             vocabularySaved: todayVocab,
             reviewsCompleted: todayReviews,
             videosWatched: videoProgress.length,
@@ -110,12 +138,11 @@ export class ProgressService {
     }
 
     async getWeeklyProgress(userId: string) {
-        // Use Vietnam timezone (UTC+7) for calculating dates
-        const vietnamOffset = 7 * 60 * 60 * 1000; // 7 hours in milliseconds
         const now = new Date();
-        const vietnamNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60 * 1000) + vietnamOffset);
-
-        // Get start of today in Vietnam timezone
+        const vietnamOffsetMs = 7 * 60 * 60 * 1000;
+        const vietnamNow = new Date(
+            now.getTime() + now.getTimezoneOffset() * 60 * 1000 + vietnamOffsetMs,
+        );
         const today = new Date(vietnamNow);
         today.setHours(0, 0, 0, 0);
 
@@ -129,8 +156,8 @@ export class ProgressService {
             nextDate.setDate(nextDate.getDate() + 1);
 
             // Convert back to UTC for database queries
-            const dateForQuery = new Date(date.getTime() - vietnamOffset);
-            const nextDateForQuery = new Date(nextDate.getTime() - vietnamOffset);
+            const dateForQuery = new Date(date.getTime() - vietnamOffsetMs);
+            const nextDateForQuery = new Date(nextDate.getTime() - vietnamOffsetMs);
 
             const [vocabCount, reviewCount] = await Promise.all([
                 this.prisma.userVocabulary.count({
