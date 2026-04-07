@@ -147,6 +147,14 @@ function DataTable<T extends { id: string | number }>({
                         >
                             <Icon name="chevron_left" className="text-xl" />
                         </button>
+                        <button
+                            onClick={() => onPageChange?.(1)}
+                            disabled={pagination.page === 1}
+                            className="size-10 rounded-full flex items-center justify-center hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="First page"
+                        >
+                            <Icon name="first_page" className="text-xl" />
+                        </button>
                         {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
                             let pageNum: number;
                             if (pagination.totalPages <= 5) {
@@ -177,6 +185,14 @@ function DataTable<T extends { id: string | number }>({
                             className="size-10 rounded-full flex items-center justify-center hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
                             <Icon name="chevron_right" className="text-xl" />
+                        </button>
+                        <button
+                            onClick={() => onPageChange?.(pagination.totalPages)}
+                            disabled={pagination.page === pagination.totalPages}
+                            className="size-10 rounded-full flex items-center justify-center hover:bg-surface-highlight disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            title="Last page"
+                        >
+                            <Icon name="last_page" className="text-xl" />
                         </button>
                     </div>
                 </div>

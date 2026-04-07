@@ -140,11 +140,13 @@ export class AdminController {
         @Query('page') page?: number,
         @Query('limit') limit?: number,
         @Query('role') role?: string,
+        @Query('search') search?: string,
     ) {
         return this.adminService.getAllUsers({
             page: page ? Number(page) : undefined,
             limit: limit ? Number(limit) : undefined,
             role,
+            search,
         });
     }
 

@@ -49,12 +49,12 @@ export default function AdminUsersPage() {
         }
     }, [authLoading, isAuthenticated, user, router]);
 
-    // Fetch users
-    const fetchUsers = useCallback(async (page = 1) => {
+    // Fetch users (supports server-side `search`)
+    const fetchUsers = useCallback(async (page = 1, search?: string) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await getAllUsers({ page, limit: 20, role: filterRole || undefined });
+            const response = await getAllUsers({ page, limit: 20, role: filterRole || undefined, search: search || undefined });
             setUsers(response.data);
             setServerStats(response.stats);
             setPagination({
@@ -73,9 +73,18 @@ export default function AdminUsersPage() {
 
     useEffect(() => {
         if (isAuthenticated && user?.role === 'admin') {
-            fetchUsers();
+            fetchUsers(1, searchQuery || undefined);
         }
     }, [fetchUsers, isAuthenticated, user]);
+
+    // Debounce search input and trigger server-side search
+    useEffect(() => {
+        if (!isAuthenticated || user?.role !== 'admin') return;
+        const t = setTimeout(() => {
+            fetchUsers(1, searchQuery || undefined);
+        }, 350);
+        return () => clearTimeout(t);
+    }, [searchQuery, fetchUsers, isAuthenticated, user]);
 
     const formatDate = (dateStr: string) => {
         const date = new Date(dateStr);
@@ -119,15 +128,12 @@ export default function AdminUsersPage() {
         }
     };
 
-    // Filter users (client-side for search)
+    // Filter users locally only for Premium filter (name/email search is server-side)
     const filteredUsers = users.filter(u => {
-        const matchSearch = !searchQuery ||
-            u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            u.email.toLowerCase().includes(searchQuery.toLowerCase());
         const matchPremium = !filterPremium ||
             (filterPremium === 'true' && u.isPremium) ||
             (filterPremium === 'false' && !u.isPremium);
-        return matchSearch && matchPremium;
+        return matchPremium;
     });
 
     // Stats logic removed (now uses serverStats)
@@ -339,7 +345,7 @@ export default function AdminUsersPage() {
                 columns={columns}
                 loading={loading}
                 pagination={pagination}
-                onPageChange={(page) => fetchUsers(page)}
+                onPageChange={(page) => fetchUsers(page, searchQuery || undefined)}
                 actions={actions}
                 emptyMessage="Không tìm thấy user nào"
             />

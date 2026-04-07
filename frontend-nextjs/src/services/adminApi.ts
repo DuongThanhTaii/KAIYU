@@ -469,12 +469,13 @@ export interface UserManagementResponse extends PaginatedResponse<AdminUser> {
 
 // ============ User Management ============
 export const getAllUsers = (
-  params: { page?: number; limit?: number; role?: string } = {},
+  params: { page?: number; limit?: number; role?: string; search?: string } = {},
 ): Promise<UserManagementResponse> => {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set("page", String(params.page));
   if (params.limit) searchParams.set("limit", String(params.limit));
   if (params.role) searchParams.set("role", params.role);
+  if (params.search) searchParams.set("search", params.search);
 
   const query = searchParams.toString();
   return apiRequest<UserManagementResponse>(

@@ -746,15 +746,62 @@ export class AdminService {
   }
 
   // ============ User Management ============
-  async getAllUsers(query: { page?: number; limit?: number; role?: string }) {
-    const { page = 1, limit = 20, role } = query;
+  async getAllUsers(query: { page?: number; limit?: number; role?: string; search?: string }) {
+    const { page = 1, limit = 20, role, search } = query;
     const skip = (page - 1) * limit;
 
-    const where: any = {};
-    if (role) where.role = role;
+    const baseWhere: any = {};
+    if (role) baseWhere.role = role;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    // If search provided, perform a global search across name/email and then paginate the matched set
+    const candidates = this.buildSearchCandidates(search || '');
+    if (candidates.length > 0) {
+      const orClauses: any[] = [];
+      for (const c of candidates) {
+        orClauses.push({ name: { contains: c, mode: 'insensitive' } });
+        orClauses.push({ email: { contains: c, mode: 'insensitive' } });
+      }
+
+      const matched = await this.prisma.user.findMany({
+        where: { AND: [baseWhere, { OR: orClauses }] },
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          avatarUrl: true,
+          hskLevel: true,
+          streak: true,
+          isPremium: true,
+          role: true,
+          createdAt: true,
+          _count: { select: { userVocabulary: true } },
+        },
+      });
+
+      const total = matched.length;
+      const paged = matched.slice(skip, skip + limit);
+
+      const premiumCount = matched.filter((u) => u.isPremium).length;
+      const adminCount = matched.filter((u) => u.role === 'admin').length;
+      const activeTodayCount = matched.filter((u) => new Date(u.createdAt) >= today || (u as any).lastActiveDate >= today).length;
+
+      return {
+        data: paged,
+        meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        stats: {
+          total,
+          premium: premiumCount,
+          admins: adminCount,
+          activeToday: activeTodayCount,
+        },
+      };
+    }
+
+    const where = baseWhere;
 
     const [users, total, premiumCount, adminCount, activeTodayCount] = await Promise.all([
       this.prisma.user.findMany({
