@@ -104,18 +104,26 @@ const Sidebar: React.FC<SidebarProps> = ({
                             <Link
                                 key={item.path}
                                 href={item.path}
-                                className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''} ${isActive(item.path)
+                                className={`flex items-center gap-4 px-3 py-3 rounded-xl transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'justify-center' : ''} ${isActive(item.path)
                                     ? 'bg-primary text-on-primary shadow-md shadow-primary/10'
                                     : 'text-text-secondary hover:bg-surface-highlight hover:text-text-base'
                                     }`}
                                 title={isCollapsed ? item.label : undefined}
                             >
                                 <Icon name={item.icon} filled={isActive(item.path)} />
-                                {!isCollapsed && (
-                                    <p className={`text-sm ${isActive(item.path) ? 'font-bold' : 'font-medium'}`}>
-                                        {item.label}
-                                    </p>
-                                )}
+                                <p
+                                    className={`text-sm ${isActive(item.path) ? 'font-bold' : 'font-medium'}`}
+                                    style={{
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        transition: 'opacity 200ms ease, transform 200ms ease',
+                                        opacity: isCollapsed ? 0 : 1,
+                                        transform: isCollapsed ? 'translateX(-6px)' : 'translateX(0)'
+                                    }}
+                                >
+                                    {item.label}
+                                </p>
                             </Link>
                         ))}
                     </nav>
@@ -125,11 +133,23 @@ const Sidebar: React.FC<SidebarProps> = ({
                 <div className="flex flex-col gap-2">
                     <Link
                         href="/settings"
-                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-all duration-300 ease-in-out ${isCollapsed ? 'justify-center' : ''}`}
+                        className={`flex items-center gap-4 px-3 py-3 rounded-xl text-text-secondary hover:bg-surface-highlight hover:text-text-base transition-all duration-300 ease-in-out overflow-hidden ${isCollapsed ? 'justify-center' : ''}`}
                         title={isCollapsed ? "Cài đặt" : undefined}
                     >
                         <Icon name="settings" />
-                        {!isCollapsed && <p className="text-sm font-medium">Cài đặt</p>}
+                        <p
+                            className="text-sm font-medium"
+                            style={{
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                transition: 'opacity 200ms ease, transform 200ms ease',
+                                opacity: isCollapsed ? 0 : 1,
+                                transform: isCollapsed ? 'translateX(-6px)' : 'translateX(0)'
+                            }}
+                        >
+                            Cài đặt
+                        </p>
                     </Link>
 
                     {/* Daily Goal Progress - Show different versions */}
