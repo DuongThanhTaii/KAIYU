@@ -20,6 +20,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { OtpService } from './otp.service';
 import {
   RegisterDto,
   LoginDto,
@@ -49,6 +50,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
+    private readonly otpService: OtpService,
   ) {}
 
   @Post('register')
@@ -59,8 +61,48 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 409, description: 'Email already registered' })
-  async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
-    return this.authService.register(dto);
+  async register(@Body() dto: RegisterDto): Promise<any> {
+    // Feature-flag: enable OTP-based email registration when
+    // `ENABLE_OTP_REGISTRATION` is set to 'true'. Otherwise use legacy flow.
+    const enableOtp = process.env.ENABLE_OTP_REGISTRATION === 'true';
+    if (!enableOtp) {
+      return this.authService.register(dto);
+    }
+
+    // Create OTP registration request (will send OTP email).
+    return this.otpService.createRegistrationRequest(dto);
+  }
+
+  @Post('register/verify')
+  @ApiOperation({ summary: 'Verify OTP and finalize registration' })
+  @ApiResponse({
+    status: 200,
+    description: 'Registration verified',
+    type: AuthResponseDto,
+  })
+  async verifyRegistration(
+    @Body() body: { registrationRequestId: string; otp: string },
+  ): Promise<AuthResponseDto> {
+    const payload = await this.otpService.verifyRegistration(
+      body.registrationRequestId,
+      body.otp,
+    );
+
+    // Expect payload to contain email, passwordHash (hashed), name, hskLevel
+    const res = await this.authService.createUserWithHash({
+      email: payload.email,
+      passwordHash: payload.passwordHash,
+      name: payload.name,
+      hskLevel: payload.hskLevel,
+    });
+
+    return res;
+  }
+
+  @Post('register/resend')
+  @ApiOperation({ summary: 'Resend OTP for registration request' })
+  async resendRegistrationOtp(@Body() body: { registrationRequestId: string }) {
+    return this.otpService.resendRegistrationOtp(body.registrationRequestId);
   }
 
   @Post('login')

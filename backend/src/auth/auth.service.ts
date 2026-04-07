@@ -31,7 +31,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Email already registered');
+      throw new ConflictException('Email đã được đăng ký');
     }
 
     // Hash password
@@ -48,6 +48,38 @@ export class AuthService {
     });
 
     // Generate token
+    const accessToken = this.generateToken(user.id, user.email, user.role);
+
+    return {
+      accessToken,
+      user: this.sanitizeUser(user),
+    };
+  }
+
+  // Create user when passwordHash is already available (used by OTP flow)
+  async createUserWithHash(data: {
+    email: string;
+    passwordHash: string;
+    name: string;
+    hskLevel?: number;
+  }): Promise<AuthResponseDto> {
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Email đã được đăng ký');
+    }
+
+    const user = await this.prisma.user.create({
+      data: {
+        email: data.email,
+        passwordHash: data.passwordHash,
+        name: data.name,
+        hskLevel: data.hskLevel || 1,
+      },
+    });
+
     const accessToken = this.generateToken(user.id, user.email, user.role);
 
     return {
@@ -100,7 +132,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Người dùng không tồn tại');
     }
 
     return this.sanitizeUser(user);
@@ -125,7 +157,7 @@ export class AuthService {
     );
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Current password is incorrect');
+      throw new UnauthorizedException('Mật khẩu hiện tại không đúng');
     }
 
     // Hash new password
@@ -137,7 +169,7 @@ export class AuthService {
       data: { passwordHash: newPasswordHash },
     });
 
-    return { message: 'Password changed successfully' };
+    return { message: 'Mật khẩu đã được thay đổi thành công' };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -238,7 +270,7 @@ export class AuthService {
       });
 
       return { message: 'Mật khẩu đã được đặt lại thành công' };
-    } catch (error) {
+    } catch (error: any) {
       if (error.name === 'TokenExpiredError') {
         throw new UnauthorizedException(
           'Token đã hết hạn. Vui lòng yêu cầu đặt lại mật khẩu mới.',

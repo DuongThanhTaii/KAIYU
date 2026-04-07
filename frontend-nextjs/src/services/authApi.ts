@@ -62,14 +62,43 @@ export const authApi = {
   /**
    * Register a new user
    */
-  async register(data: RegisterData): Promise<AuthResponse> {
-    const response = await api.post<AuthResponse>("/auth/register", data);
-    const { accessToken, user } = response.data;
+  async register(data: RegisterData): Promise<any> {
+    const response = await api.post<any>("/auth/register", data);
 
-    // Store token and user
+    // If backend returned an access token (legacy immediate registration or
+    // a registration completed flow), store it. Otherwise it may return
+    // an object like { registrationRequestId } for OTP flow.
+    if (response.data && response.data.accessToken) {
+      const { accessToken, user } = response.data;
+      tokenManager.setToken(accessToken);
+      tokenManager.setUser(user);
+      return response.data as AuthResponse;
+    }
+
+    return response.data;
+  },
+
+  async registerVerify(
+    registrationRequestId: string,
+    otp: string,
+  ): Promise<AuthResponse> {
+    const response = await api.post<AuthResponse>("/auth/register/verify", {
+      registrationRequestId,
+      otp,
+    });
+    const { accessToken, user } = response.data;
     tokenManager.setToken(accessToken);
     tokenManager.setUser(user);
+    return response.data;
+  },
 
+  async registerResend(
+    registrationRequestId: string,
+  ): Promise<{ message: string }> {
+    const response = await api.post<{ message: string }>(
+      "/auth/register/resend",
+      { registrationRequestId },
+    );
     return response.data;
   },
 
