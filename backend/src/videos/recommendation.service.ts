@@ -111,14 +111,19 @@ export class RecommendationService {
       return [];
     }
 
-    return overrideDelegate.findMany({
-      where: {
-        isActive: true,
-        OR: [{ hskLevel: null }, { hskLevel: userHskLevel }],
-      },
-      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
-      include: { video: true },
-    });
+    try {
+      return await overrideDelegate.findMany({
+        where: {
+          isActive: true,
+          OR: [{ hskLevel: null }, { hskLevel: userHskLevel }],
+        },
+        orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+        include: { video: true },
+      });
+    } catch {
+      // Production-safe fallback if override table or relation is not ready.
+      return [];
+    }
   }
 
   async getRecommendations(
