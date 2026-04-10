@@ -387,12 +387,16 @@ export class RecommendationService {
     // if scoring produced no actionable lanes but there are published candidates,
     // force-fill from easiest scored videos.
     const safeNextUp = nextUpRow ?? scored[0] ?? null;
-    const safeSuitedRows =
+    let safeSuitedRows =
       suitedRows.length > 0
         ? suitedRows
         : scored
             .filter((row) => row.video.id !== safeNextUp?.video.id)
             .slice(0, Math.min(Math.max(limit, 3), 6));
+
+    if (safeSuitedRows.length === 0 && safeNextUp) {
+      safeSuitedRows = [safeNextUp];
+    }
 
     const payload: RecommendationsResponse = {
       generatedAt: new Date().toISOString(),
@@ -410,7 +414,7 @@ export class RecommendationService {
         userId,
         recommendationType: cacheKey,
         content: payload as unknown as object,
-        score: nextUpRow ? nextUpRow.rawScore / 100 : null,
+        score: safeNextUp ? safeNextUp.rawScore / 100 : null,
       },
     });
 
