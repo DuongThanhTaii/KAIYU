@@ -10,6 +10,20 @@ import {
   ParsedToken,
 } from './subtitle-parser.js';
 
+interface SubtitleCreateManyAndReturnDelegate {
+  createManyAndReturn(args: {
+    data: Array<{
+      videoId: string;
+      startTime: number;
+      endTime: number;
+      hanzi: string;
+      pinyin: string;
+      meaningVi?: string;
+      sequenceOrder: number;
+    }>;
+  }): Promise<Array<{ id: string }>>;
+}
+
 @Injectable()
 export class VideosService {
   private readonly logger = new Logger(VideosService.name);
@@ -137,30 +151,39 @@ export class VideosService {
       throw new NotFoundException('Video not found');
     }
 
-    // Check if user has viewed this video in the last 6 hours
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
-    const recentView = await this.prisma.videoView.findFirst({
-      where: {
-        userId,
-        videoId,
-        viewedAt: { gte: sixHoursAgo },
-      },
-    });
+    const wasCounted = await this.prisma.$transaction(async (tx) => {
+      const lockKey = `${userId}:${videoId}`;
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(hashtext(${lockKey}))
+      `;
 
-    if (recentView) {
-      return { counted: false, message: 'View already counted within 6 hours' };
-    }
+      // Check cooldown while holding transaction lock to avoid double count races.
+      const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+      const recentView = await tx.videoView.findFirst({
+        where: {
+          userId,
+          videoId,
+          viewedAt: { gte: sixHoursAgo },
+        },
+        select: { id: true },
+      });
 
-    // Create view record and increment count in transaction
-    await this.prisma.$transaction([
-      this.prisma.videoView.create({
-        data: { userId, videoId },
-      }),
-      this.prisma.video.update({
+      if (recentView) {
+        return false;
+      }
+
+      await tx.videoView.create({ data: { userId, videoId } });
+      await tx.video.update({
         where: { id: videoId },
         data: { viewCount: { increment: 1 } },
-      }),
-    ]);
+      });
+
+      return true;
+    });
+
+    if (!wasCounted) {
+      return { counted: false, message: 'View already counted within 6 hours' };
+    }
 
     // Award XP for watching video (use video.xpReward)
     await this.xpStreak.recordActivity(
@@ -291,9 +314,9 @@ export class VideosService {
 
       // 1. Create all subtitles and get their IDs
       // Use createManyAndReturn which is available in Prisma 5.14.0+
-      const createdSubtitles = await (
-        this.prisma.subtitle as any
-      ).createManyAndReturn({
+      const subtitleDelegate = this.prisma
+        .subtitle as unknown as SubtitleCreateManyAndReturnDelegate;
+      const createdSubtitles = await subtitleDelegate.createManyAndReturn({
         data: subtitleData,
       });
       this.logger.debug(`Created subtitles count: ${createdSubtitles.length}`);

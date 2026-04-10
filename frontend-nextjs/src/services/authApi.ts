@@ -151,7 +151,9 @@ export const authApi = {
    * Get stored user
    */
   getStoredUser(): User | null {
-    return tokenManager.getUser();
+    const storedUser = tokenManager.getUser();
+    if (!storedUser) return null;
+    return storedUser as User;
   },
 
   /**

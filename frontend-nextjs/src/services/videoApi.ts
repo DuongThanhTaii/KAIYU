@@ -68,6 +68,26 @@ export interface Category {
     count: number;
 }
 
+export type RecommendationLane = 'nextUp' | 'suited' | 'review';
+export type RecommendationContext = 'learn' | 'dashboard';
+
+export interface RecommendationItem {
+    video: Video;
+    lane: RecommendationLane;
+    score: number;
+    reasons: string[];
+    estimatedComprehension: number;
+    estimatedNewWords: number;
+}
+
+export interface RecommendationsResponse {
+    generatedAt: string;
+    context: RecommendationContext;
+    nextUp: RecommendationItem | null;
+    suited: RecommendationItem[];
+    review: RecommendationItem[];
+}
+
 // Video API
 export const videoApi = {
     /**
@@ -114,6 +134,24 @@ export const videoApi = {
      */
     async getCategories(): Promise<Category[]> {
         const response = await api.get<Category[]>('/videos/categories');
+        return response.data;
+    },
+
+    /**
+     * Get personalized recommendations for current user
+     */
+    async getRecommendations(
+        context: RecommendationContext = 'learn',
+        limit: number = 4,
+        forceRefresh: boolean = false,
+    ): Promise<RecommendationsResponse> {
+        const params = new URLSearchParams();
+        params.set('context', context);
+        params.set('limit', String(limit));
+        if (forceRefresh) params.set('forceRefresh', 'true');
+        const response = await api.get<RecommendationsResponse>(
+            `/videos/recommendations?${params.toString()}`
+        );
         return response.data;
     },
 

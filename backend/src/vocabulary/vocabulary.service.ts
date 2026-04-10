@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   CreateVocabularyDto,
@@ -16,11 +17,21 @@ import {
   RelatedWordDto,
 } from './dto';
 
+interface MeaningEntry {
+  partOfSpeech: string;
+  pinyin: string;
+  meanings: string[];
+}
+
 @Injectable()
 export class VocabularyService {
   private readonly logger = new Logger(VocabularyService.name);
 
   constructor(private prisma: PrismaService) {}
+
+  private toJsonValue<T>(value: T): Prisma.InputJsonValue {
+    return value as unknown as Prisma.InputJsonValue;
+  }
 
   private normalizeText(value: string): string {
     return value
@@ -198,12 +209,12 @@ export class VocabularyService {
         hskLevel: data.hskLevel,
         tags: data.tags || [],
         audioUrl: this.normalizeOptionalText(data.audioUrl),
-        examples: data.examples || [],
-        synonyms: data.synonyms || [],
-        antonyms: data.antonyms || [],
+        examples: this.toJsonValue(data.examples || []),
+        synonyms: this.toJsonValue(data.synonyms || []),
+        antonyms: this.toJsonValue(data.antonyms || []),
         mnemonic: this.normalizeOptionalText(data.mnemonic),
-        meanings: data.meanings || [],
-      } as any,
+        meanings: this.toJsonValue(data.meanings || []),
+      } as Prisma.VocabularyCreateInput,
     });
   }
 
@@ -415,7 +426,7 @@ export class VocabularyService {
           });
         }
 
-        const vocabData = {
+        const vocabData: Prisma.VocabularyCreateInput = {
           hanzi,
           pinyin: (item.pinyin || '').trim() || '',
           meaningVi,
@@ -428,11 +439,11 @@ export class VocabularyService {
             : undefined,
           hskLevel: item.hskLevel ?? 1,
           tags: item.tags || [],
-          examples: examples.length > 0 ? examples : [],
-          synonyms: synonyms.length > 0 ? synonyms : [],
-          antonyms: antonyms.length > 0 ? antonyms : [],
+          examples: this.toJsonValue(examples.length > 0 ? examples : []),
+          synonyms: this.toJsonValue(synonyms.length > 0 ? synonyms : []),
+          antonyms: this.toJsonValue(antonyms.length > 0 ? antonyms : []),
           mnemonic: item.mnemonic,
-        } as any;
+        };
 
         if (existing) {
           if (duplicateAction === 'skip') {
@@ -461,7 +472,8 @@ export class VocabularyService {
           if (antonyms.length > 0) updateData.antonyms = antonyms;
 
           // Merge meanings logic for duplicates
-          const existingMeanings = (existing.meanings as any[]) || [];
+          const existingMeanings =
+            (existing.meanings as unknown as MeaningEntry[]) || [];
           const isAlreadyInMeanings = existingMeanings.some(
             (m) =>
               m.pinyin === (item.pinyin || '') &&

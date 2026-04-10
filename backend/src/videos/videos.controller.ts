@@ -2,13 +2,22 @@ import { Controller, Get, Post, Patch, Delete, Param, Query, Body, UseGuards } f
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { VideosService } from './videos.service';
-import { CreateVideoDto, UpdateVideoDto, VideoQueryDto } from './dto';
+import {
+    CreateVideoDto,
+    UpdateVideoDto,
+    VideoQueryDto,
+    VideoRecommendationQueryDto,
+} from './dto';
 import { CurrentUser } from '../auth/decorators';
+import { RecommendationService } from './recommendation.service';
 
 @ApiTags('videos')
 @Controller('videos')
 export class VideosController {
-    constructor(private readonly videosService: VideosService) { }
+    constructor(
+        private readonly videosService: VideosService,
+        private readonly recommendationService: RecommendationService,
+    ) { }
 
     @Get()
     @ApiOperation({ summary: 'Get list of published videos' })
@@ -36,6 +45,23 @@ export class VideosController {
     @ApiResponse({ status: 200, description: 'List of categories' })
     async getCategories() {
         return this.videosService.getCategories();
+    }
+
+    @Get('recommendations')
+    @UseGuards(AuthGuard('jwt'))
+    @ApiBearerAuth()
+    @ApiOperation({ summary: 'Get personalized video recommendations' })
+    @ApiResponse({ status: 200, description: 'Recommendations grouped by lane' })
+    async getRecommendations(
+        @CurrentUser() user: { id: string },
+        @Query() query: VideoRecommendationQueryDto,
+    ) {
+        return this.recommendationService.getRecommendations(
+            user.id,
+            query.context || 'learn',
+            query.limit || 4,
+            Boolean(query.forceRefresh),
+        );
     }
 
     @Get(':id')

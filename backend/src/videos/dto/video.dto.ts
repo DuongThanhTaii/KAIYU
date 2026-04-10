@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsInt, IsOptional, IsBoolean, IsArray, Min, Max } from 'class-validator';
+import { IsString, IsInt, IsOptional, IsBoolean, IsArray, Min, Max, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateVideoDto {
@@ -151,4 +151,25 @@ export class VideoQueryDto {
     @IsOptional()
     @IsString()
     search?: string;
+}
+
+export class VideoRecommendationQueryDto {
+    @ApiPropertyOptional({ enum: ['learn', 'dashboard'], default: 'learn' })
+    @IsOptional()
+    @IsIn(['learn', 'dashboard'])
+    context?: 'learn' | 'dashboard' = 'learn';
+
+    @ApiPropertyOptional({ example: 4, minimum: 3, maximum: 6 })
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(3)
+    @Max(6)
+    limit?: number = 4;
+
+    @ApiPropertyOptional({ default: false })
+    @IsOptional()
+    @Type(() => Boolean)
+    @IsBoolean()
+    forceRefresh?: boolean = false;
 }

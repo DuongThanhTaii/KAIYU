@@ -166,6 +166,25 @@ export interface Subtitle {
   meaningVi?: string;
 }
 
+export interface RecommendationOverride {
+  id: string;
+  videoId: string;
+  hskLevel?: number | null;
+  action: "pin" | "hide";
+  lane?: "nextUp" | "suited" | null;
+  priority: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  video?: {
+    id: string;
+    title: string;
+    hskLevel: number;
+    thumbnailUrl?: string | null;
+    isPublished: boolean;
+  };
+}
+
 // ============ Dashboard ============
 export const getOverviewStats = (): Promise<OverviewStats> => {
   return apiRequest<OverviewStats>("/admin/stats/overview");
@@ -342,6 +361,57 @@ export const addSubtitles = (
   });
 };
 
+// ============ Recommendation Override Management ============
+export const getRecommendationOverrides = (
+  params: { hskLevel?: number; isActive?: boolean } = {},
+): Promise<RecommendationOverride[]> => {
+  const query = new URLSearchParams();
+  if (params.hskLevel !== undefined)
+    query.set("hskLevel", String(params.hskLevel));
+  if (params.isActive !== undefined)
+    query.set("isActive", String(params.isActive));
+  const suffix = query.toString();
+  return apiRequest<RecommendationOverride[]>(
+    `/admin/recommendation-overrides${suffix ? `?${suffix}` : ""}`,
+  );
+};
+
+export const createRecommendationOverride = (
+  payload: Partial<RecommendationOverride> & {
+    videoId: string;
+    action: "pin" | "hide";
+  },
+): Promise<RecommendationOverride> => {
+  return apiRequest<RecommendationOverride>("/admin/recommendation-overrides", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+};
+
+export const updateRecommendationOverride = (
+  id: string,
+  payload: Partial<RecommendationOverride>,
+): Promise<RecommendationOverride> => {
+  return apiRequest<RecommendationOverride>(
+    `/admin/recommendation-overrides/${id}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(payload),
+    },
+  );
+};
+
+export const deleteRecommendationOverride = (
+  id: string,
+): Promise<{ message: string }> => {
+  return apiRequest<{ message: string }>(
+    `/admin/recommendation-overrides/${id}`,
+    {
+      method: "DELETE",
+    },
+  );
+};
+
 // ============ Vocabulary Management ============
 export const getAllVocabulary = (
   params: {
@@ -469,7 +539,12 @@ export interface UserManagementResponse extends PaginatedResponse<AdminUser> {
 
 // ============ User Management ============
 export const getAllUsers = (
-  params: { page?: number; limit?: number; role?: string; search?: string } = {},
+  params: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    search?: string;
+  } = {},
 ): Promise<UserManagementResponse> => {
   const searchParams = new URLSearchParams();
   if (params.page) searchParams.set("page", String(params.page));
@@ -700,10 +775,11 @@ export const parseCSV = <T>(
   return lines.slice(1).map((line) => {
     const values = line.split(",").map((v) => v.trim().replace(/^"|"$/g, ""));
     const item: Partial<T> = {};
+    const mutableItem = item as Partial<Record<keyof T, string>>;
     headers.forEach((header, index) => {
       const key = headerMap.get(header);
       if (key && values[index] !== undefined) {
-        (item as any)[key] = values[index];
+        mutableItem[key] = values[index];
       }
     });
     return item;
