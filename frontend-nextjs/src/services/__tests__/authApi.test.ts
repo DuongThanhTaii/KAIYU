@@ -119,7 +119,10 @@ describe("Auth API", () => {
       expect(api.get).toHaveBeenCalledWith(
         "/auth/me",
         expect.objectContaining({
-          validateStatus: expect.any(Function),
+          headers: expect.objectContaining({
+            "Cache-Control": "no-store, no-cache, max-age=0",
+            Pragma: "no-cache",
+          }),
         }),
       );
       expect(result).toEqual(mockUser);

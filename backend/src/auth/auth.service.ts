@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ConflictException,
   NotFoundException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -18,6 +19,8 @@ import {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -198,9 +201,7 @@ export class AuthService {
   }
 
   // Forgot password - generate a reset token
-  async forgotPassword(
-    email: string,
-  ): Promise<{ message: string; resetToken?: string }> {
+  async forgotPassword(email: string): Promise<{ message: string }> {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -219,22 +220,27 @@ export class AuthService {
       { expiresIn: '1h' },
     );
 
-    // In production, send email with reset link
-    // For development, log the token
-    console.log('='.repeat(60));
-    console.log('PASSWORD RESET TOKEN for', user.email);
-    console.log('Token:', resetToken);
-    console.log(
-      'Reset URL: http://localhost:5173/reset-password?token=' + resetToken,
+    const frontendBaseUrl =
+      String(process.env.FRONTEND_URL || '')
+        .split(',')[0]
+        ?.trim() || 'http://localhost:5173';
+    const resetUrl = `${frontendBaseUrl}/reset-password?token=${encodeURIComponent(
+      resetToken,
+    )}`;
+
+    // Avoid exposing token in logs. Keep only minimal metadata for audit/debug.
+    this.logger.log(
+      `Password reset requested for userId=${user.id}, email=${user.email}`,
     );
-    console.log('='.repeat(60));
+    this.logger.debug(`Password reset URL generated for userId=${user.id}`);
+
+    // TODO: integrate email sender for reset URL delivery.
+    // Example: await this.emailService.sendPasswordReset(user.email, resetUrl)
+    void resetUrl;
 
     return {
       message:
         'Nếu email tồn tại, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu.',
-      // Only return token in development mode for testing
-      resetToken:
-        process.env.NODE_ENV === 'development' ? resetToken : undefined,
     };
   }
 

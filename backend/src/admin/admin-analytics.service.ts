@@ -1,4 +1,5 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -113,6 +114,8 @@ interface NginxSnapshot {
 
 @Injectable()
 export class AdminAnalyticsService {
+  private readonly logger = new Logger(AdminAnalyticsService.name);
+
   private cloudflareCache: {
     key: string;
     at: number;
@@ -591,7 +594,12 @@ export class AdminAnalyticsService {
       };
 
       return snapshot;
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `Cloudflare analytics fetch failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       return null;
     }
   }
@@ -628,22 +636,12 @@ export class AdminAnalyticsService {
         .slice(0, 500);
       const requestTimeMs = Math.max(0, Math.round(Number(row.rt || 0) * 1000));
 
-      await this.prisma.$executeRawUnsafe(
-        `
+      await this.prisma.$executeRaw(
+        Prisma.sql`
           INSERT INTO analytics_requests
             (ts, host, method, path, status, bytes, ip, country, user_agent, request_time_ms)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          VALUES (${ts}, ${host}, ${method}, ${path}, ${status}, ${bytes}, ${ip}, ${country}, ${userAgent}, ${requestTimeMs})
         `,
-        ts,
-        host,
-        method,
-        path,
-        status,
-        bytes,
-        ip,
-        country,
-        userAgent,
-        requestTimeMs,
       );
       inserted += 1;
     }
@@ -681,114 +679,97 @@ export class AdminAnalyticsService {
         error4xxRows,
         error5xxRows,
       ] = await Promise.all([
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<
+          Array<{
+            total_requests: number;
+            total_bytes: number;
+            error_4xx: number;
+            error_5xx: number;
+          }>
+        >(
+          Prisma.sql`
               SELECT
                 COUNT(*)::int AS total_requests,
                 COALESCE(SUM(bytes), 0)::bigint AS total_bytes,
                 COALESCE(SUM(CASE WHEN status BETWEEN 400 AND 499 THEN 1 ELSE 0 END), 0)::int AS error_4xx,
                 COALESCE(SUM(CASE WHEN status BETWEEN 500 AND 599 THEN 1 ELSE 0 END), 0)::int AS error_5xx
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until}
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<Array<{ country: string; requests: number }>>(
+          Prisma.sql`
               SELECT COALESCE(NULLIF(country, ''), 'Unknown') AS country, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until}
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               GROUP BY COALESCE(NULLIF(country, ''), 'Unknown')
               ORDER BY requests DESC
               LIMIT 5
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<Array<{ ip: string; requests: number }>>(
+          Prisma.sql`
               SELECT COALESCE(NULLIF(ip, ''), 'Unknown') AS ip, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until}
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               GROUP BY COALESCE(NULLIF(ip, ''), 'Unknown')
               ORDER BY requests DESC
               LIMIT 5
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<Array<{ request: string; requests: number }>>(
+          Prisma.sql`
               SELECT COALESCE(NULLIF(path, ''), '/') AS request, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until}
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               GROUP BY COALESCE(NULLIF(path, ''), '/')
               ORDER BY requests DESC
               LIMIT 5
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<Array<{ bucket: Date; requests: number }>>(
+          Prisma.sql`
               SELECT date_trunc('minute', ts) AS bucket, COUNT(*)::int AS requests
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until}
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               GROUP BY bucket
               ORDER BY bucket ASC
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<any[]>(
+          Prisma.sql`
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until}
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               ORDER BY ts DESC
               LIMIT 50
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<any[]>(
+          Prisma.sql`
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2 AND status BETWEEN 400 AND 499
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until} AND status BETWEEN 400 AND 499
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               ORDER BY ts DESC
               LIMIT 50
             `,
-          since,
-          until,
-          host,
         ),
-        this.prisma.$queryRawUnsafe<any[]>(
-          `
+        this.prisma.$queryRaw<any[]>(
+          Prisma.sql`
               SELECT id::text, ts, host, method, path, status, bytes::bigint, ip, country, request_time_ms
               FROM analytics_requests
-              WHERE ts >= $1 AND ts <= $2 AND status BETWEEN 500 AND 599
-                AND ($3 = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = $3)
+              WHERE ts >= ${since} AND ts <= ${until} AND status BETWEEN 500 AND 599
+                AND (${host} = '' OR regexp_replace(split_part(lower(host), ':', 1), '^www\\.', '') = ${host})
               ORDER BY ts DESC
               LIMIT 50
             `,
-          since,
-          until,
-          host,
         ),
       ]);
 
@@ -822,41 +803,48 @@ export class AdminAnalyticsService {
         error4xxLogs: error4xxRows.map((x) => this.mapTrafficLogRow(x)),
         error5xxLogs: error5xxRows.map((x) => this.mapTrafficLogRow(x)),
       };
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `Failed to load nginx analytics snapshot: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       return null;
     }
   }
 
   private async ensureAnalyticsTable(): Promise<void> {
-    await this.prisma.$executeRawUnsafe(
-      `CREATE EXTENSION IF NOT EXISTS pgcrypto;`,
+    await this.prisma.$executeRaw(
+      Prisma.sql`CREATE EXTENSION IF NOT EXISTS pgcrypto;`,
     );
 
-    await this.prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS analytics_requests (
-        id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-        ts TIMESTAMPTZ NOT NULL,
-        host VARCHAR(255) NOT NULL DEFAULT '',
-        method VARCHAR(16) NOT NULL DEFAULT 'GET',
-        path VARCHAR(500) NOT NULL DEFAULT '/',
-        status INTEGER NOT NULL DEFAULT 0,
-        bytes BIGINT NOT NULL DEFAULT 0,
-        ip VARCHAR(64) NOT NULL DEFAULT '',
-        country VARCHAR(100) NOT NULL DEFAULT 'Unknown',
-        user_agent VARCHAR(500) NOT NULL DEFAULT '',
-        request_time_ms INTEGER NOT NULL DEFAULT 0,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-      );
-    `);
+    await this.prisma.$executeRaw(
+      Prisma.sql`
+        CREATE TABLE IF NOT EXISTS analytics_requests (
+          id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+          ts TIMESTAMPTZ NOT NULL,
+          host VARCHAR(255) NOT NULL DEFAULT '',
+          method VARCHAR(16) NOT NULL DEFAULT 'GET',
+          path VARCHAR(500) NOT NULL DEFAULT '/',
+          status INTEGER NOT NULL DEFAULT 0,
+          bytes BIGINT NOT NULL DEFAULT 0,
+          ip VARCHAR(64) NOT NULL DEFAULT '',
+          country VARCHAR(100) NOT NULL DEFAULT 'Unknown',
+          user_agent VARCHAR(500) NOT NULL DEFAULT '',
+          request_time_ms INTEGER NOT NULL DEFAULT 0,
+          created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        );
+      `,
+    );
 
-    await this.prisma.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS idx_analytics_requests_ts ON analytics_requests(ts DESC);`,
+    await this.prisma.$executeRaw(
+      Prisma.sql`CREATE INDEX IF NOT EXISTS idx_analytics_requests_ts ON analytics_requests(ts DESC);`,
     );
-    await this.prisma.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS idx_analytics_requests_host_ts ON analytics_requests(host, ts DESC);`,
+    await this.prisma.$executeRaw(
+      Prisma.sql`CREATE INDEX IF NOT EXISTS idx_analytics_requests_host_ts ON analytics_requests(host, ts DESC);`,
     );
-    await this.prisma.$executeRawUnsafe(
-      `CREATE INDEX IF NOT EXISTS idx_analytics_requests_status_ts ON analytics_requests(status, ts DESC);`,
+    await this.prisma.$executeRaw(
+      Prisma.sql`CREATE INDEX IF NOT EXISTS idx_analytics_requests_status_ts ON analytics_requests(status, ts DESC);`,
     );
   }
 
@@ -931,7 +919,12 @@ export class AdminAnalyticsService {
     try {
       const url = new URL(frontend);
       return url.host;
-    } catch {
+    } catch (error) {
+      this.logger.warn(
+        `Failed to parse FRONTEND_URL, fallback to raw host: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
       return frontend.replace(/^https?:\/\//, '');
     }
   }

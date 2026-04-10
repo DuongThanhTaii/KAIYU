@@ -1154,10 +1154,12 @@ export default function AdminVideosPage() {
 
                   {/* Vietnamese Tier */}
                   {(currentSubtitle.meaningVi ||
-                    (currentSubtitle as any).textVietnamese) && (
+                    (currentSubtitle as { textVietnamese?: string })
+                      .textVietnamese) && (
                     <p className="text-amber-200/90 text-xl font-semibold mt-2 max-w-[90%] mx-auto leading-relaxed">
                       {currentSubtitle.meaningVi ||
-                        (currentSubtitle as any).textVietnamese}
+                        (currentSubtitle as { textVietnamese?: string })
+                          .textVietnamese}
                     </p>
                   )}
                 </>
@@ -1218,7 +1220,8 @@ export default function AdminVideosPage() {
                     >
                       {sub.hanzi}
                     </p>
-                    {(sub.meaningVi || (sub as any).textVietnamese) && (
+                    {(sub.meaningVi ||
+                      (sub as { textVietnamese?: string }).textVietnamese) && (
                       <p
                         className={`text-xs mt-1 leading-normal ${
                           currentSubtitleIndex === index
@@ -1226,7 +1229,8 @@ export default function AdminVideosPage() {
                             : "text-text-secondary/50"
                         }`}
                       >
-                        {sub.meaningVi || (sub as any).textVietnamese}
+                        {sub.meaningVi ||
+                          (sub as { textVietnamese?: string }).textVietnamese}
                       </p>
                     )}
                   </div>

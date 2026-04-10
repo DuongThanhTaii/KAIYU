@@ -87,6 +87,24 @@ describe('Video API', () => {
         });
     });
 
+    describe('getRecommendations', () => {
+        it('should fetch personalized recommendation lanes', async () => {
+            const mockReco = {
+                generatedAt: new Date().toISOString(),
+                context: 'learn',
+                nextUp: null,
+                suited: [],
+                review: [],
+            };
+            (api.get as any).mockResolvedValue({ data: mockReco });
+
+            const result = await videoApi.getRecommendations('learn', 4);
+
+            expect(api.get).toHaveBeenCalledWith('/videos/recommendations?context=learn&limit=4');
+            expect(result).toEqual(mockReco);
+        });
+    });
+
     describe('formatDuration', () => {
         it('should format seconds to mm:ss', () => {
             expect(videoApi.formatDuration(0)).toBe('0:00');

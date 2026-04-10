@@ -8,8 +8,8 @@ import Icon from "@/components/common/Icon";
 import StreakBadge from "@/components/common/StreakBadge";
 import { getStreakColor, getStreakBg } from "@/utils/streak";
 import {
-    userVocabularyApi,
-    type UserVocabularyStats,
+  userVocabularyApi,
+  type UserVocabularyStats,
 } from "@/services/userVocabularyApi";
 
 // Utility function to scale and compress image
@@ -119,7 +119,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-background-dark flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="size-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-text-secondary">Dang tai ho so...</p>
+          <p className="text-text-secondary">Đang tải hồ sơ...</p>
         </div>
       </div>
     );
@@ -345,11 +345,13 @@ export default function ProfilePage() {
               Cấp độ
             </p>
           </div>
-          <div className={`${getStreakBg(user?.streak || 0)} rounded-2xl p-5 text-center transition-all hover:scale-[1.02] group flex flex-col items-center justify-center border`}>
+          <div
+            className={`${getStreakBg(user?.streak || 0)} rounded-2xl p-5 text-center transition-all hover:scale-[1.02] group flex flex-col items-center justify-center border`}
+          >
             <div className="flex items-center justify-center gap-2">
               <Icon
                 name="local_fire_department"
-                className={`text-2xl sm:text-3xl ${getStreakColor(user?.streak || 0)} ${user?.streak >= 30 ? 'animate-streak-glow' : user?.streak >= 15 ? 'animate-streak-pulse' : ''}`}
+                className={`text-2xl sm:text-3xl ${getStreakColor(user?.streak || 0)} ${user?.streak >= 30 ? "animate-streak-glow" : user?.streak >= 15 ? "animate-streak-pulse" : ""}`}
               />
               <p className="text-2xl sm:text-3xl font-black text-text-base">
                 {user?.streak || 0}

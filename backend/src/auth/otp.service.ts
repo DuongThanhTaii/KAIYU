@@ -55,7 +55,10 @@ export class OtpService {
         html: `<p>Mã xác thực của bạn là: <strong>${otp}</strong></p><p>Mã có hiệu lực trong ${this.OTP_TTL} giây.</p>`,
       });
     } catch (err) {
-      this.logger.error('Failed to send OTP email', err as any);
+      const message =
+        err instanceof Error ? err.message : 'Unknown OTP email error';
+      const stack = err instanceof Error ? err.stack : undefined;
+      this.logger.error(`Failed to send OTP email: ${message}`, stack);
     }
   }
 

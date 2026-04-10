@@ -69,8 +69,26 @@ model Video {
   videoNotes        VideoNote[]
   savedBy           SavedVideo[]
   videoViews        VideoView[]
+  recommendationOverrides VideoRecommendationOverride[]
 
   @@map("videos")
+}
+
+model VideoRecommendationOverride {
+  id        String   @id @default(uuid()) @db.Uuid
+  videoId   String   @map("video_id") @db.Uuid
+  hskLevel  Int?     @map("hsk_level")
+  action    String   @db.VarChar(20) // pin | hide
+  lane      String?  @db.VarChar(20) // nextUp | suited (used with pin)
+  priority  Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  video Video @relation(fields: [videoId], references: [id], onDelete: Cascade)
+
+  @@index([isActive, action, lane, hskLevel])
+  @@map("video_recommendation_overrides")
 }
 
 model VideoView {

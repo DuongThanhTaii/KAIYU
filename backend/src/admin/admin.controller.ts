@@ -163,6 +163,62 @@ export class AdminController {
         return this.adminService.deleteUser(id);
     }
 
+    // ============ Recommendation Overrides ============
+    @Get('recommendation-overrides')
+    @ApiOperation({ summary: 'Get recommendation override rules' })
+    async getRecommendationOverrides(
+        @Query('hskLevel') hskLevel?: number,
+        @Query('isActive') isActive?: string,
+    ) {
+        return this.adminService.getRecommendationOverrides({
+            hskLevel: hskLevel ? Number(hskLevel) : undefined,
+            isActive:
+                isActive === 'true'
+                    ? true
+                    : isActive === 'false'
+                        ? false
+                        : undefined,
+        });
+    }
+
+    @Post('recommendation-overrides')
+    @ApiOperation({ summary: 'Create recommendation override rule' })
+    async createRecommendationOverride(
+        @Body()
+        body: {
+            videoId: string;
+            hskLevel?: number | null;
+            action: 'pin' | 'hide';
+            lane?: 'nextUp' | 'suited' | null;
+            priority?: number;
+            isActive?: boolean;
+        },
+    ) {
+        return this.adminService.createRecommendationOverride(body);
+    }
+
+    @Put('recommendation-overrides/:id')
+    @ApiOperation({ summary: 'Update recommendation override rule' })
+    async updateRecommendationOverride(
+        @Param('id') id: string,
+        @Body()
+        body: {
+            hskLevel?: number | null;
+            action?: 'pin' | 'hide';
+            lane?: 'nextUp' | 'suited' | null;
+            priority?: number;
+            isActive?: boolean;
+        },
+    ) {
+        return this.adminService.updateRecommendationOverride(id, body);
+    }
+
+    @Delete('recommendation-overrides/:id')
+    @ApiOperation({ summary: 'Delete recommendation override rule' })
+    async deleteRecommendationOverride(@Param('id') id: string) {
+        return this.adminService.deleteRecommendationOverride(id);
+    }
+
     // ============ Achievements ============
     @Get('achievements')
     @ApiOperation({ summary: 'Get all achievements (admin)' })

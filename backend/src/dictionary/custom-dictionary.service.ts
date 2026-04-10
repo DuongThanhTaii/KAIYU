@@ -53,6 +53,36 @@ interface AICacheEntry {
   timestamp: number;
 }
 
+interface ExampleItem {
+  chinese: string;
+  pinyin?: string;
+  vietnamese: string;
+  translation?: string;
+}
+
+export interface LexicalRelation {
+  hanzi: string;
+  pinyin: string;
+  meaningVi: string;
+}
+
+interface DbVocabularyLike {
+  id: string;
+  hanzi: string;
+  pinyin: string;
+  meaningVi: string;
+  meaningEn?: string | null;
+  radical?: string | null;
+  radicalMeaning?: string | null;
+  strokeCount?: number | null;
+  partOfSpeech?: string | null;
+  hskLevel?: number | null;
+  examples?: unknown;
+  synonyms?: unknown;
+  antonyms?: unknown;
+  mnemonic?: string | null;
+}
+
 /**
  * Custom Dictionary Service
  * Uses local vocabulary database as primary source
@@ -173,7 +203,7 @@ export class CustomDictionaryService {
   private async findFlexibleVocabularyMatches(
     rawInput: string,
     contextPinyin?: string,
-  ): Promise<any[]> {
+  ): Promise<DbVocabularyLike[]> {
     const candidates = this.buildLookupCandidates(rawInput);
     if (candidates.length === 0) return [];
 
@@ -192,19 +222,26 @@ export class CustomDictionaryService {
     }
 
     // 2) Phrase decomposition fallback (candidate contains a known word)
-    const containsQueries = candidates.flatMap(
-      (candidate) =>
-        [
-          { hanzi: { contains: candidate } },
-          candidate.length > 1
-            ? {
-                AND: [
-                  { hanzi: { not: candidate } },
-                  { hanzi: { in: Array.from(candidate) } },
-                ],
-              }
-            : null,
-        ].filter(Boolean) as any[],
+    const containsQueries = candidates.flatMap((candidate) =>
+      [
+        { hanzi: { contains: candidate } },
+        candidate.length > 1
+          ? {
+              AND: [
+                { hanzi: { not: candidate } },
+                { hanzi: { in: Array.from(candidate) } },
+              ],
+            }
+          : null,
+      ].filter(
+        (
+          query,
+        ): query is
+          | { hanzi: { contains: string } }
+          | {
+              AND: [{ hanzi: { not: string } }, { hanzi: { in: string[] } }];
+            } => Boolean(query),
+      ),
     );
 
     if (containsQueries.length === 0) return [];
@@ -246,9 +283,11 @@ export class CustomDictionaryService {
       strokeCount: vocab.strokeCount,
       partOfSpeech: vocab.partOfSpeech,
       hskLevel: vocab.hskLevel,
-      examples: this.splitCompoundExamples((vocab.examples as any[]) || []),
-      synonyms: (vocab.synonyms as any[]) || [],
-      antonyms: (vocab.antonyms as any[]) || [],
+      examples: this.splitCompoundExamples(
+        (vocab.examples as ExampleItem[]) || [],
+      ),
+      synonyms: (vocab.synonyms as LexicalRelation[]) || [],
+      antonyms: (vocab.antonyms as LexicalRelation[]) || [],
       mnemonic: vocab.mnemonic,
       found: true,
       source: 'db',
@@ -309,10 +348,10 @@ export class CustomDictionaryService {
       }
 
       // === STEP 2: Not found in DB ===
-      console.log(`[Dictionary] "${normalizedInput}" not found in DB`);
+      this.logger.debug(`[Dictionary] "${normalizedInput}" not found in DB`);
       return this.createNotFoundResult(normalizedInput);
     } catch (error) {
-      console.error('CustomDictionary lookup error:', error);
+      this.logger.error('CustomDictionary lookup error', error as Error);
       return this.createNotFoundResult(
         this.normalizeLookupInput(hanzi) || hanzi,
       );
@@ -433,7 +472,9 @@ export class CustomDictionaryService {
       });
 
       if (vocab?.examples && Array.isArray(vocab.examples)) {
-        return this.splitCompoundExamples(vocab.examples as any[]);
+        return this.splitCompoundExamples(
+          vocab.examples as unknown as ExampleItem[],
+        );
       }
 
       return [];
@@ -451,8 +492,8 @@ export class CustomDictionaryService {
     radical?: string;
     radicalMeaning?: string;
     strokeCount?: number;
-    synonyms?: any[];
-    antonyms?: any[];
+    synonyms?: LexicalRelation[];
+    antonyms?: LexicalRelation[];
     mnemonic?: string;
     hskLevel?: number;
     isSystemWord: boolean;
@@ -492,8 +533,8 @@ export class CustomDictionaryService {
         radical: vocab.radical || undefined,
         radicalMeaning: vocab.radicalMeaning || undefined,
         strokeCount: vocab.strokeCount || undefined,
-        synonyms: (vocab.synonyms as any[]) || [],
-        antonyms: (vocab.antonyms as any[]) || [],
+        synonyms: (vocab.synonyms as unknown as LexicalRelation[]) || [],
+        antonyms: (vocab.antonyms as unknown as LexicalRelation[]) || [],
         mnemonic: vocab.mnemonic || undefined,
         hskLevel: vocab.hskLevel,
         isSystemWord: true,
@@ -507,10 +548,10 @@ export class CustomDictionaryService {
   /**
    * Split merged examples into individual ones if they share a common separator
    */
-  private splitCompoundExamples(examples: any[]): any[] {
+  private splitCompoundExamples(examples: ExampleItem[]): ExampleItem[] {
     if (!examples || !Array.isArray(examples)) return [];
 
-    const result: any[] = [];
+    const result: ExampleItem[] = [];
     for (const ex of examples) {
       const chinese = (ex.chinese || '').trim();
       const pinyin = (ex.pinyin || '').trim();

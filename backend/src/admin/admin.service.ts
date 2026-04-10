@@ -1,4 +1,10 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   parseSubtitleFile,
@@ -7,9 +13,56 @@ import {
   ParsedToken,
 } from '../videos/subtitle-parser.js';
 
+export interface RecommendationOverrideRow {
+  action: 'pin' | 'hide';
+  lane: 'nextUp' | 'suited' | null;
+  hskLevel: number | null;
+  priority: number;
+  isActive: boolean;
+}
+
+interface RecommendationOverrideDelegate {
+  findMany: (...args: unknown[]) => Promise<RecommendationOverrideRow[]>;
+  create: (...args: unknown[]) => Promise<RecommendationOverrideRow>;
+  findUnique: (...args: unknown[]) => Promise<RecommendationOverrideRow | null>;
+  update: (...args: unknown[]) => Promise<RecommendationOverrideRow>;
+  delete: (...args: unknown[]) => Promise<RecommendationOverrideRow>;
+}
+
+interface SubtitleCreateManyAndReturnDelegate {
+  createManyAndReturn(args: {
+    data: Array<{
+      videoId: string;
+      startTime: number;
+      endTime: number;
+      hanzi: string;
+      pinyin: string;
+      meaningEn: string;
+      meaningVi: string;
+      sequenceOrder: number;
+    }>;
+  }): Promise<Array<{ id: string }>>;
+}
+
 @Injectable()
 export class AdminService {
+  private readonly logger = new Logger(AdminService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  private getRecommendationOverrideDelegate() {
+    const delegate = (
+      this.prisma as PrismaService & {
+        videoRecommendationOverride?: RecommendationOverrideDelegate;
+      }
+    ).videoRecommendationOverride;
+    if (!delegate) {
+      throw new NotFoundException(
+        'Recommendation override model is not available. Please run prisma migrate + prisma generate.',
+      );
+    }
+    return delegate;
+  }
 
   private normalizeSearchInput(input: string): string {
     return String(input || '')
@@ -91,7 +144,8 @@ export class AdminService {
 
     // Helper to calculate trend percentage
     const calculateTrend = (current: number, previous: number) => {
-      if (previous === 0) return { value: current > 0 ? 100 : 0, isPositive: true };
+      if (previous === 0)
+        return { value: current > 0 ? 100 : 0, isPositive: true };
       const diff = current - previous;
       const percent = Math.round((diff / previous) * 100);
       return {
@@ -118,41 +172,64 @@ export class AdminService {
 
   // Method to get daily stats for the activity chart (public for direct API access)
   async getDailyActivityStats(days: number) {
+    const safeDays = Math.max(1, Math.min(90, Number(days) || 7));
+    const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
+
+    const now = new Date();
+    const startDate = new Date(now);
+    startDate.setDate(startDate.getDate() - (safeDays - 1));
+    startDate.setHours(0, 0, 0, 0);
+
+    const [userRows, viewRows] = await Promise.all([
+      this.prisma.$queryRaw<Array<{ day: Date; count: bigint }>>(
+        Prisma.sql`
+          SELECT date_trunc('day', created_at) AS day, COUNT(*)::bigint AS count
+          FROM users
+          WHERE created_at >= ${startDate} AND created_at <= ${now}
+          GROUP BY 1
+        `,
+      ),
+      this.prisma.$queryRaw<Array<{ day: Date; count: bigint }>>(
+        Prisma.sql`
+          SELECT date_trunc('day', last_watched_at) AS day, COUNT(*)::bigint AS count
+          FROM video_progress
+          WHERE last_watched_at >= ${startDate} AND last_watched_at <= ${now}
+          GROUP BY 1
+        `,
+      ),
+    ]);
+
+    const toDayKey = (value: Date) => {
+      const d = new Date(value);
+      d.setHours(0, 0, 0, 0);
+      return d.toISOString().split('T')[0];
+    };
+
+    const userCountByDay = new Map<string, number>(
+      userRows.map((row) => [toDayKey(row.day), Number(row.count || 0)]),
+    );
+    const viewCountByDay = new Map<string, number>(
+      viewRows.map((row) => [toDayKey(row.day), Number(row.count || 0)]),
+    );
+
     const result: {
       date: string;
       label: string;
       newUsers: number;
       videoViews: number;
     }[] = [];
-    const dayLabels = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date();
+    for (let i = safeDays - 1; i >= 0; i--) {
+      const date = new Date(now);
       date.setDate(date.getDate() - i);
       date.setHours(0, 0, 0, 0);
-
-      const nextDate = new Date(date);
-      nextDate.setDate(nextDate.getDate() + 1);
-
-      const [newUsers, videoViews] = await Promise.all([
-        this.prisma.user.count({
-          where: {
-            createdAt: { gte: date, lt: nextDate },
-          },
-        }),
-        // Use video progress updates as proxy for video views
-        this.prisma.videoProgress.count({
-          where: {
-            lastWatchedAt: { gte: date, lt: nextDate },
-          },
-        }),
-      ]);
+      const dayKey = date.toISOString().split('T')[0];
 
       result.push({
-        date: date.toISOString().split('T')[0],
+        date: dayKey,
         label: dayLabels[date.getDay()],
-        newUsers,
-        videoViews,
+        newUsers: userCountByDay.get(dayKey) || 0,
+        videoViews: viewCountByDay.get(dayKey) || 0,
       });
     }
 
@@ -305,7 +382,9 @@ export class AdminService {
       });
     } catch (error: any) {
       if (error?.code === 'P2003') {
-        throw new ConflictException('Không thể xóa video vì còn dữ liệu liên quan');
+        throw new ConflictException(
+          'Không thể xóa video vì còn dữ liệu liên quan',
+        );
       }
       throw error;
     }
@@ -334,9 +413,9 @@ export class AdminService {
 
     // Create new subtitles
     // Use createManyAndReturn if possible, or sequential creates
-    const createdSubtitles = await (
-      this.prisma.subtitle as any
-    ).createManyAndReturn({
+    const subtitleDelegate = this.prisma
+      .subtitle as unknown as SubtitleCreateManyAndReturnDelegate;
+    const createdSubtitles = await subtitleDelegate.createManyAndReturn({
       data: subtitlesData.map((sub, index) => ({
         videoId,
         startTime: sub.startTime,
@@ -509,7 +588,12 @@ export class AdminService {
                   partOfSpeech: normalizedPartOfSpeech || undefined,
                 },
               });
-            } catch {
+            } catch (error) {
+              this.logger.warn(
+                `Skip stale vocabularyId=${vocabularyId} while updating subtitle=${id}: ${
+                  error instanceof Error ? error.message : String(error)
+                }`,
+              );
               // Stale or invalid vocabularyId, continue with hanzi-based fallback.
               vocabularyId = undefined;
             }
@@ -619,9 +703,12 @@ export class AdminService {
             best = Math.max(best, 700);
           }
 
-          if (folded && foldedPinyin.includes(folded)) best = Math.max(best, 650);
-          if (folded && foldedMeaningVi.includes(folded)) best = Math.max(best, 500);
-          if (folded && foldedMeaningEn.includes(folded)) best = Math.max(best, 450);
+          if (folded && foldedPinyin.includes(folded))
+            best = Math.max(best, 650);
+          if (folded && foldedMeaningVi.includes(folded))
+            best = Math.max(best, 500);
+          if (folded && foldedMeaningEn.includes(folded))
+            best = Math.max(best, 450);
         }
 
         return best;
@@ -713,40 +800,79 @@ export class AdminService {
   }
 
   async importVocabulary(vocabList: any[]) {
-    const results = { created: 0, skipped: 0, errors: 0 };
+    const results = {
+      created: 0,
+      skipped: 0,
+      errors: 0,
+      errorItems: [] as Array<{ hanzi: string; reason: string }>,
+    };
 
-    for (const item of vocabList) {
-      try {
-        await this.prisma.vocabulary.upsert({
-          where: { hanzi: item.hanzi },
-          create: {
-            hanzi: item.hanzi,
-            pinyin: item.pinyin,
-            meaningEn: item.meaningEn,
-            meaningVi: item.meaningVi,
-            partOfSpeech: item.partOfSpeech,
-            hskLevel: item.hskLevel || 1,
-            tags: item.tags || [],
-          },
-          update: {
-            pinyin: item.pinyin,
-            meaningEn: item.meaningEn,
-            meaningVi: item.meaningVi,
-            partOfSpeech: item.partOfSpeech,
-            hskLevel: item.hskLevel,
-          },
-        });
-        results.created++;
-      } catch (error) {
-        results.errors++;
+    const validItems = vocabList.filter((item) => {
+      const hanzi = String(item?.hanzi || '').trim();
+      if (!hanzi) {
+        results.skipped += 1;
+        return false;
       }
+      return true;
+    });
+
+    const chunkSize = 200;
+    for (let i = 0; i < validItems.length; i += chunkSize) {
+      const chunk = validItems.slice(i, i + chunkSize);
+      const settled = await Promise.allSettled(
+        chunk.map((item) =>
+          this.prisma.vocabulary.upsert({
+            where: { hanzi: item.hanzi },
+            create: {
+              hanzi: item.hanzi,
+              pinyin: item.pinyin,
+              meaningEn: item.meaningEn,
+              meaningVi: item.meaningVi,
+              partOfSpeech: item.partOfSpeech,
+              hskLevel: item.hskLevel || 1,
+              tags: item.tags || [],
+            },
+            update: {
+              pinyin: item.pinyin,
+              meaningEn: item.meaningEn,
+              meaningVi: item.meaningVi,
+              partOfSpeech: item.partOfSpeech,
+              hskLevel: item.hskLevel,
+            },
+          }),
+        ),
+      );
+
+      settled.forEach((entry, index) => {
+        if (entry.status === 'fulfilled') {
+          results.created += 1;
+          return;
+        }
+
+        results.errors += 1;
+        const failedItem = chunk[index];
+        if (results.errorItems.length < 50) {
+          results.errorItems.push({
+            hanzi: String(failedItem?.hanzi || ''),
+            reason:
+              entry.reason instanceof Error
+                ? entry.reason.message
+                : String(entry.reason),
+          });
+        }
+      });
     }
 
     return results;
   }
 
   // ============ User Management ============
-  async getAllUsers(query: { page?: number; limit?: number; role?: string; search?: string }) {
+  async getAllUsers(query: {
+    page?: number;
+    limit?: number;
+    role?: string;
+    search?: string;
+  }) {
     const { page = 1, limit = 20, role, search } = query;
     const skip = (page - 1) * limit;
 
@@ -759,7 +885,7 @@ export class AdminService {
     // If search provided, perform a global search across name/email and then paginate the matched set
     const candidates = this.buildSearchCandidates(search || '');
     if (candidates.length > 0) {
-      const orClauses: any[] = [];
+      const orClauses: Prisma.UserWhereInput[] = [];
       for (const c of candidates) {
         orClauses.push({ name: { contains: c, mode: 'insensitive' } });
         orClauses.push({ email: { contains: c, mode: 'insensitive' } });
@@ -778,6 +904,7 @@ export class AdminService {
           isPremium: true,
           role: true,
           createdAt: true,
+          lastActiveDate: true,
           _count: { select: { userVocabulary: true } },
         },
       });
@@ -787,7 +914,11 @@ export class AdminService {
 
       const premiumCount = matched.filter((u) => u.isPremium).length;
       const adminCount = matched.filter((u) => u.role === 'admin').length;
-      const activeTodayCount = matched.filter((u) => new Date(u.createdAt) >= today || (u as any).lastActiveDate >= today).length;
+      const activeTodayCount = matched.filter(
+        (u) =>
+          new Date(u.createdAt) >= today ||
+          (u.lastActiveDate ? new Date(u.lastActiveDate) >= today : false),
+      ).length;
 
       return {
         data: paged,
@@ -803,34 +934,36 @@ export class AdminService {
 
     const where = baseWhere;
 
-    const [users, total, premiumCount, adminCount, activeTodayCount] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          avatarUrl: true,
-          hskLevel: true,
-          streak: true,
-          isPremium: true,
-          role: true,
-          createdAt: true,
-          _count: { select: { userVocabulary: true } },
-        },
-      }),
-      this.prisma.user.count({ where }),
-      this.prisma.user.count({ where: { isPremium: true } }),
-      this.prisma.user.count({ where: { role: 'admin' } }),
-      this.prisma.user.count({
-        where: {
-          lastActiveDate: { gte: today },
-        },
-      }),
-    ]);
+    const [users, total, premiumCount, adminCount, activeTodayCount] =
+      await Promise.all([
+        this.prisma.user.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            avatarUrl: true,
+            hskLevel: true,
+            streak: true,
+            isPremium: true,
+            role: true,
+            createdAt: true,
+            lastActiveDate: true,
+            _count: { select: { userVocabulary: true } },
+          },
+        }),
+        this.prisma.user.count({ where }),
+        this.prisma.user.count({ where: { isPremium: true } }),
+        this.prisma.user.count({ where: { role: 'admin' } }),
+        this.prisma.user.count({
+          where: {
+            lastActiveDate: { gte: today },
+          },
+        }),
+      ]);
 
     return {
       data: users,
@@ -862,6 +995,140 @@ export class AdminService {
     // vì đã cấu hình onDelete: Cascade trong schema
     await this.prisma.user.delete({ where: { id } });
     return { message: 'User deleted successfully' };
+  }
+
+  // ============ Recommendation Overrides ============
+  async getRecommendationOverrides(query: {
+    hskLevel?: number;
+    isActive?: boolean;
+  }) {
+    const where: any = {};
+    if (query.hskLevel !== undefined) where.hskLevel = query.hskLevel;
+    if (query.isActive !== undefined) where.isActive = query.isActive;
+
+    return this.getRecommendationOverrideDelegate().findMany({
+      where,
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+      include: {
+        video: {
+          select: {
+            id: true,
+            title: true,
+            hskLevel: true,
+            thumbnailUrl: true,
+            isPublished: true,
+          },
+        },
+      },
+    });
+  }
+
+  async createRecommendationOverride(data: {
+    videoId: string;
+    hskLevel?: number | null;
+    action: 'pin' | 'hide';
+    lane?: 'nextUp' | 'suited' | null;
+    priority?: number;
+    isActive?: boolean;
+  }) {
+    const video = await this.prisma.video.findUnique({
+      where: { id: data.videoId },
+    });
+    if (!video) throw new NotFoundException('Video not found');
+
+    if (data.action === 'pin' && !data.lane) {
+      throw new ConflictException('lane is required when action is pin');
+    }
+
+    return this.getRecommendationOverrideDelegate().create({
+      data: {
+        videoId: data.videoId,
+        hskLevel:
+          data.hskLevel === null || data.hskLevel === undefined
+            ? null
+            : Number(data.hskLevel),
+        action: data.action,
+        lane: data.action === 'hide' ? null : data.lane || 'suited',
+        priority: Number(data.priority ?? 0),
+        isActive: data.isActive ?? true,
+      },
+      include: {
+        video: {
+          select: {
+            id: true,
+            title: true,
+            hskLevel: true,
+            thumbnailUrl: true,
+            isPublished: true,
+          },
+        },
+      },
+    });
+  }
+
+  async updateRecommendationOverride(
+    id: string,
+    data: {
+      hskLevel?: number | null;
+      action?: 'pin' | 'hide';
+      lane?: 'nextUp' | 'suited' | null;
+      priority?: number;
+      isActive?: boolean;
+    },
+  ) {
+    const existing = await this.getRecommendationOverrideDelegate().findUnique({
+      where: { id },
+    });
+    if (!existing)
+      throw new NotFoundException('Recommendation override not found');
+
+    const nextAction = data.action || existing.action;
+    const nextLane = data.lane !== undefined ? data.lane : existing.lane;
+
+    if (nextAction === 'pin' && !nextLane) {
+      throw new ConflictException('lane is required when action is pin');
+    }
+
+    return this.getRecommendationOverrideDelegate().update({
+      where: { id },
+      data: {
+        hskLevel:
+          data.hskLevel === undefined
+            ? existing.hskLevel
+            : data.hskLevel === null
+              ? null
+              : Number(data.hskLevel),
+        action: nextAction,
+        lane: nextAction === 'hide' ? null : nextLane || 'suited',
+        priority:
+          data.priority === undefined
+            ? existing.priority
+            : Number(data.priority),
+        isActive: data.isActive ?? existing.isActive,
+      },
+      include: {
+        video: {
+          select: {
+            id: true,
+            title: true,
+            hskLevel: true,
+            thumbnailUrl: true,
+            isPublished: true,
+          },
+        },
+      },
+    });
+  }
+
+  async deleteRecommendationOverride(id: string) {
+    const existing = await this.getRecommendationOverrideDelegate().findUnique({
+      where: { id },
+    });
+    if (!existing)
+      throw new NotFoundException('Recommendation override not found');
+
+    await this.getRecommendationOverrideDelegate().delete({ where: { id } });
+    return { message: 'Recommendation override deleted' };
   }
 
   // ============ Achievement Management ============
