@@ -478,7 +478,7 @@ export class VocabularyService {
             (m) =>
               m.pinyin === (item.pinyin || '') &&
               m.partOfSpeech === (item.partOfSpeech || '') &&
-              ((m.meanings as string[]) || []).includes(meaningVi),
+              (m.meanings || []).includes(meaningVi),
           );
           const isIdenticalToPrimary =
             (existing.pinyin || '') === (item.pinyin || '') &&

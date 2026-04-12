@@ -4,9 +4,9 @@ import { QuizzesController } from './quizzes.controller';
 import { GeminiModule } from '../gemini/gemini.module';
 
 @Module({
-    imports: [GeminiModule],
-    controllers: [QuizzesController],
-    providers: [QuizzesService],
-    exports: [QuizzesService],
+  imports: [GeminiModule],
+  controllers: [QuizzesController],
+  providers: [QuizzesService],
+  exports: [QuizzesService],
 })
-export class QuizzesModule { }
+export class QuizzesModule {}

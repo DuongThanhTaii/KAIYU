@@ -1,85 +1,92 @@
-import { IsString, IsOptional, IsBoolean, IsArray, IsInt, Min } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsBoolean,
+  IsArray,
+  IsInt,
+  Min,
+} from 'class-validator';
 
 export class CreateQuizDto {
-    @IsString()
-    videoId: string;
+  @IsString()
+  videoId: string;
 
-    @IsString()
-    @IsOptional()
-    title?: string;
+  @IsString()
+  @IsOptional()
+  title?: string;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 }
 
 export class UpdateQuizDto {
-    @IsString()
-    @IsOptional()
-    title?: string;
+  @IsString()
+  @IsOptional()
+  title?: string;
 
-    @IsString()
-    @IsOptional()
-    description?: string;
+  @IsString()
+  @IsOptional()
+  description?: string;
 
-    @IsBoolean()
-    @IsOptional()
-    isPublished?: boolean;
+  @IsBoolean()
+  @IsOptional()
+  isPublished?: boolean;
 }
 
 export class CreateQuestionDto {
-    @IsString()
-    sentenceHanzi: string;
+  @IsString()
+  sentenceHanzi: string;
 
-    @IsString()
-    blankWord: string;
+  @IsString()
+  blankWord: string;
 
-    @IsInt()
-    @Min(0)
-    blankPosition: number;
+  @IsInt()
+  @Min(0)
+  blankPosition: number;
 
-    @IsArray()
-    @IsString({ each: true })
-    options: string[];
+  @IsArray()
+  @IsString({ each: true })
+  options: string[];
 
-    @IsString()
-    @IsOptional()
-    meaningVi?: string;
+  @IsString()
+  @IsOptional()
+  meaningVi?: string;
 
-    @IsInt()
-    @Min(0)
-    sequenceOrder: number;
+  @IsInt()
+  @Min(0)
+  sequenceOrder: number;
 
-    @IsString()
-    @IsOptional()
-    subtitleId?: string;
+  @IsString()
+  @IsOptional()
+  subtitleId?: string;
 }
 
 export class UpdateQuestionDto {
-    @IsString()
-    @IsOptional()
-    sentenceHanzi?: string;
+  @IsString()
+  @IsOptional()
+  sentenceHanzi?: string;
 
-    @IsString()
-    @IsOptional()
-    blankWord?: string;
+  @IsString()
+  @IsOptional()
+  blankWord?: string;
 
-    @IsInt()
-    @Min(0)
-    @IsOptional()
-    blankPosition?: number;
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  blankPosition?: number;
 
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    options?: string[];
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  options?: string[];
 
-    @IsString()
-    @IsOptional()
-    meaningVi?: string;
+  @IsString()
+  @IsOptional()
+  meaningVi?: string;
 
-    @IsInt()
-    @Min(0)
-    @IsOptional()
-    sequenceOrder?: number;
+  @IsInt()
+  @Min(0)
+  @IsOptional()
+  sequenceOrder?: number;
 }

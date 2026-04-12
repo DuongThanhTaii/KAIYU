@@ -4,8 +4,8 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { EmailModule } from '../email/email.module';
 
 @Module({
-    imports: [PrismaModule, EmailModule],
-    providers: [SchedulerService],
-    exports: [SchedulerService],
+  imports: [PrismaModule, EmailModule],
+  providers: [SchedulerService],
+  exports: [SchedulerService],
 })
-export class SchedulerModule { }
+export class SchedulerModule {}

@@ -297,7 +297,7 @@ Ví dụ tốt cho từ "喜欢":
       // Remove ```json and ``` markers
       cleanText = cleanText.replace(/```json\s*/gi, '').replace(/```\s*/g, '');
 
-      let jsonMatch = cleanText.match(/\[[\s\S]*\]/);
+      const jsonMatch = cleanText.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         let jsonStr = jsonMatch[0];
 

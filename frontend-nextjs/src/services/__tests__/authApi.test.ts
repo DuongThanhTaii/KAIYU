@@ -42,7 +42,7 @@ describe("Auth API", () => {
         email: "test@example.com",
         password: "password123",
       });
-      expect(tokenManager.setToken).toHaveBeenCalledWith("jwt-token-123");
+      expect(tokenManager.setUser).toHaveBeenCalledWith(mockResponse.user);
       expect(result).toEqual(mockResponse);
     });
   });
@@ -71,8 +71,16 @@ describe("Auth API", () => {
   });
 
   describe("logout", () => {
-    it("should clear auth data on logout", () => {
-      authApi.logout();
+    it("should call backend logout and clear auth data", async () => {
+      (api.post as any).mockResolvedValue({ data: { message: "ok" } });
+
+      await authApi.logout();
+
+      expect(api.post).toHaveBeenCalledWith(
+        "/auth/logout",
+        {},
+        expect.objectContaining({ skipAuthRedirect: true }),
+      );
       expect(tokenManager.clearAuth).toHaveBeenCalled();
     });
   });
@@ -147,13 +155,13 @@ describe("Auth API", () => {
   });
 
   describe("isAuthenticated", () => {
-    it("should return true when token exists", () => {
-      (tokenManager.getToken as any).mockReturnValue("some-token");
+    it("should return true when cached user exists", () => {
+      (tokenManager.getUser as any).mockReturnValue({ id: "1" });
       expect(authApi.isAuthenticated()).toBe(true);
     });
 
-    it("should return false when no token", () => {
-      (tokenManager.getToken as any).mockReturnValue(null);
+    it("should return false when no cached user", () => {
+      (tokenManager.getUser as any).mockReturnValue(null);
       expect(authApi.isAuthenticated()).toBe(false);
     });
   });

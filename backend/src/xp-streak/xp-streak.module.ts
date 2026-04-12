@@ -3,7 +3,7 @@ import { XpStreakService } from './xp-streak.service';
 
 @Global()
 @Module({
-    providers: [XpStreakService],
-    exports: [XpStreakService],
+  providers: [XpStreakService],
+  exports: [XpStreakService],
 })
-export class XpStreakModule { }
+export class XpStreakModule {}

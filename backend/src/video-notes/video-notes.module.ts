@@ -4,9 +4,9 @@ import { VideoNotesService } from './video-notes.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [VideoNotesController],
-    providers: [VideoNotesService],
-    exports: [VideoNotesService],
+  imports: [PrismaModule],
+  controllers: [VideoNotesController],
+  providers: [VideoNotesService],
+  exports: [VideoNotesService],
 })
-export class VideoNotesModule { }
+export class VideoNotesModule {}

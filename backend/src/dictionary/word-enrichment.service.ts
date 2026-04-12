@@ -394,7 +394,7 @@ Nếu không có, để mảng rỗng [].`;
           .replace(/```\s*/g, '')
           .trim();
 
-        let jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+        const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           let jsonStr = jsonMatch[0];
 

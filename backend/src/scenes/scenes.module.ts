@@ -6,9 +6,9 @@ import { SceneAnalyticsService } from './scene-analytics.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [ScenesController],
-    providers: [ScenesService, AiSceneService, SceneAnalyticsService],
-    exports: [ScenesService, AiSceneService, SceneAnalyticsService],
+  imports: [PrismaModule],
+  controllers: [ScenesController],
+  providers: [ScenesService, AiSceneService, SceneAnalyticsService],
+  exports: [ScenesService, AiSceneService, SceneAnalyticsService],
 })
-export class ScenesModule { }
+export class ScenesModule {}

@@ -1,102 +1,114 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class VideoNotesService {
-    constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
-    async findByVideoId(userId: string, videoId: string) {
-        const notes = await this.prisma.videoNote.findMany({
-            where: {
-                userId,
-                videoId,
-            },
-            orderBy: { timestampSec: 'asc' },
-        });
+  async findByVideoId(userId: string, videoId: string) {
+    const notes = await this.prisma.videoNote.findMany({
+      where: {
+        userId,
+        videoId,
+      },
+      orderBy: { timestampSec: 'asc' },
+    });
 
-        return notes.map(note => ({
-            ...note,
-            timestampSec: Number(note.timestampSec),
-        }));
+    return notes.map((note) => ({
+      ...note,
+      timestampSec: Number(note.timestampSec),
+    }));
+  }
+
+  async create(
+    userId: string,
+    data: {
+      videoId: string;
+      timestampSec: number;
+      content: string;
+    },
+  ) {
+    // Verify video exists
+    const video = await this.prisma.video.findUnique({
+      where: { id: data.videoId },
+    });
+
+    if (!video) {
+      throw new NotFoundException('Video not found');
     }
 
-    async create(userId: string, data: {
-        videoId: string;
-        timestampSec: number;
-        content: string;
-    }) {
-        // Verify video exists
-        const video = await this.prisma.video.findUnique({
-            where: { id: data.videoId },
-        });
+    const note = await this.prisma.videoNote.create({
+      data: {
+        userId,
+        videoId: data.videoId,
+        timestampSec: data.timestampSec,
+        content: data.content,
+      },
+    });
 
-        if (!video) {
-            throw new NotFoundException('Video not found');
-        }
+    return {
+      ...note,
+      timestampSec: Number(note.timestampSec),
+    };
+  }
 
-        const note = await this.prisma.videoNote.create({
-            data: {
-                userId,
-                videoId: data.videoId,
-                timestampSec: data.timestampSec,
-                content: data.content,
-            },
-        });
+  async update(
+    userId: string,
+    noteId: string,
+    data: {
+      content?: string;
+      timestampSec?: number;
+    },
+  ) {
+    const note = await this.prisma.videoNote.findUnique({
+      where: { id: noteId },
+    });
 
-        return {
-            ...note,
-            timestampSec: Number(note.timestampSec),
-        };
+    if (!note) {
+      throw new NotFoundException('Note not found');
     }
 
-    async update(userId: string, noteId: string, data: {
-        content?: string;
-        timestampSec?: number;
-    }) {
-        const note = await this.prisma.videoNote.findUnique({
-            where: { id: noteId },
-        });
-
-        if (!note) {
-            throw new NotFoundException('Note not found');
-        }
-
-        if (note.userId !== userId) {
-            throw new ForbiddenException('Not authorized to update this note');
-        }
-
-        const updateData: any = {};
-        if (data.content !== undefined) updateData.content = data.content;
-        if (data.timestampSec !== undefined) updateData.timestampSec = data.timestampSec;
-
-        const updated = await this.prisma.videoNote.update({
-            where: { id: noteId },
-            data: updateData,
-        });
-
-        return {
-            ...updated,
-            timestampSec: Number(updated.timestampSec),
-        };
+    if (note.userId !== userId) {
+      throw new ForbiddenException('Not authorized to update this note');
     }
 
-    async remove(userId: string, noteId: string) {
-        const note = await this.prisma.videoNote.findUnique({
-            where: { id: noteId },
-        });
+    const updateData: any = {};
+    if (data.content !== undefined) updateData.content = data.content;
+    if (data.timestampSec !== undefined)
+      updateData.timestampSec = data.timestampSec;
 
-        if (!note) {
-            throw new NotFoundException('Note not found');
-        }
+    const updated = await this.prisma.videoNote.update({
+      where: { id: noteId },
+      data: updateData,
+    });
 
-        if (note.userId !== userId) {
-            throw new ForbiddenException('Not authorized to delete this note');
-        }
+    return {
+      ...updated,
+      timestampSec: Number(updated.timestampSec),
+    };
+  }
 
-        await this.prisma.videoNote.delete({
-            where: { id: noteId },
-        });
+  async remove(userId: string, noteId: string) {
+    const note = await this.prisma.videoNote.findUnique({
+      where: { id: noteId },
+    });
 
-        return { message: 'Note deleted successfully' };
+    if (!note) {
+      throw new NotFoundException('Note not found');
     }
+
+    if (note.userId !== userId) {
+      throw new ForbiddenException('Not authorized to delete this note');
+    }
+
+    await this.prisma.videoNote.delete({
+      where: { id: noteId },
+    });
+
+    return { message: 'Note deleted successfully' };
+  }
 }

@@ -4,9 +4,9 @@ import { AchievementsService } from './achievements.service';
 import { PrismaModule } from '../prisma';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [AchievementsController],
-    providers: [AchievementsService],
-    exports: [AchievementsService],
+  imports: [PrismaModule],
+  controllers: [AchievementsController],
+  providers: [AchievementsService],
+  exports: [AchievementsService],
 })
-export class AchievementsModule { }
+export class AchievementsModule {}

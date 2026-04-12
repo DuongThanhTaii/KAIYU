@@ -3,8 +3,8 @@ import { FlashcardsService } from './flashcards.service';
 import { FlashcardsController } from './flashcards.controller';
 
 @Module({
-    controllers: [FlashcardsController],
-    providers: [FlashcardsService],
-    exports: [FlashcardsService],
+  controllers: [FlashcardsController],
+  providers: [FlashcardsService],
+  exports: [FlashcardsService],
 })
-export class FlashcardsModule { }
+export class FlashcardsModule {}

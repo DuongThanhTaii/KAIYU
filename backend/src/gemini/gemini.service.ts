@@ -1,25 +1,31 @@
-import { Injectable, Logger, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI, GenerativeModel } from '@google/generative-ai';
 
 @Injectable()
 export class GeminiService {
-    private readonly logger = new Logger(GeminiService.name);
-    private genAI: GoogleGenerativeAI;
-    private model: GenerativeModel;
+  private readonly logger = new Logger(GeminiService.name);
+  private genAI: GoogleGenerativeAI;
+  private model: GenerativeModel;
 
-    constructor(private configService: ConfigService) {
-        const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-        if (!apiKey) {
-            this.logger.warn('GEMINI_API_KEY is not set in environment variables. AI features will fail.');
-        }
-        this.genAI = new GoogleGenerativeAI(apiKey || 'missing-key');
-        // gemini-2.5-flash is the supported fast model for this API version
-        this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  constructor(private configService: ConfigService) {
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      this.logger.warn(
+        'GEMINI_API_KEY is not set in environment variables. AI features will fail.',
+      );
     }
+    this.genAI = new GoogleGenerativeAI(apiKey || 'missing-key');
+    // gemini-2.5-flash is the supported fast model for this API version
+    this.model = this.genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
+  }
 
-    async generateQuizQuestions(subtitleData: string): Promise<any[]> {
-        const prompt = `
+  async generateQuizQuestions(subtitleData: string): Promise<any[]> {
+    const prompt = `
 Bạn là một chuyên gia ngôn ngữ tiếng Trung giảng dạy HSK.
 Dựa vào nội dung phụ đề tiếng Trung và tiếng Việt bên dưới, hãy tạo các câu hỏi trắc nghiệm điền vào chỗ trống.
 Tiêu chuẩn chọn từ để tạo chỗ trống:
@@ -44,22 +50,30 @@ Nội dung phụ đề:
 ${subtitleData}
         `;
 
-        try {
-            const result = await this.model.generateContent(prompt);
-            const response = result.response;
-            let text = response.text();
+    try {
+      const result = await this.model.generateContent(prompt);
+      const response = result.response;
+      let text = response.text();
 
-            // Clean up backticks if model returns markdown json block
-            text = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
-            // remove trailing backticks if any
-            if (text.startsWith('```')) text = text.replace(/^```\s*/, '');
-            if (text.endsWith('```')) text = text.replace(/```$/, '');
+      // Clean up backticks if model returns markdown json block
+      text = text
+        .replace(/^```json\s*/i, '')
+        .replace(/\s*```$/i, '')
+        .trim();
+      // remove trailing backticks if any
+      if (text.startsWith('```')) text = text.replace(/^```\s*/, '');
+      if (text.endsWith('```')) text = text.replace(/```$/, '');
 
-            const parsed = JSON.parse(text);
-            return parsed;
-        } catch (e) {
-            this.logger.error('Failed to parse Gemini response or generate content', e);
-            throw new InternalServerErrorException('Không thể tạo câu hỏi từ AI hiện tại: ' + e.message);
-        }
+      const parsed = JSON.parse(text);
+      return parsed;
+    } catch (e) {
+      this.logger.error(
+        'Failed to parse Gemini response or generate content',
+        e,
+      );
+      throw new InternalServerErrorException(
+        'Không thể tạo câu hỏi từ AI hiện tại: ' + e.message,
+      );
     }
+  }
 }

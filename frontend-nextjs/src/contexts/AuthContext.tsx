@@ -51,44 +51,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Check for Google OAuth callback parameters
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get("token");
-        const userParam = urlParams.get("user");
-
-        if (token && userParam) {
-          // Handle Google OAuth callback
-          const result = authApi.handleGoogleCallback(token, userParam);
-          if (result) {
-            setUser(result.user);
-            // Clean URL
-            window.history.replaceState(
-              {},
-              document.title,
-              window.location.pathname,
-            );
-          }
-          setIsLoading(false);
-          return;
+        const cachedUser = authApi.getStoredUser();
+        if (cachedUser) {
+          setUser(cachedUser);
         }
 
-        // Check for existing token
-        const existingToken = tokenManager.getToken();
-        if (existingToken) {
-          // Try to get fresh profile
-          try {
-            const profile = await authApi.getProfile();
-            setUser(profile);
-          } catch (err: any) {
-            if (err?.status === 304) {
-              const cachedUser = authApi.getStoredUser();
-              if (cachedUser) {
-                setUser(cachedUser);
-                return;
-              }
-            }
-            // Token invalid, clear it
+        try {
+          const profile = await authApi.getProfile();
+          setUser(profile);
+        } catch (err: any) {
+          if (err?.status === 401) {
             tokenManager.clearAuth();
+            setUser(null);
           }
         }
       } catch (err) {
@@ -134,7 +108,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   // Logout
   const logout = useCallback(() => {
-    authApi.logout();
+    void authApi.logout();
     setUser(null);
     setError(null);
   }, []);
