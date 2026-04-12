@@ -3,18 +3,16 @@
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-// Helper function to get auth token - matches the token key in api.ts
+// Cookie-session based auth: backend reads HttpOnly cookie.
 const getAuthHeaders = () => {
-  const token = localStorage.getItem("auth_token");
   return {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 };
 
 export const getAdminApiBaseUrl = () => BASE_URL;
 
-export const getAdminAuthToken = () => localStorage.getItem("auth_token");
+export const getAdminAuthToken = () => null;
 
 // Generic fetch wrapper with error handling
 async function apiRequest<T>(
@@ -23,6 +21,7 @@ async function apiRequest<T>(
 ): Promise<T> {
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
+    credentials: "include",
     headers: {
       ...getAuthHeaders(),
       ...options.headers,
