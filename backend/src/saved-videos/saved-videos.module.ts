@@ -4,9 +4,9 @@ import { SavedVideosService } from './saved-videos.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [SavedVideosController],
-    providers: [SavedVideosService],
-    exports: [SavedVideosService],
+  imports: [PrismaModule],
+  controllers: [SavedVideosController],
+  providers: [SavedVideosService],
+  exports: [SavedVideosService],
 })
-export class SavedVideosModule { }
+export class SavedVideosModule {}

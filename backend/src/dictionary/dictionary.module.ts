@@ -6,17 +6,13 @@ import { WordEnrichmentService } from './word-enrichment.service';
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [DictionaryController],
-    providers: [
-        DictionaryService,
-        CustomDictionaryService,
-        WordEnrichmentService
-    ],
-    exports: [
-        DictionaryService,
-        CustomDictionaryService,
-        WordEnrichmentService
-    ],
+  imports: [PrismaModule],
+  controllers: [DictionaryController],
+  providers: [
+    DictionaryService,
+    CustomDictionaryService,
+    WordEnrichmentService,
+  ],
+  exports: [DictionaryService, CustomDictionaryService, WordEnrichmentService],
 })
-export class DictionaryModule { }
+export class DictionaryModule {}

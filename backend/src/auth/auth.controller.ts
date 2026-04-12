@@ -30,6 +30,8 @@ import {
   UpdateProfileDto,
   ForgotPasswordDto,
   ResetPasswordDto,
+  VerifyRegistrationDto,
+  ResendRegistrationOtpDto,
 } from './dto';
 import { CurrentUser } from './decorators';
 
@@ -48,11 +50,35 @@ type GoogleCallbackRequest = Request & {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
+  private readonly authCookieName =
+    this.configService.get<string>('AUTH_COOKIE_NAME') || 'access_token';
+
   constructor(
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
     private readonly otpService: OtpService,
   ) {}
+
+  private getAuthCookieOptions() {
+    return {
+      httpOnly: true,
+      sameSite: 'lax' as const,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: Number(process.env.AUTH_COOKIE_MAX_AGE_MS || 7 * 24 * 60 * 60 * 1000),
+      path: '/',
+    };
+  }
+
+  private setAuthCookie(res: Response, accessToken: string) {
+    res.cookie(this.authCookieName, accessToken, this.getAuthCookieOptions());
+  }
+
+  private clearAuthCookie(res: Response) {
+    res.clearCookie(this.authCookieName, {
+      ...this.getAuthCookieOptions(),
+      maxAge: 0,
+    });
+  }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -62,12 +88,17 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 409, description: 'Email already registered' })
-  async register(@Body() dto: RegisterDto): Promise<any> {
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<any> {
     // Feature-flag: enable OTP-based email registration when
     // `ENABLE_OTP_REGISTRATION` is set to 'true'. Otherwise use legacy flow.
     const enableOtp = process.env.ENABLE_OTP_REGISTRATION === 'true';
     if (!enableOtp) {
-      return this.authService.register(dto);
+      const auth = await this.authService.register(dto);
+      this.setAuthCookie(res, auth.accessToken);
+      return auth;
     }
 
     // Create OTP registration request (will send OTP email).
@@ -82,7 +113,8 @@ export class AuthController {
     type: AuthResponseDto,
   })
   async verifyRegistration(
-    @Body() body: { registrationRequestId: string; otp: string },
+    @Body() body: VerifyRegistrationDto,
+    @Res({ passthrough: true }) res: Response,
   ): Promise<AuthResponseDto> {
     const payload = await this.otpService.verifyRegistration(
       body.registrationRequestId,
@@ -90,19 +122,20 @@ export class AuthController {
     );
 
     // Expect payload to contain email, passwordHash (hashed), name, hskLevel
-    const res = await this.authService.createUserWithHash({
+    const auth = await this.authService.createUserWithHash({
       email: payload.email,
       passwordHash: payload.passwordHash,
       name: payload.name,
       hskLevel: payload.hskLevel,
     });
 
-    return res;
+    this.setAuthCookie(res, auth.accessToken);
+    return auth;
   }
 
   @Post('register/resend')
   @ApiOperation({ summary: 'Resend OTP for registration request' })
-  async resendRegistrationOtp(@Body() body: { registrationRequestId: string }) {
+  async resendRegistrationOtp(@Body() body: ResendRegistrationOtpDto) {
     return this.otpService.resendRegistrationOtp(body.registrationRequestId);
   }
 
@@ -115,8 +148,21 @@ export class AuthController {
     type: AuthResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  async login(@Body() dto: LoginDto): Promise<AuthResponseDto> {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<AuthResponseDto> {
+    const auth = await this.authService.login(dto);
+    this.setAuthCookie(res, auth.accessToken);
+    return auth;
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Logout current session' })
+  async logout(@Res({ passthrough: true }) res: Response) {
+    this.clearAuthCookie(res);
+    return { message: 'Logged out successfully' };
   }
 
   @Get('me')
@@ -198,7 +244,7 @@ export class AuthController {
     @Res() res: Response,
   ) {
     // Get the auth result from the request (set by GoogleStrategy)
-    const { accessToken, user, isNewUser } = req.user;
+    const { accessToken, isNewUser } = req.user;
 
     // Get frontend URLs from config
     const frontendUrlConfig =
@@ -217,10 +263,7 @@ export class AuthController {
     // Redirect to onboarding for brand-new Google users to match email register flow.
     const redirectPath = isNewUser ? '/onboarding/goals' : '/dashboard';
 
-    // Redirect to frontend with token and user info
-    const userJson = encodeURIComponent(JSON.stringify(user));
-    res.redirect(
-      `${frontendUrl}${redirectPath}?token=${accessToken}&user=${userJson}`,
-    );
+    this.setAuthCookie(res, accessToken);
+    res.redirect(`${frontendUrl}${redirectPath}`);
   }
 }

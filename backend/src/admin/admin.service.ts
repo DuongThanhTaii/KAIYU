@@ -403,76 +403,72 @@ export class AdminService {
 
   // ============ Subtitle Management ============
   async addSubtitles(videoId: string, subtitlesData: any[]) {
-    const video = await this.prisma.video.findUnique({
-      where: { id: videoId },
-    });
-    if (!video) throw new NotFoundException('Video not found');
+    return this.prisma.$transaction(async (tx) => {
+      const video = await tx.video.findUnique({
+        where: { id: videoId },
+      });
+      if (!video) throw new NotFoundException('Video not found');
 
-    // Delete existing subtitles
-    await this.prisma.subtitle.deleteMany({ where: { videoId } });
+      await tx.subtitle.deleteMany({ where: { videoId } });
 
-    // Create new subtitles
-    // Use createManyAndReturn if possible, or sequential creates
-    const subtitleDelegate = this.prisma
-      .subtitle as unknown as SubtitleCreateManyAndReturnDelegate;
-    const createdSubtitles = await subtitleDelegate.createManyAndReturn({
-      data: subtitlesData.map((sub, index) => ({
-        videoId,
-        startTime: sub.startTime,
-        endTime: sub.endTime,
-        hanzi: sub.hanzi,
-        pinyin: sub.pinyin || '',
-        meaningEn: sub.meaningEn || '',
-        meaningVi: sub.meaningVi,
-        sequenceOrder: index,
-      })),
-    });
-
-    // Generate tokens for each subtitle
-    const allTokens: any[] = [];
-    for (let i = 0; i < subtitlesData.length; i++) {
-      const sub = subtitlesData[i];
-      const dbSub = createdSubtitles[i];
-      if (!dbSub) continue;
-
-      let tokens: ParsedToken[] = [];
-      if (sub.hanzi && sub.pinyin) {
-        tokens = segmentHanziWithPinyin(sub.hanzi, sub.pinyin);
-      } else if (sub.hanzi) {
-        tokens = tokenizeChinese(sub.hanzi);
-      }
-
-      allTokens.push(
-        ...tokens.map((t) => ({
-          subtitleId: dbSub.id,
-          hanzi: t.hanzi,
-          pinyin: t.pinyin || '',
-          position: t.position,
+      const subtitleDelegate = tx
+        .subtitle as unknown as SubtitleCreateManyAndReturnDelegate;
+      const createdSubtitles = await subtitleDelegate.createManyAndReturn({
+        data: subtitlesData.map((sub, index) => ({
+          videoId,
+          startTime: sub.startTime,
+          endTime: sub.endTime,
+          hanzi: sub.hanzi,
+          pinyin: sub.pinyin || '',
+          meaningEn: sub.meaningEn || '',
+          meaningVi: sub.meaningVi,
+          sequenceOrder: index,
         })),
-      );
-    }
+      });
 
-    // Batch create tokens
-    if (allTokens.length > 0) {
-      const chunkSize = 1000;
-      for (let i = 0; i < allTokens.length; i += chunkSize) {
-        const chunk = allTokens.slice(i, i + chunkSize);
-        await this.prisma.subtitleToken.createMany({ data: chunk });
+      const allTokens: any[] = [];
+      for (let i = 0; i < subtitlesData.length; i++) {
+        const sub = subtitlesData[i];
+        const dbSub = createdSubtitles[i];
+        if (!dbSub) continue;
+
+        let tokens: ParsedToken[] = [];
+        if (sub.hanzi && sub.pinyin) {
+          tokens = segmentHanziWithPinyin(sub.hanzi, sub.pinyin);
+        } else if (sub.hanzi) {
+          tokens = tokenizeChinese(sub.hanzi);
+        }
+
+        allTokens.push(
+          ...tokens.map((t) => ({
+            subtitleId: dbSub.id,
+            hanzi: t.hanzi,
+            pinyin: t.pinyin || '',
+            position: t.position,
+          })),
+        );
       }
-    }
 
-    // Update video vocab count and languages
-    await this.prisma.video.update({
-      where: { id: videoId },
-      data: {
-        vocabCount: allTokens.length,
-        subtitleLanguages: ['zh', 'vi'],
-      },
+      if (allTokens.length > 0) {
+        const chunkSize = 1000;
+        for (let i = 0; i < allTokens.length; i += chunkSize) {
+          const chunk = allTokens.slice(i, i + chunkSize);
+          await tx.subtitleToken.createMany({ data: chunk });
+        }
+      }
+
+      await tx.video.update({
+        where: { id: videoId },
+        data: {
+          vocabCount: allTokens.length,
+          subtitleLanguages: ['zh', 'vi'],
+        },
+      });
+
+      return {
+        message: `Created ${createdSubtitles.length} subtitles and ${allTokens.length} tokens`,
+      };
     });
-
-    return {
-      message: `Created ${createdSubtitles.length} subtitles and ${allTokens.length} tokens`,
-    };
   }
 
   async updateSubtitle(id: string, data: any) {

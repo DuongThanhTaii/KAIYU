@@ -26,7 +26,9 @@ describe('Recommendation scoring helpers', () => {
     const twoHoursAgo = new Date(now.getTime() - 2 * 60 * 60 * 1000);
     const fiveDaysAgo = new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000);
 
-    expect(freshnessScore(twoHoursAgo)).toBeLessThan(freshnessScore(fiveDaysAgo));
+    expect(freshnessScore(twoHoursAgo)).toBeLessThan(
+      freshnessScore(fiveDaysAgo),
+    );
   });
 
   it('should prioritize review for in-progress videos', () => {
@@ -34,4 +36,3 @@ describe('Recommendation scoring helpers', () => {
     expect(reviewNeedScore(50, now)).toBeGreaterThan(reviewNeedScore(0, now));
   });
 });
-

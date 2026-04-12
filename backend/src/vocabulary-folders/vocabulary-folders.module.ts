@@ -4,9 +4,9 @@ import { VocabularyFoldersService } from './vocabulary-folders.service';
 import { PrismaModule } from '../prisma';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [VocabularyFoldersController],
-    providers: [VocabularyFoldersService],
-    exports: [VocabularyFoldersService],
+  imports: [PrismaModule],
+  controllers: [VocabularyFoldersController],
+  providers: [VocabularyFoldersService],
+  exports: [VocabularyFoldersService],
 })
-export class VocabularyFoldersModule { }
+export class VocabularyFoldersModule {}

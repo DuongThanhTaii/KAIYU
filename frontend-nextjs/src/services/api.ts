@@ -16,6 +16,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 // Create axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
   headers: {
     "Content-Type": "application/json",
   },
@@ -40,11 +41,11 @@ export interface ApiClientError extends Error {
 // Token management
 export const tokenManager = {
   getToken: (): string | null => {
-    return localStorage.getItem(TOKEN_KEY);
+    return null;
   },
 
-  setToken: (token: string): void => {
-    localStorage.setItem(TOKEN_KEY, token);
+  setToken: (_token: string): void => {
+    // Access token is now managed in HttpOnly cookie by backend.
   },
 
   removeToken: (): void => {
@@ -77,44 +78,15 @@ export const tokenManager = {
   },
 };
 
-// Request interceptor - add auth token
-api.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    const token = tokenManager.getToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  },
-);
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => config);
 
 // Response interceptor - handle errors
 api.interceptors.response.use(
   (response) => response,
   (error: AxiosError<{ message?: string; error?: string }>) => {
     const shouldSkipAuthRedirect = Boolean(error.config?.skipAuthRedirect);
-    const headers = error.config?.headers as
-      | Record<string, unknown>
-      | undefined;
-    const requestAuthHeader = headers?.Authorization || headers?.authorization;
-    const requestToken =
-      typeof requestAuthHeader === "string"
-        ? requestAuthHeader.replace(/^Bearer\s+/i, "").trim()
-        : null;
-    const currentToken = tokenManager.getToken();
-    const isCurrentSessionRequest =
-      !requestToken || (currentToken !== null && requestToken === currentToken);
 
-    // Handle 401 Unauthorized - only auto logout if it belongs to current session.
-    // This prevents stale in-flight requests from an old account clearing a newer login.
-    if (
-      error.response?.status === 401 &&
-      !shouldSkipAuthRedirect &&
-      isCurrentSessionRequest
-    ) {
+    if (error.response?.status === 401 && !shouldSkipAuthRedirect) {
       tokenManager.clearAuth();
 
       if (typeof window !== "undefined") {

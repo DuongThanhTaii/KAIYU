@@ -50,10 +50,8 @@ export const authApi = {
    */
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await api.post<AuthResponse>("/auth/login", data);
-    const { accessToken, user } = response.data;
+    const { user } = response.data;
 
-    // Store token and user
-    tokenManager.setToken(accessToken);
     tokenManager.setUser(user);
 
     return response.data;
@@ -69,8 +67,7 @@ export const authApi = {
     // a registration completed flow), store it. Otherwise it may return
     // an object like { registrationRequestId } for OTP flow.
     if (response.data && response.data.accessToken) {
-      const { accessToken, user } = response.data;
-      tokenManager.setToken(accessToken);
+      const { user } = response.data;
       tokenManager.setUser(user);
       return response.data as AuthResponse;
     }
@@ -86,8 +83,7 @@ export const authApi = {
       registrationRequestId,
       otp,
     });
-    const { accessToken, user } = response.data;
-    tokenManager.setToken(accessToken);
+    const { user } = response.data;
     tokenManager.setUser(user);
     return response.data;
   },
@@ -136,7 +132,18 @@ export const authApi = {
   /**
    * Logout - clear local storage
    */
-  logout(): void {
+  async logout(): Promise<void> {
+    try {
+      await api.post(
+        "/auth/logout",
+        {},
+        {
+          skipAuthRedirect: true,
+        },
+      );
+    } catch {
+      // Ignore network/logout race errors and always clear local cached user.
+    }
     tokenManager.clearAuth();
   },
 
@@ -144,7 +151,7 @@ export const authApi = {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
-    return !!tokenManager.getToken();
+    return !!tokenManager.getUser();
   },
 
   /**
@@ -163,22 +170,6 @@ export const authApi = {
   googleLogin(): void {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
     window.location.href = `${apiUrl}/auth/google`;
-  },
-
-  /**
-   * Handle Google OAuth callback
-   * Called when redirected back from Google OAuth
-   */
-  handleGoogleCallback(token: string, userJson: string): AuthResponse | null {
-    try {
-      const user = JSON.parse(decodeURIComponent(userJson));
-      tokenManager.setToken(token);
-      tokenManager.setUser(user);
-      return { accessToken: token, user };
-    } catch (error) {
-      console.error("Failed to parse Google callback data:", error);
-      return null;
-    }
   },
 
   /**

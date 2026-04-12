@@ -21,22 +21,19 @@ describe('API Service', () => {
     });
 
     describe('tokenManager', () => {
-        it('should get token from localStorage', () => {
-            const mockToken = 'test-token-123';
-            (localStorage.getItem as any).mockReturnValue(mockToken);
-
+        it('should not persist access token in localStorage', () => {
             const token = tokenManager.getToken();
 
-            expect(localStorage.getItem).toHaveBeenCalledWith('auth_token');
-            expect(token).toBe(mockToken);
+            expect(localStorage.getItem).not.toHaveBeenCalledWith('auth_token');
+            expect(token).toBeNull();
         });
 
-        it('should set token to localStorage', () => {
+        it('should ignore setToken calls (cookie-based auth)', () => {
             const mockToken = 'new-token-456';
 
             tokenManager.setToken(mockToken);
 
-            expect(localStorage.setItem).toHaveBeenCalledWith('auth_token', mockToken);
+            expect(localStorage.setItem).not.toHaveBeenCalledWith('auth_token', mockToken);
         });
 
         it('should remove token from localStorage', () => {

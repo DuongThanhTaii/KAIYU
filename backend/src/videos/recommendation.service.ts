@@ -313,7 +313,7 @@ export class RecommendationService {
       overrides.filter((o) => o.action === 'hide').map((o) => o.videoId),
     );
 
-    let scored = featureRows
+    const scored = featureRows
       .filter((row) => !hideIds.has(row.video.id))
       .sort((a, b) => b.rawScore - a.rawScore);
 
