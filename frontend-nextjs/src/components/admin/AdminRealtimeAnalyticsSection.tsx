@@ -11,7 +11,6 @@ import Icon from "@/components/common/Icon";
 import ThemedDateRangePicker from "@/components/common/ThemedDateRangePicker";
 import {
   getAdminApiBaseUrl,
-  getAdminAuthToken,
   getAnalyticsPermissions,
   getRealtimeAnalytics,
   type AnalyticsPermissions,
@@ -147,12 +146,6 @@ export default function AdminRealtimeAnalyticsSection() {
 
     const connect = async () => {
       try {
-        const token = getAdminAuthToken();
-        if (!token) {
-          setError("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-          return;
-        }
-
         const intervalSec = permissions?.defaultStreamIntervalSec || 5;
         const streamQuery = new URLSearchParams({
           window: windowSize,
@@ -166,8 +159,8 @@ export default function AdminRealtimeAnalyticsSection() {
           method: "GET",
           headers: {
             Accept: "text/event-stream",
-            Authorization: `Bearer ${token}`,
           },
+          credentials: "include",
           signal: controller.signal,
           cache: "no-store",
         });
